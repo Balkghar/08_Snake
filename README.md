@@ -28,3 +28,14 @@ La partie se termine lorsque qu’un seul serpent est en jeu.
 * L’encapsulation doit être maximale
 * La représentation doit correspondre à celle proposée.
 * Il doit être possible d’interrompre le programme en fermant la fenêtre graphique.
+## Analyse et concept
+ ```mermaid
+---
+Schéma de relation
+---
+ stateDiagram
+     saisie.cpp --> main.cpp
+     combatSnakes.cpp --> main.cpp
+     snake.cpp --> combatSnakes.cpp
+     affichage2d.cpp --> combatSnakes.cpp
+ ```
