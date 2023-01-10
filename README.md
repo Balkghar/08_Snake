@@ -20,7 +20,6 @@ La partie se termine lorsque qu’un seul serpent est en jeu.
 * Les chances des serpents sont équilibrées.
 * Seules les pommes des serpents en jeu sont représentées.
 * La listes des serpents tués est affichées sur la console en cours de partie.
-* La vidéo Snake.mp4 montre le déroulement du programme.
 ## Contraintes
 * Utiliser au mieux tout ce qui a été vu à ce jour.
 * Économiser la mémoire au maximum.
