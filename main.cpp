@@ -55,6 +55,8 @@ int main(int argc, char* argv[]) {
    SDL_RenderSetScale(renderer, (float)SCREEN_WIDTH/(float)NBRE_VALUES, (float)SCREEN_HEIGTH/(float)NBRE_VALUES);
    //--------------------------------------------------------------------------
 
+   
+
    cout << "press ENTER to quit ...";
    cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
