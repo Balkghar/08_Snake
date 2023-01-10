@@ -29,6 +29,7 @@ La partie se termine lorsque qu’un seul serpent est en jeu.
 * La représentation doit correspondre à celle proposée.
 * Il doit être possible d’interrompre le programme en fermant la fenêtre graphique.
 ## Analyse et concept
+Schéma de compilation séparée
  ```mermaid
  stateDiagram
      saisie.cpp --> main.cpp
