@@ -30,10 +30,7 @@ La partie se termine lorsque qu’un seul serpent est en jeu.
 * Il doit être possible d’interrompre le programme en fermant la fenêtre graphique.
 ## Analyse et concept
  ```mermaid
- ---
- title: Simple sample
- ---
- stateDiagram-v2
+ stateDiagram
      saisie.cpp --> main.cpp
      combatSnakes.cpp --> main.cpp
      snake.cpp --> combatSnakes.cpp
