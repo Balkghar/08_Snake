@@ -35,4 +35,6 @@ Schéma de compilation séparée
      combatSnakes.cpp --> main.cpp
      snake.cpp --> combatSnakes.cpp
      affichage2d.cpp --> combatSnakes.cpp
+     aleatoire.cpp --> combatSnakes.cpp
  ```
+ 
