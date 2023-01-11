@@ -18,7 +18,10 @@
 #include <random>
 #include <algorithm>
 
-#include <SDL2/SDL.h>
+#include "jeu/combatSnakes.hpp"
+
+#include <SDL.h>
+
 
 using namespace std;
 

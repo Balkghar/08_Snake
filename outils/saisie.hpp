@@ -7,14 +7,14 @@
   But         : Déclaration des fonctions nécessaires à la saisie sécurisée d'un
                 entier.
 
-  Remarque(s) : à compléter
+  Remarque(s) :
 
   Compilateur : gcc version 11.2.0
   ---------------------------------------------------------------------------
 */
 
-#ifndef LABO7_ROBOTS_SAISIE_HPP
-#define LABO7_ROBOTS_SAISIE_HPP
+#ifndef LABO8_SNAKES_OUTILS_SAISIE_HPP
+#define LABO8_SNAKES_OUTILS_SAISIE_HPP
 
 #include <string>
 
@@ -30,4 +30,4 @@ void viderBuffer();
 int saisirIntervaleInt(int minInt, int maxInt, const std::string& message,
                        const std::string& message_erreur);
 
-#endif //LABO7_ROBOTS_SAISIE_HPP
+#endif

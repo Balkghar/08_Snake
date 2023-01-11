@@ -1,13 +1,13 @@
 /*
   ---------------------------------------------------------------------------
   Fichier     : saisie.cpp
-  Nom du labo : Labo7 - Robots
+  Nom du labo : Labo8 - snake
   Auteur(s)   : Delétraz Alexandre - Germano Hugo
-  Date        : 13.12.2022
+  Date        : 11.01.2023
   But         : Définition des fonctions nécessaires à la saisie sécurisée d'un
                 entier.
 
-  Remarque(s) : à compléter
+  Remarque(s) :
 
   Compilateur : gcc version 11.2.0
   ---------------------------------------------------------------------------
@@ -23,12 +23,13 @@ void viderBuffer() {
    cin.ignore(numeric_limits<streamsize>::max(), '\n');
 }
 
-int saisirIntervaleInt(int minInt, int maxInt, const string& message, const string& message_erreur){
+template <typename T>
+T saisirIntervaleInt(T minInt, T maxInt, const string& message, const string& message_erreur){
 
    int saisie;
    bool erreur;
 
-   //continue jusque que le condition soit remplies
+   //continue jusqu'à ce que les conditions soient remplies
    do {
 
       // message et saisie

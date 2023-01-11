@@ -4,7 +4,7 @@
   Nom du labo : Labo8 - Snake
   Auteur(s)   : Delétraz Alexandre - Germano Hugo
   Date        : 10.01.2022
-  But         : 
+  But         : Définition des fonctions membres de la classe snake.
 
   Remarque(s) : 
 
