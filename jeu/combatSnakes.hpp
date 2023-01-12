@@ -39,8 +39,9 @@ private:
    unsigned nbSerpent; // pas nécessaire de stocker cette variable (selon l'assistant)
    std::vector<Snake> serpents;
    std::vector<Pomme> pommes;
+
+   bool serpentPresent(unsigned int x, unsigned int y);
+   bool pommePresente(unsigned int x, unsigned int y);
 };
-
-
 
 #endif

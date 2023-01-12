@@ -22,20 +22,24 @@ class Snake {
 public:
    Snake(unsigned x,
          unsigned y,
-         const int id,
+         const unsigned id,
          bool estEnVie);
 
    void deplacerSerpent();
    void setCoordX(unsigned x);
    void setCoordY(unsigned y);
+   void deplacerVersPomme(unsigned x, unsigned y);
 
    unsigned getCoordX();
    unsigned getCoordY();
+   unsigned getId();
+
+   bool peutSeDeplacer(unsigned x, unsigned y) const;
 
 private:
    std::vector<std::vector<unsigned>> coordonnee;
    unsigned longueur = 10;
-   const int id;
+   const unsigned id;
    unsigned longueurAAjouter;
    bool     estEnVie;
 

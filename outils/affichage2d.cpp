@@ -6,43 +6,88 @@ Auteur(s)   : Delétraz Alexandre - Germano Hugo
 Date        : 10.01.2022
 But         : Permet d'afficher une fenêtre d'une taille personnalisée en utilisant
               la libraire SDL (simple DirectMedia Layer)
-
 Remarque(s) :
-
 Compilateur : gcc version 11.2.0
 ---------------------------------------------------------------------------
 */
 
 #include <iomanip>
+#include <iostream>
+#include "affichage2d.hpp"
 #include <SDL.h>
+#include <limits>
 
 using namespace std;
 
-void affichageDuJeu() {
+
+// SDL library
+SDL_Window*    window         = nullptr;
+SDL_Renderer*  renderer       = nullptr;
+SDL_Event      event;
+bool           appIsRunning   = true;
+
+void Affichage2d::confCouleur(Couleur couleur){
+
+   switch (couleur)
+   {
+      case Couleur::rouge:
+         SDL_SetRenderDrawColor(renderer, 255, 0, 0, SDL_ALPHA_OPAQUE);
+         break;
+      case Couleur::blanc:
+         SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+         break;
+      case Couleur::noir:
+         SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+         break;
+   }
+}
+bool Affichage2d::initalisationAffichage (){
    //--------------------------------------------------------------------------
    //    SDL settings
    //--------------------------------------------------------------------------
-   const int  SCREEN_WIDTH  =  800;
-   const int  SCREEN_HEIGTH =  600;
-   const int  NBRE_VALUES   =   50;
-   const int  SDL_DELAY     =  100;
-
-   // SDL library
-   SDL_Window*    window         = nullptr;
-   SDL_Renderer*  renderer       = nullptr;
-   SDL_Event      event;
-   bool           appIsRunning   = true;
+   const int  SCREEN_WIDTH  =  this->largeur;
+   const int  SCREEN_HEIGTH =  this->hauteur;
 
    SDL_Init(SDL_INIT_VIDEO);
    SDL_CreateWindowAndRenderer(SCREEN_WIDTH, SCREEN_HEIGTH, SDL_WINDOW_SHOWN, &window, &renderer);
    if (window == nullptr or renderer == nullptr) {
       cout << "SDL not ready ... quitting" << endl;
-      return EXIT_FAILURE;
+      return true;
    }
-   SDL_RenderSetScale(renderer, (float)SCREEN_WIDTH/(float)NBRE_VALUES, (float)SCREEN_HEIGTH/(float)NBRE_VALUES);
-   //--------------------------------------------------------------------------
+   SDL_RenderSetScale(renderer, (float)SCREEN_WIDTH/(float)this->nbre_values, (float)SCREEN_HEIGTH/(float)this->nbre_values);
+   return false;
+}
+bool Affichage2d::nettoyerAffichage(Couleur couleur){
+   SDL_PollEvent(&event);
+   if (event.type == SDL_QUIT) {
+      appIsRunning = false;
+      return true;
+   }
+
+   confCouleur(couleur);
+
+   SDL_RenderClear(renderer);
+
+   return false;
+}
+bool Affichage2d::ajouterElementAffichage(unsigned x, unsigned y, Couleur couleur){
 
 
+   confCouleur(couleur);
+
+   SDL_RenderDrawPoint(renderer, x, y);
+
+   return false;
+}
+
+bool Affichage2d::mettreAjourAffichage(){
+
+   // SDL display the window
+   SDL_RenderPresent(renderer);
+   SDL_Delay(this->sdl_delay);
+   return false;
+}
+bool Affichage2d::fermerAffichage (){
 
    cout << "press ENTER to quit ...";
    cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -51,4 +96,6 @@ void affichageDuJeu() {
    SDL_DestroyWindow(window);
    SDL_DestroyRenderer(renderer);
    SDL_Quit();
+
+   return false;
 }

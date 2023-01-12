@@ -20,19 +20,24 @@ Compilateur : gcc version 11.2.0
 
 class Pomme {
 public:
-   Pomme(std::array<unsigned, 2> coord,
-         std::array <short,4> coul,
-         const int id,
-         bool estMangee);
+   Pomme(unsigned x,
+         unsigned y,
+         const unsigned id,
+         bool estMangee,
+         std::array <short,4> coul = {255, 0, 0, 255});
+
+   unsigned getCoordX();
+   unsigned getCoordY();
+   unsigned getId();
+
+   void nouvellePomme();
 
 private:
 
    std::array<unsigned, 2> coordonnes;
-   std::array <short,4> couleurs;
-   const int id;
+   const unsigned id;
    bool estMangee;
-
-
+   std::array <short,4> couleurs;
 
 };
 
