@@ -38,3 +38,33 @@ Schéma de compilation séparée
      aleatoire.cpp --> combatSnakes.cpp
      pomme.cpp --> combatSnakes.cpp
  ```
+
+```mermaid
+classDiagram
+    snake ..> combatSnake : Dependency
+    affichage2d ..> combatSnake : Dependency
+    pomme ..> combatSnake : Dependency
+    
+    class combatSnake{
+    	-largeur : int
+    	-hauteur : int
+    	-nbrSerpent : int
+	}
+	class snake{
+		-id : const int
+		-positions : vector<.vector<.int>>
+		-etat : bool
+		-longueur : int
+		-longueurAAjouter : int
+	}
+	class affichage2d{
+		-largeur  : const int
+		-hauteur : const int
+	}
+	class pomme{
+		-id : const int
+		-position : array<.int>
+		-couleur : array<.short>
+		-estMangee : bool
+	}
+```
