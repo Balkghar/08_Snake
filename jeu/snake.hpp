@@ -16,13 +16,28 @@ Compilateur : gcc version 11.2.0
 #ifndef LABO8_SNAKES_JEU_SNAKE_HPP
 #define LABO8_SNAKES_JEU_SNAKE_HPP
 
+#include <vector>
+
 class Snake {
 public:
-   Snake(unsigned x, unsigned y) : coordX(x), coordY(y) {}
+   Snake(unsigned x,
+         unsigned y,
+         const int id,
+         bool estEnVie);
+
+   void deplacerSerpent();
+   void setCoordX(unsigned x);
+   void setCoordY(unsigned y);
+
+   unsigned getCoordX();
+   unsigned getCoordY();
+
 private:
-   unsigned coordX;
-   unsigned coordY;
+   std::vector<std::vector<unsigned>> coordonnee;
    unsigned longueur = 10;
+   const int id;
+   unsigned longueurAAjouter;
+   bool     estEnVie;
 
 };
 

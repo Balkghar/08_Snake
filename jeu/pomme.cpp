@@ -13,3 +13,8 @@ Compilateur : gcc version 11.2.0
 */
 
 #include "pomme.hpp"
+
+Pomme::Pomme(std::array<unsigned int, 2> coord, std::array<short, 4> coul, const int id,
+             bool estMangee) : coordonnes(coord), couleurs(coul), id(id), estMangee(estMangee){
+
+}

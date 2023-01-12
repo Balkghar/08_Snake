@@ -13,3 +13,33 @@
 */
 #include "snake.hpp"
 
+Snake::Snake(unsigned x, unsigned y,
+             const int id, bool estEnVie) :id(id), estEnVie(estEnVie) {
+   setCoordX(x);
+   setCoordY(y);
+   longueurAAjouter = longueur;
+
+
+}
+
+void Snake::deplacerSerpent() {
+
+}
+
+void Snake::setCoordX(unsigned x) {
+   coordonnee.at(0).at(0) = x;
+
+}
+
+void Snake::setCoordY(unsigned y) {
+   coordonnee.at(0).at(1) = y;
+}
+
+unsigned Snake::getCoordX() {
+   return this->coordonnee.at(0).at(0);
+}
+
+unsigned Snake::getCoordY() {
+   return this->coordonnee.at(0).at(1);
+
+}

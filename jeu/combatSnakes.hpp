@@ -18,19 +18,29 @@ Compilateur : gcc version 11.2.0
 
 #include <vector>
 #include "snake.hpp"
+#include "pomme.hpp"
 
 
 class Combat {
 public:
    Combat() : Combat(100, 100, 10) {}
-   Combat(unsigned largeur, unsigned longueur, unsigned nbSerpent) :
-          largeur(largeur), longueur(longueur), nbSerpent(nbSerpent) {}
+   Combat(unsigned largeur, unsigned longueur, unsigned nbSerpent);
+
+
+   void initialiserPomme();
+   void initialiserSerpent();
+
+   bool placeEstLibre( unsigned x, unsigned y );
+
 
 private:
    unsigned largeur;
    unsigned longueur;
-   unsigned nbSerpent;
+   unsigned nbSerpent; // pas nécessaire de stocker cette variable (selon l'assistant)
    std::vector<Snake> serpents;
+   std::vector<Pomme> pommes;
 };
+
+
 
 #endif

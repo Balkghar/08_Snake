@@ -16,14 +16,26 @@ Compilateur : gcc version 11.2.0
 #ifndef LABO8_SNAKES_JEU_POMME_HPP
 #define LABO8_SNAKES_JEU_POMME_HPP
 
-
+#include <array>
 
 class Pomme {
 public:
-   Pomme(unsigned x, unsigned y) : coordX(x), coordY(y){}
+   Pomme(std::array<unsigned, 2> coord,
+         std::array <short,4> coul,
+         const int id,
+         bool estMangee);
+
 private:
-   unsigned coordX;
-   unsigned coordY;
+
+   std::array<unsigned, 2> coordonnes;
+   std::array <short,4> couleurs;
+   const int id;
+   bool estMangee;
+
+
+
 };
+
+
 
 #endif
