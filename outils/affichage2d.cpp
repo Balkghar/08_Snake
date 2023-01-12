@@ -73,7 +73,6 @@ bool Affichage2d::nettoyerAffichage(Couleur couleur){
 }
 bool Affichage2d::ajouterElementAffichage(unsigned x, unsigned y, Couleur couleur){
 
-
    confCouleur(couleur);
 
    SDL_RenderDrawPoint(renderer, x, y);
