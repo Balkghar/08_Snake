@@ -31,15 +31,15 @@ void Affichage2d::confCouleur(Couleur couleur){
 
    switch (couleur)
    {
-   case Couleur::rouge:
-      SDL_SetRenderDrawColor(renderer, 255, 0, 0, SDL_ALPHA_OPAQUE);
-      break;
-   case Couleur::blanc:
-      SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-      break;
-   case Couleur::noir:
-      SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
-      break;
+      case Couleur::rouge:
+         SDL_SetRenderDrawColor(renderer, 255, 0, 0, SDL_ALPHA_OPAQUE);
+         break;
+      case Couleur::blanc:
+         SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+         break;
+      case Couleur::noir:
+         SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+         break;
    }
 }
 bool Affichage2d::initalisationAffichage (){
@@ -89,9 +89,6 @@ bool Affichage2d::mettreAjourAffichage(){
    return false;
 }
 bool Affichage2d::fermerAffichage (){
-
-   cout << "press ENTER to quit ...";
-   cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
    // clear SDL ressources
    SDL_DestroyWindow(window);
