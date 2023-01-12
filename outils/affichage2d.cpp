@@ -6,7 +6,9 @@ Auteur(s)   : Delétraz Alexandre - Germano Hugo
 Date        : 10.01.2022
 But         : Permet d'afficher une fenêtre d'une taille personnalisée en utilisant
               la libraire SDL (simple DirectMedia Layer)
+
 Remarque(s) :
+
 Compilateur : gcc version 11.2.0
 ---------------------------------------------------------------------------
 */
@@ -19,6 +21,14 @@ Compilateur : gcc version 11.2.0
 
 using namespace std;
 
+void affichageDuJeu() {
+   //--------------------------------------------------------------------------
+   //    SDL settings
+   //--------------------------------------------------------------------------
+   const int  SCREEN_WIDTH  =  800;
+   const int  SCREEN_HEIGTH =  600;
+   const int  NBRE_VALUES   =   50;
+   const int  SDL_DELAY     =  100;
 
 // SDL library
 SDL_Window*    window         = nullptr;
@@ -72,7 +82,6 @@ bool Affichage2d::nettoyerAffichage(Couleur couleur){
 }
 bool Affichage2d::ajouterElementAffichage(unsigned x, unsigned y, Couleur couleur){
 
-
    confCouleur(couleur);
 
    SDL_RenderDrawPoint(renderer, x, y);
@@ -88,9 +97,6 @@ bool Affichage2d::mettreAjourAffichage(){
    return false;
 }
 bool Affichage2d::fermerAffichage (){
-
-   cout << "press ENTER to quit ...";
-   cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
    // clear SDL ressources
    SDL_DestroyWindow(window);
