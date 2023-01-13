@@ -73,7 +73,6 @@ bool Affichage2d::nettoyerAffichage(Couleur couleur){
 }
 bool Affichage2d::ajouterElementAffichage(unsigned x, unsigned y, Couleur couleur){
 
-
    confCouleur(couleur);
 
    SDL_RenderDrawPoint(renderer, x, y);
@@ -89,9 +88,6 @@ bool Affichage2d::mettreAjourAffichage(){
    return false;
 }
 bool Affichage2d::fermerAffichage (){
-
-   cout << "press ENTER to quit ...";
-   cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
    // clear SDL ressources
    SDL_DestroyWindow(window);
