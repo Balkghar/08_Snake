@@ -16,19 +16,10 @@ Compilateur : gcc version 11.2.0
 #include <iomanip>
 #include <iostream>
 #include "affichage2d.hpp"
-#include <SDL.h>
-#include <limits>
+#include <SDL2/SDL.h>
 
 using namespace std;
 
-void affichageDuJeu() {
-   //--------------------------------------------------------------------------
-   //    SDL settings
-   //--------------------------------------------------------------------------
-   const int  SCREEN_WIDTH  =  800;
-   const int  SCREEN_HEIGTH =  600;
-   const int  NBRE_VALUES   =   50;
-   const int  SDL_DELAY     =  100;
 
 // SDL library
 SDL_Window*    window         = nullptr;
@@ -40,15 +31,15 @@ void Affichage2d::confCouleur(Couleur couleur){
 
    switch (couleur)
    {
-      case Couleur::rouge:
-         SDL_SetRenderDrawColor(renderer, 255, 0, 0, SDL_ALPHA_OPAQUE);
-         break;
-      case Couleur::blanc:
-         SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-         break;
-      case Couleur::noir:
-         SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
-         break;
+   case Couleur::rouge:
+      SDL_SetRenderDrawColor(renderer, 255, 0, 0, SDL_ALPHA_OPAQUE);
+      break;
+   case Couleur::blanc:
+      SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+      break;
+   case Couleur::noir:
+      SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+      break;
    }
 }
 bool Affichage2d::initalisationAffichage (){
@@ -73,7 +64,7 @@ bool Affichage2d::nettoyerAffichage(Couleur couleur){
       appIsRunning = false;
       return true;
    }
-
+            
    confCouleur(couleur);
 
    SDL_RenderClear(renderer);
@@ -81,6 +72,7 @@ bool Affichage2d::nettoyerAffichage(Couleur couleur){
    return false;
 }
 bool Affichage2d::ajouterElementAffichage(unsigned x, unsigned y, Couleur couleur){
+
 
    confCouleur(couleur);
 
@@ -97,6 +89,9 @@ bool Affichage2d::mettreAjourAffichage(){
    return false;
 }
 bool Affichage2d::fermerAffichage (){
+
+   cout << "press ENTER to quit ...";
+   cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
    // clear SDL ressources
    SDL_DestroyWindow(window);
