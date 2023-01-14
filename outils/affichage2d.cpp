@@ -13,10 +13,20 @@ Compilateur : gcc version 11.2.0
 ---------------------------------------------------------------------------
 */
 
+
+
 #include <iomanip>
 #include <iostream>
 #include "affichage2d.hpp"
+
+#if defined(__linux__)  // Or #if __linux__
 #include <SDL2/SDL.h>
+#elif _WIN32
+#include <SDL.h>
+#else
+#include <SDL2/SDL.h>
+#endif
+
 
 using namespace std;
 
@@ -27,7 +37,7 @@ SDL_Renderer*  renderer       = nullptr;
 SDL_Event      event;
 bool           appIsRunning   = true;
 
-void Affichage2d::confCouleur(Couleur couleur){
+void Affichage2d::confCouleur(Couleur couleur) {
 
    switch (couleur)
    {
@@ -42,7 +52,7 @@ void Affichage2d::confCouleur(Couleur couleur){
       break;
    }
 }
-bool Affichage2d::initalisationAffichage (){
+bool Affichage2d::initalisationAffichage () {
    //--------------------------------------------------------------------------
    //    SDL settings
    //--------------------------------------------------------------------------
@@ -58,7 +68,7 @@ bool Affichage2d::initalisationAffichage (){
    SDL_RenderSetScale(renderer, (float)SCREEN_WIDTH/(float)this->nbre_values, (float)SCREEN_HEIGTH/(float)this->nbre_values);
    return false;
 }
-bool Affichage2d::nettoyerAffichage(Couleur couleur){
+bool Affichage2d::nettoyerAffichage(Couleur couleur) {
    SDL_PollEvent(&event);
    if (event.type == SDL_QUIT) {
       appIsRunning = false;
@@ -71,7 +81,7 @@ bool Affichage2d::nettoyerAffichage(Couleur couleur){
 
    return false;
 }
-bool Affichage2d::ajouterElementAffichage(unsigned x, unsigned y, Couleur couleur){
+bool Affichage2d::ajouterElementAffichage(unsigned x, unsigned y, Couleur couleur) {
 
    confCouleur(couleur);
 
@@ -80,14 +90,14 @@ bool Affichage2d::ajouterElementAffichage(unsigned x, unsigned y, Couleur couleu
    return false;
 }
 
-bool Affichage2d::mettreAjourAffichage(){
+bool Affichage2d::mettreAjourAffichage() {
 
    // SDL display the window
    SDL_RenderPresent(renderer);
    SDL_Delay(this->sdl_delay);
    return false;
 }
-bool Affichage2d::fermerAffichage (){
+bool Affichage2d::fermerAffichage () {
 
    // clear SDL ressources
    SDL_DestroyWindow(window);

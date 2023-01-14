@@ -26,7 +26,7 @@ void viderBuffer() {
 template <typename T>
 T saisirIntervaleInt(T minInt, T maxInt, const string& message, const string& message_erreur){
 
-   int saisie;
+   T saisie;
    bool erreur;
 
    //continue jusqu'à ce que les conditions soient remplies
@@ -34,7 +34,7 @@ T saisirIntervaleInt(T minInt, T maxInt, const string& message, const string& me
 
       // message et saisie
       cout << message;
-      cin >> saisie;
+      cin  >> saisie;
 
       erreur = cin.fail() or saisie < minInt or saisie > maxInt;
 

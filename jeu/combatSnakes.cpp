@@ -17,23 +17,26 @@ Compilateur : gcc version 11.2.0
 #include "snake.hpp"
 #include "pomme.hpp"
 #include "outils/aleatoire.hpp"
-#include "outils/affichage2d.hpp"
 
+using namespace std;
 
-Combat::Combat(unsigned int largeur, unsigned int longueur, unsigned int nbSerpent)
+AreneDeCombat::AreneDeCombat(unsigned int largeur, unsigned int longueur, unsigned int nbSerpent)
    : largeur(largeur), longueur(longueur), nbSerpent(nbSerpent) {
    initialiserSerpent();
    initialiserPomme();
 
 }
 
-void Combat::initialiserPomme() {
+void AreneDeCombat::initialiserPomme() {
+
+   pommes.reserve(nbSerpent);
+
    const unsigned min = 1;
 
    unsigned x;
    unsigned y;
 
-   for ( unsigned i = 1; i <= Combat::nbSerpent; ++i ) {
+   for (unsigned i = 1; i <= AreneDeCombat::nbSerpent; ++i ) {
       do {
 
          x = aleatoireEntreDeuxEntiersPositifs(min, largeur);
@@ -45,13 +48,16 @@ void Combat::initialiserPomme() {
    }
 }
 
-void Combat::initialiserSerpent() {
+void AreneDeCombat::initialiserSerpent() {
+
+   serpents.reserve(nbSerpent);
+
    const unsigned min = 1;
 
    unsigned x;
    unsigned y;
 
-   for ( unsigned i = 1; i <= Combat::nbSerpent; ++i ) {
+   for (unsigned i = 1; i <= AreneDeCombat::nbSerpent; ++i ) {
       do {
 
          x = aleatoireEntreDeuxEntiersPositifs(min, largeur);
@@ -63,12 +69,13 @@ void Combat::initialiserSerpent() {
 
 }
 
-bool Combat::placeEstLibre(unsigned int x, unsigned int y) {
+bool AreneDeCombat::placeEstLibre(unsigned int x, unsigned int y) {
 
-   return !serpentPresent(x, y) and !pommePresente(x, y);
+//   return !serpentPresent(x, y) and !pommePresente(x, y);
+   return (serpentPresent(x, y) or pommePresente(x, y)); /// pas d'accord avec ça
 }
 
-bool Combat::serpentPresent(unsigned int x, unsigned int y) {
+bool AreneDeCombat::serpentPresent(unsigned int x, unsigned int y) {
    for (Snake monSerpent: serpents) {
       if (monSerpent.getCoordX() == x and monSerpent.getCoordY() == y) {
          return true;
@@ -78,7 +85,7 @@ bool Combat::serpentPresent(unsigned int x, unsigned int y) {
    return false;
 }
 
-bool Combat::pommePresente(unsigned int x, unsigned int y) {
+bool AreneDeCombat::pommePresente(unsigned int x, unsigned int y) {
    for(Pomme mesPommes : pommes) {
       if(mesPommes.getCoordX() == x and mesPommes.getCoordY() == y) {
          return true;
@@ -86,4 +93,35 @@ bool Combat::pommePresente(unsigned int x, unsigned int y) {
    }
 
    return false;
+}
+
+void AreneDeCombat::commencerCombat(){
+
+   Affichage2d affichage(this->largeur, this->longueur, 50, 6);
+
+   affichage.initalisationAffichage();
+
+   affichage.nettoyerAffichage(Couleur::blanc);
+
+   ajouterSerpentAffichage(affichage);
+   ajouterPommeAffichage(affichage);
+
+
+   affichage.mettreAjourAffichage();
+
+}
+void AreneDeCombat::ajouterSerpentAffichage(Affichage2d& affichage){
+
+   for(Snake serpent : serpents){
+      affichage.ajouterElementAffichage(serpent.getCoordX(), serpent.getCoordY(), Couleur::noir);
+   }
+
+}
+
+void AreneDeCombat::ajouterPommeAffichage(Affichage2d& affichage){
+   for(Pomme pomme : pommes){
+
+      affichage.ajouterElementAffichage(pomme.getCoordX(), pomme.getCoordY(), Couleur::rouge);
+
+   }
 }

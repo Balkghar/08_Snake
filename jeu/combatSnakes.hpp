@@ -19,29 +19,31 @@ Compilateur : gcc version 11.2.0
 #include <vector>
 #include "snake.hpp"
 #include "pomme.hpp"
+#include "../outils/affichage2d.hpp"
 
-
-class Combat {
+class AreneDeCombat {
 public:
-   Combat() : Combat(100, 100, 10) {}
-   Combat(unsigned largeur, unsigned longueur, unsigned nbSerpent);
+   AreneDeCombat() : AreneDeCombat(100, 100, 10) {}
+   AreneDeCombat(unsigned largeur, unsigned longueur, unsigned nbSerpent);
 
-
-   void initialiserPomme();
-   void initialiserSerpent();
-
-   bool placeEstLibre( unsigned x, unsigned y );
-
+   void commencerCombat();
 
 private:
    unsigned largeur;
    unsigned longueur;
-   unsigned nbSerpent; // pas nécessaire de stocker cette variable (selon l'assistant)
+   unsigned nbSerpent;
    std::vector<Snake> serpents;
    std::vector<Pomme> pommes;
 
+   bool placeEstLibre( unsigned x, unsigned y );
    bool serpentPresent(unsigned int x, unsigned int y);
    bool pommePresente(unsigned int x, unsigned int y);
+
+   void initialiserPomme();
+   void initialiserSerpent();
+   void ajouterSerpentAffichage(Affichage2d& affichage);
+   void ajouterPommeAffichage(Affichage2d& affichage);
+
 };
 
 #endif

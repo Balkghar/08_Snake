@@ -25,16 +25,20 @@ public:
          const unsigned id,
          bool estEnVie);
 
-   void deplacerSerpent();
    void setCoordX(unsigned x);
    void setCoordY(unsigned y);
-   void deplacerVersPomme(unsigned x, unsigned y);
+   void deplacerVersPomme(unsigned int xPomme, unsigned int yPomme,
+                          const unsigned idPomme,
+                          unsigned largeur,
+                          unsigned hauteur,
+                          std::vector<Snake>& serpents);
 
    unsigned getCoordX();
    unsigned getCoordY();
    unsigned getId();
 
-   bool peutSeDeplacer(unsigned x, unsigned y) const;
+   bool peutSeDeplacer(unsigned int x, unsigned int y, unsigned largeur,
+                       unsigned hauteur) const;
 
 private:
    std::vector<std::vector<unsigned>> coordonnee;
