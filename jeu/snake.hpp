@@ -35,10 +35,10 @@ public:
 
    unsigned getCoordX();
    unsigned getCoordY();
-   unsigned getId();
+   unsigned getId() const;
 
-   bool peutSeDeplacer(unsigned int x, unsigned int y, unsigned largeur,
-                       unsigned hauteur) const;
+   static bool peutSeDeplacer(unsigned int x, unsigned int y, unsigned largeur,
+                       unsigned hauteur) ;
 
 private:
    std::vector<std::vector<unsigned>> coordonnee;

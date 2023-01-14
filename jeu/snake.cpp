@@ -46,7 +46,7 @@ unsigned Snake::getCoordY() {
 
 }
 
-unsigned Snake::getId() {
+unsigned Snake::getId() const {
    return id;
 }
 
@@ -82,7 +82,7 @@ void Snake::deplacerVersPomme(unsigned int xPomme, unsigned int yPomme,
 }
 
 bool Snake::peutSeDeplacer(unsigned int x, unsigned int y, unsigned largeur,
-                           unsigned hauteur) const {
+                           unsigned hauteur) {
    if(x > largeur or y > hauteur or x == 0 or y == 0) {
       return true;
    }
