@@ -17,6 +17,8 @@ Compilateur : gcc version 11.2.0
 #ifndef LABO8_SNAKES_OUTILS_AFFICHAGE2D_HPP
 #define LABO8_SNAKES_OUTILS_AFFICHAGE2D_HPP
 
+#include <SDL2/SDL.h>
+
 enum Couleur{blanc, noir, rouge};
 
    class Affichage2d {
@@ -33,6 +35,10 @@ enum Couleur{blanc, noir, rouge};
          const unsigned hauteur;
          const unsigned sdl_delay;
          const unsigned nbre_values;
+         SDL_Window*    window         = nullptr;
+         SDL_Renderer*  renderer       = nullptr;
+         SDL_Event      event;
+         bool           appIsRunning   = true;
    };
 
 

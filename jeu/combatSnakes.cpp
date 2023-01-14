@@ -14,20 +14,23 @@ Compilateur : gcc version 11.2.0
 */
 
 #include "combatSnakes.hpp"
-#include "snake.hpp"
-#include "pomme.hpp"
-#include "outils/aleatoire.hpp"
-#include "outils/affichage2d.hpp"
+#include "../outils/aleatoire.hpp"
+#include <iostream>
+
+using namespace std;
 
 
 Combat::Combat(unsigned int largeur, unsigned int longueur, unsigned int nbSerpent)
    : largeur(largeur), longueur(longueur), nbSerpent(nbSerpent) {
+
    initialiserSerpent();
    initialiserPomme();
-
 }
 
 void Combat::initialiserPomme() {
+
+   pommes.reserve(nbSerpent);
+
    const unsigned min = 1;
 
    unsigned x;
@@ -46,7 +49,11 @@ void Combat::initialiserPomme() {
 }
 
 void Combat::initialiserSerpent() {
+
+   serpents.reserve(nbSerpent);
+
    const unsigned min = 1;
+
 
    unsigned x;
    unsigned y;
@@ -65,11 +72,11 @@ void Combat::initialiserSerpent() {
 
 bool Combat::placeEstLibre(unsigned int x, unsigned int y) {
 
-   return !serpentPresent(x, y) and !pommePresente(x, y);
+   return (serpentPresent(x, y) or pommePresente(x, y));
 }
 
 bool Combat::serpentPresent(unsigned int x, unsigned int y) {
-   for (Snake monSerpent: serpents) {
+   for (Snake monSerpent : serpents) {
       if (monSerpent.getCoordX() == x and monSerpent.getCoordY() == y) {
          return true;
       }
@@ -86,4 +93,36 @@ bool Combat::pommePresente(unsigned int x, unsigned int y) {
    }
 
    return false;
+}
+
+
+void Combat::commencerCombat(){
+
+   Affichage2d affichage(this->largeur, this->longueur, 50, 6);
+
+   affichage.initalisationAffichage();
+   
+   affichage.nettoyerAffichage(Couleur::blanc);
+
+   ajouterSerpentAffichage(affichage);
+   ajouterPommeAffichage(affichage);
+
+
+   affichage.mettreAjourAffichage();
+
+}
+void Combat::ajouterSerpentAffichage(Affichage2d& affichage){
+
+   for(Snake serpent : serpents){
+      affichage.ajouterElementAffichage(serpent.getCoordX(), serpent.getCoordY(), Couleur::noir);
+   }
+
+}
+
+void Combat::ajouterPommeAffichage(Affichage2d& affichage){
+   for(Pomme pomme : pommes){
+
+      affichage.ajouterElementAffichage(pomme.getCoordX(), pomme.getCoordY(), Couleur::rouge);
+
+   }
 }

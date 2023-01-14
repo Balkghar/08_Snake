@@ -12,13 +12,17 @@
   ---------------------------------------------------------------------------
 */
 #include "snake.hpp"
+#include <vector>
 
-Snake::Snake(unsigned x,
-             unsigned y,
-             const unsigned id,
-             bool estEnVie) : id(id), estEnVie(estEnVie) {
-   coordonnee.at(0).at(0) = x;
-   coordonnee.at(0).at(1) = y;
+Snake::Snake(unsigned x,unsigned y, const unsigned id, bool estEnVie) : id(id), estEnVie(estEnVie) {
+
+   coordonnee.resize(longueur);
+
+
+   coordonnee.at(0).x = x;
+   coordonnee.at(0).y = y;
+
+
    longueurAAjouter = longueur;
 
 
@@ -29,20 +33,20 @@ void Snake::deplacerSerpent() {
 }
 
 void Snake::setCoordX(unsigned x) {
-   coordonnee.at(0).at(0) = x;
+   coordonnee.at(0).x = x;
 
 }
 
 void Snake::setCoordY(unsigned y) {
-   coordonnee.at(0).at(1) = y;
+   coordonnee.at(0).y = y;
 }
 
 unsigned Snake::getCoordX() {
-   return this->coordonnee.at(0).at(0);
+   return this->coordonnee.at(0).x;
 }
 
 unsigned Snake::getCoordY() {
-   return this->coordonnee.at(0).at(1);
+   return this->coordonnee.at(0).y;
 
 }
 

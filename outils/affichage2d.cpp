@@ -16,16 +16,12 @@ Compilateur : gcc version 11.2.0
 #include <iomanip>
 #include <iostream>
 #include "affichage2d.hpp"
-#include <SDL2/SDL.h>
 
 using namespace std;
 
 
 // SDL library
-SDL_Window*    window         = nullptr;
-SDL_Renderer*  renderer       = nullptr;
-SDL_Event      event;
-bool           appIsRunning   = true;
+
 
 void Affichage2d::confCouleur(Couleur couleur){
 
@@ -50,12 +46,13 @@ bool Affichage2d::initalisationAffichage (){
    const int  SCREEN_HEIGTH =  this->hauteur;
 
    SDL_Init(SDL_INIT_VIDEO);
-   SDL_CreateWindowAndRenderer(SCREEN_WIDTH, SCREEN_HEIGTH, SDL_WINDOW_SHOWN, &window, &renderer);
+   SDL_CreateWindowAndRenderer(SCREEN_WIDTH*this->nbre_values, SCREEN_HEIGTH*this->nbre_values, SDL_WINDOW_SHOWN, &window, &renderer);
    if (window == nullptr or renderer == nullptr) {
       cout << "SDL not ready ... quitting" << endl;
       return true;
    }
-   SDL_RenderSetScale(renderer, (float)SCREEN_WIDTH/(float)this->nbre_values, (float)SCREEN_HEIGTH/(float)this->nbre_values);
+   //SDL_RenderSetScale(renderer, (float)SCREEN_WIDTH/(float)this->nbre_values, (float)SCREEN_HEIGTH/(float)this->nbre_values);
+   SDL_RenderSetScale(renderer, (float)this->nbre_values, (float)this->nbre_values);
    return false;
 }
 bool Affichage2d::nettoyerAffichage(Couleur couleur){
@@ -72,6 +69,7 @@ bool Affichage2d::nettoyerAffichage(Couleur couleur){
    return false;
 }
 bool Affichage2d::ajouterElementAffichage(unsigned x, unsigned y, Couleur couleur){
+
 
    confCouleur(couleur);
 

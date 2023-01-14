@@ -17,8 +17,7 @@
 
 using namespace std;
 
-template <typename T>
-T aleatoireEntreDeuxEntiersPositifs(T min, T max) {
+unsigned aleatoireEntreDeuxEntiersPositifs(unsigned min, unsigned max) {
 
    random_device                  rand_dev;
    default_random_engine          generator(rand_dev());

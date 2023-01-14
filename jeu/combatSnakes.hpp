@@ -19,18 +19,15 @@ Compilateur : gcc version 11.2.0
 #include <vector>
 #include "snake.hpp"
 #include "pomme.hpp"
+#include "../outils/affichage2d.hpp"
 
 
 class Combat {
 public:
    Combat() : Combat(100, 100, 10) {}
    Combat(unsigned largeur, unsigned longueur, unsigned nbSerpent);
+   void commencerCombat();
 
-
-   void initialiserPomme();
-   void initialiserSerpent();
-
-   bool placeEstLibre( unsigned x, unsigned y );
 
 
 private:
@@ -39,9 +36,13 @@ private:
    unsigned nbSerpent; // pas nécessaire de stocker cette variable (selon l'assistant)
    std::vector<Snake> serpents;
    std::vector<Pomme> pommes;
-
+   bool placeEstLibre( unsigned x, unsigned y );
    bool serpentPresent(unsigned int x, unsigned int y);
    bool pommePresente(unsigned int x, unsigned int y);
+   void initialiserPomme();
+   void initialiserSerpent();
+   void ajouterSerpentAffichage(Affichage2d& affichage);
+   void ajouterPommeAffichage(Affichage2d& affichage);
 };
 
 #endif

@@ -18,6 +18,11 @@ Compilateur : gcc version 11.2.0
 
 #include <vector>
 
+struct coordonneesXY{
+  unsigned x;
+  unsigned y;
+} ;
+
 class Snake {
 public:
    Snake(unsigned x,
@@ -37,7 +42,7 @@ public:
    bool peutSeDeplacer(unsigned x, unsigned y) const;
 
 private:
-   std::vector<std::vector<unsigned>> coordonnee;
+   std::vector<coordonneesXY> coordonnee;
    unsigned longueur = 10;
    const unsigned id;
    unsigned longueurAAjouter;

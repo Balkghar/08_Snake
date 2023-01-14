@@ -14,13 +14,10 @@
 
 #include <iostream>
 #include <cstdlib>
-#include <vector>
-#include <random>
-#include <algorithm>
+#include <limits>
+
 
 #include "jeu/combatSnakes.hpp"
-
-#include <SDL2/SDL.h>
 
 
 using namespace std;
@@ -28,6 +25,14 @@ using namespace std;
 
 //-----------------------------------------------------------------------------
 int main() {
-   
-   return EXIT_SUCCESS;
+  
+  Combat combat(150, 150, 40);
+
+  combat.commencerCombat();
+  
+
+  cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+
+  return EXIT_SUCCESS;
 }
