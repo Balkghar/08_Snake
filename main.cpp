@@ -26,7 +26,7 @@ using namespace std;
 //-----------------------------------------------------------------------------
 int main() {
   
-  Combat combat(150, 150, 40);
+  Combat combat(200, 150, 40);
 
   combat.commencerCombat();
   

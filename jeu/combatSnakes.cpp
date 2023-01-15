@@ -104,15 +104,17 @@ void Combat::commencerCombat(){
    Affichage2d affichage(this->largeur, this->longueur, 50, 6);
 
    affichage.initalisationAffichage();
+
+   do{
    
-   affichage.nettoyerAffichage(Couleur::blanc);
+      affichage.nettoyerAffichage(Couleur::blanc);
 
-   ajouterSerpentAffichage(affichage);
-   
-   ajouterPommeAffichage(affichage);
+      ajouterSerpentAffichage(affichage);
+      
+      ajouterPommeAffichage(affichage);
 
-
-   affichage.mettreAjourAffichage();
+      affichage.mettreAjourAffichage();
+   }while(serpents.size() > 1);
 
 }
 void Combat::ajouterSerpentAffichage(Affichage2d& affichage){
