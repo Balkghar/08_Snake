@@ -50,6 +50,10 @@ unsigned Snake::getCoordY() {
 
 }
 
+std::vector<coordonneesXY> Snake::getCoord(){
+   return this->coordonnee;
+}
+
 // TODO
 void Snake::deplacerVersPomme(unsigned int x, unsigned int y) {
 

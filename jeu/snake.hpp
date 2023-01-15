@@ -38,6 +38,7 @@ public:
    unsigned getCoordX();
    unsigned getCoordY();
    unsigned getId();
+   std::vector<coordonneesXY> getCoord();
 
    bool peutSeDeplacer(unsigned x, unsigned y) const;
 

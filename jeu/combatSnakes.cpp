@@ -42,7 +42,7 @@ void Combat::initialiserPomme() {
          x = aleatoireEntreDeuxEntiersPositifs(min, largeur);
          y = aleatoireEntreDeuxEntiersPositifs(min, longueur);
 
-      }while( placeEstLibre(x, y) );
+      }while( placeEstOccupee(x, y) );
       pommes.emplace_back(x, y, i, false);
 
    }
@@ -64,19 +64,19 @@ void Combat::initialiserSerpent() {
          x = aleatoireEntreDeuxEntiersPositifs(min, largeur);
          y = aleatoireEntreDeuxEntiersPositifs(min, longueur);
 
-      }while( placeEstLibre(x, y) );
+      }while( placeEstOccupee(x, y) );
       serpents.emplace_back(x, y, i, true);
    }
 
 }
 
-bool Combat::placeEstLibre(unsigned int x, unsigned int y) {
+bool Combat::placeEstOccupee(unsigned int x, unsigned int y) {
 
    return (serpentPresent(x, y) or pommePresente(x, y));
 }
 
 bool Combat::serpentPresent(unsigned int x, unsigned int y) {
-   for (Snake monSerpent : serpents) {
+   for (Snake& monSerpent : serpents) {
       if (monSerpent.getCoordX() == x and monSerpent.getCoordY() == y) {
          return true;
       }
@@ -86,7 +86,7 @@ bool Combat::serpentPresent(unsigned int x, unsigned int y) {
 }
 
 bool Combat::pommePresente(unsigned int x, unsigned int y) {
-   for(Pomme mesPommes : pommes) {
+   for(Pomme& mesPommes : pommes) {
       if(mesPommes.getCoordX() == x and mesPommes.getCoordY() == y) {
          return true;
       }
@@ -105,6 +105,7 @@ void Combat::commencerCombat(){
    affichage.nettoyerAffichage(Couleur::blanc);
 
    ajouterSerpentAffichage(affichage);
+   
    ajouterPommeAffichage(affichage);
 
 
@@ -113,14 +114,17 @@ void Combat::commencerCombat(){
 }
 void Combat::ajouterSerpentAffichage(Affichage2d& affichage){
 
-   for(Snake serpent : serpents){
-      affichage.ajouterElementAffichage(serpent.getCoordX(), serpent.getCoordY(), Couleur::noir);
-   }
+   for(Snake& serpent : serpents){
+      for(coordonneesXY& coord : serpent.getCoord()){
 
+         affichage.ajouterElementAffichage(coord.x, coord.y, Couleur::noir);
+         
+      }
+   }
 }
 
 void Combat::ajouterPommeAffichage(Affichage2d& affichage){
-   for(Pomme pomme : pommes){
+   for(Pomme& pomme : pommes){
 
       affichage.ajouterElementAffichage(pomme.getCoordX(), pomme.getCoordY(), Couleur::rouge);
 
