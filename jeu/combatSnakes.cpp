@@ -114,6 +114,11 @@ void Combat::commencerCombat(){
       ajouterPommeAffichage(affichage);
 
       affichage.mettreAjourAffichage();
+
+
+      //TODO affrontement des serpents et mangement des pommes
+
+
    }while(serpents.size() > 1);
 
 }
