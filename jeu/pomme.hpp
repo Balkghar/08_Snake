@@ -33,7 +33,6 @@ public:
    void nouvellePomme();
 
 private:
-
    std::array<unsigned, 2> coordonnes;
    const unsigned id;
    bool estMangee;

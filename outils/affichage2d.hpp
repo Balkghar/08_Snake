@@ -17,7 +17,14 @@ Compilateur : gcc version 11.2.0
 #ifndef LABO8_SNAKES_OUTILS_AFFICHAGE2D_HPP
 #define LABO8_SNAKES_OUTILS_AFFICHAGE2D_HPP
 
+#if defined(__linux__)  // Or #if __linux__
 #include <SDL2/SDL.h>
+#elif _WIN32
+#include <SDL.h>
+#else
+#include <SDL2/SDL.h>
+#endif
+
 
 enum Couleur{blanc, noir, rouge};
 
