@@ -122,6 +122,7 @@ void Combat::commencerCombat(){
    }while(serpents.size() > 1);
 
 }
+
 void Combat::ajouterSerpentAffichage(Affichage2d& affichage){
 
    for(Snake& serpent : serpents){
