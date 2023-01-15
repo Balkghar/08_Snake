@@ -76,10 +76,13 @@ bool Combat::placeEstOccupee(unsigned int x, unsigned int y) {
 }
 
 bool Combat::serpentPresent(unsigned int x, unsigned int y) {
-   for (Snake& monSerpent : serpents) {
-      if (monSerpent.getCoordX() == x and monSerpent.getCoordY() == y) {
-         return true;
+   for (Snake& serpent : serpents) {
+      for(coordonneesXY& coord : serpent.getCoord()){
+         if (coord.x == x and coord.y == y) {
+            return true;
+         }
       }
+      
    }
 
    return false;
@@ -116,9 +119,7 @@ void Combat::ajouterSerpentAffichage(Affichage2d& affichage){
 
    for(Snake& serpent : serpents){
       for(coordonneesXY& coord : serpent.getCoord()){
-
          affichage.ajouterElementAffichage(coord.x, coord.y, Couleur::noir);
-         
       }
    }
 }
