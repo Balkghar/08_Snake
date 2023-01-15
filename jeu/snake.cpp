@@ -17,71 +17,84 @@
 
 using namespace std;
 
+//--------------------------- Constructeur --------------------------------
+
 Snake::Snake(unsigned x,
              unsigned y,
              const unsigned id,
              bool estEnVie) : id(id), estEnVie(estEnVie) {
-   coordonnee.at(0).at(0) = x;
-   coordonnee.at(0).at(1) = y;
+   coordonnees.resize(longueur);
+
+   coordonnees.at(id).x = x;
+   coordonnees.at(id).y = y;
+
    longueurAAjouter = longueur;
 
 }
 
+//--------------------------- getter et setter ----------------------------
+
 
 void Snake::setCoordX(unsigned x) {
-   coordonnee.at(0).at(0) = x;
+   coordonnees.at(0).x = x;
+
 
 }
 
 void Snake::setCoordY(unsigned y) {
-   coordonnee.at(0).at(1) = y;
+   coordonnees.at(0).y = y;
+
+}
+
+void Snake::setLongueurAAjouter(unsigned x) {
+   this->longueurAAjouter = x;
 }
 
 unsigned Snake::getCoordX() {
-   return this->coordonnee.at(getId()).at(0);
+   return this->coordonnees.at(0).x;
+
 }
 
 unsigned Snake::getCoordY() {
-   return this->coordonnee.at(getId()).at(1);
+   return this->coordonnees.at(0).y;
 
+}
+
+std::vector<coordonneesXY> Snake::getCoord() {
+   return this->coordonnees;
 }
 
 unsigned Snake::getId() const {
    return id;
 }
 
-// TODO
-void Snake::deplacerVersPomme(unsigned int xPomme, unsigned int yPomme,
-                              const unsigned idPomme,
+//--------------------------- Méthode pour le déplacement -----------------
+
+void Snake::deplacerVersObjet(coordonneesXY coordonnesObjet,
                               unsigned largeur,
-                              unsigned hauteur,
-                              vector<Snake>& serpents) {
-   for(Snake& monSerpent : serpents) {
-      if(monSerpent.id == idPomme) {
-         do {
-            if(monSerpent.getCoordX() < xPomme){
-               monSerpent.coordonnee.at(getId()).at(0) += 1;
-            }
-            else if(monSerpent.getCoordX() > xPomme) {
-               monSerpent.coordonnee.at(getId()).at(0) -= 1;
-            }
-            if(monSerpent.getCoordY() < yPomme) {
-               monSerpent.coordonnee.at(getId()).at(1) += 1;
-            }
-            else if(monSerpent.getCoordY() > yPomme) {
-               monSerpent.coordonnee.at(getId()).at(1) -= 1;
-            }
-         }while(peutSeDeplacer(monSerpent.coordonnee.at(getId()).at(0),
-                               monSerpent.coordonnee.at(getId()).at(1),
-                               largeur, hauteur));
-
+                              unsigned hauteur) {
+   do {
+      if(this->getCoordX() < coordonnesObjet.x) {
+         this->coordonnees.at(getId()).x += 1;
       }
-
-   }
+      else if(this->getCoordX() > coordonnesObjet.x) {
+         this->coordonnees.at(getId()).x -= 1;
+      }
+      if(this->getCoordY() < coordonnesObjet.y) {
+         this->coordonnees.at(getId()).y += 1;
+      }
+      else if(this->getCoordY() > coordonnesObjet.y) {
+         this->coordonnees.at(getId()).y -= 1;
+      }
+   }while(peutSeDeplacer(this->coordonnees.at(getId()).x,
+                         this->coordonnees.at(getId()).y,
+                         largeur, hauteur));
 
 }
 
-bool Snake::peutSeDeplacer(unsigned int x, unsigned int y, unsigned largeur,
+bool Snake::peutSeDeplacer(unsigned int x,
+                           unsigned int y,
+                           unsigned largeur,
                            unsigned hauteur) {
    if(x > largeur or y > hauteur or x == 0 or y == 0) {
       return true;
@@ -89,3 +102,17 @@ bool Snake::peutSeDeplacer(unsigned int x, unsigned int y, unsigned largeur,
 
    return false;
 }
+
+//------------------------ Méthode lié au combat -----------------------
+
+void Snake::tuer(Snake& victime) {
+   this->longueurAAjouter += unsigned(victime.longueur * 0.6);
+   victime.estEnVie = false;
+}
+
+void Snake::mangerPomme() {
+   this->longueur +=1;
+
+}
+
+

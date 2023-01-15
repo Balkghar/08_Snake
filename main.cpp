@@ -83,7 +83,7 @@ int main() {
                                      "d'avoir utilisé Snake battle simulator©.\n"s
                                      "Grâce à votre simulation, nous avons pu "s
                                      "récolter de précieuses informations pour "s
-                                     "l'avenir de l'humanité.\n"s +
+                                     "l'avenir de l'humanité.\n"s         +
                                      "Veuillez appuyer sur ENTER pour quitter."s;
 
    //======================== Début du programme ===================================
@@ -91,12 +91,13 @@ int main() {
    cout << MSG_DEBUT;
 
 
-   AreneDeCombat terrainsDeCombat(saisirIntervaleInt(MIN_LARGEUR, MAX_LARGEUR,
-                                                     MSG_LARG_TERRAIN, MSG_ERR_TAILLE),
-                                  saisirIntervaleInt(MIN_HAUTEUR, MAX_HAUTEUR,
-                                              MSG_HAUT_TERRAIN, MSG_ERR_TAILLE),
-                                  saisirIntervaleInt(MIN_SERPENT,MAX_SERPENT,
-                                              MSG_SAISIE_SERPENT, MSG_ERR_SERPENT));
+   AreneDeCombat terrainsDeCombat(saisirIntervalle(MIN_LARGEUR, MAX_LARGEUR,
+                                                   MSG_LARG_TERRAIN, MSG_ERR_TAILLE),
+                                  saisirIntervalle(MIN_HAUTEUR, MAX_HAUTEUR,
+                                                   MSG_HAUT_TERRAIN, MSG_ERR_TAILLE),
+                                  saisirIntervalle(MIN_SERPENT, MAX_SERPENT,
+                                                   MSG_SAISIE_SERPENT,
+                                                   MSG_ERR_SERPENT));
    
    return EXIT_SUCCESS;
 }

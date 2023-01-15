@@ -27,8 +27,10 @@
 // exception   n/a
 void viderBuffer();
 
-template <typename T>
-T saisirIntervaleInt(T minInt, T maxInt, const std::string& message,
-                       const std::string& message_erreur);
+template <typename T, typename U>
+T saisirIntervalle(T minInt,
+                   U maxInt,
+                   const std::string& message,
+                   const std::string& message_erreur);
 
 #endif

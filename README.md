@@ -10,11 +10,11 @@ Nous souhaitons simuler des serpents allant chercher des pommes. Lors de leurs d
 La partie se termine lorsque qu’un seul serpent est en jeu.   
 ### Déroulement
 * Dans la console, l’utilisateur est invité à saisir la taille de l’écran et le nbre de serpents.
-* Ils sont positionnés aléatoirement avec une longueur initiale de 10 unités.
+* Ils sont positionnés aléatoirement avec une hauteur initiale de 10 unités.
 * Les pommes sont disposées aléatoirement et contiennent une valeur.
 * Les serpents ne cherchent que leurs pommes et se déplacent par le plus court chemin (un pas à la fois N, S, W, E). Une fois atteinte, le serpent grandit de la valeur de la pommeet une nouvelle pomme est aléatoirement créée pour lui.
-* Si un serpent mord le corps d’un autre (tête sur corps), ce dernier est coupé à cet endroit et 40% de la longueur coupée est ajoutée au serpent attaquant.
-* Si un serpent mord un autre par la tête (tête sur tête), le serpent le plus court meurt et 60% de la longueur du serpent tué est ajoutée celle de l’attaquant.
+* Si un serpent mord le corps d’un autre (tête sur corps), ce dernier est coupé à cet endroit et 40% de la hauteur coupée est ajoutée au serpent attaquant.
+* Si un serpent mord un autre par la tête (tête sur tête), le serpent le plus court meurt et 60% de la hauteur du serpent tué est ajoutée celle de l’attaquant.
 * Les serpents raccourcis sont représentés immédiatement.
 * Les serpents rallongés sont représentés au fur et à mesure de leurs déplacements.
 * Les chances des serpents sont équilibrées.
@@ -54,7 +54,7 @@ classDiagram
 		-id : const int
 		-positions : vector<.vector<.int>>
 		-etat : bool
-		-longueur : int
+		-hauteur : int
 		-longueurAAjouter : int
 	}
 	class affichage2d{

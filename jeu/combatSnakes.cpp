@@ -20,14 +20,20 @@ Compilateur : gcc version 11.2.0
 
 using namespace std;
 
-AreneDeCombat::AreneDeCombat(unsigned int largeur, unsigned int longueur, unsigned int nbSerpent)
-   : largeur(largeur), longueur(longueur), nbSerpent(nbSerpent) {
+//--------------------------- Constructeur --------------------------------
+
+AreneDeCombat::AreneDeCombat(unsigned int largeur,
+                             unsigned int longueur,
+                             unsigned int nbSerpent)
+   : largeur(largeur), hauteur(longueur), nbSerpent(nbSerpent) {
    initialiserSerpent();
-   initialiserPomme();
+   initialiserPommes();
 
 }
 
-void AreneDeCombat::initialiserPomme() {
+//--------------------------- Méthodes d'initialisation --------------------
+
+void AreneDeCombat::initialiserPommes() {
 
    pommes.reserve(nbSerpent);
 
@@ -39,10 +45,10 @@ void AreneDeCombat::initialiserPomme() {
    for (unsigned i = 1; i <= AreneDeCombat::nbSerpent; ++i ) {
       do {
 
-         x = aleatoireEntreDeuxEntiersPositifs(min, largeur);
-         y = aleatoireEntreDeuxEntiersPositifs(min, longueur);
+         x = aleatoireEntreDeuxValeurs(min, largeur);
+         y = aleatoireEntreDeuxValeurs(min, hauteur);
 
-      }while( placeEstLibre(x, y) );
+      }while(placeEstOccupee(x, y) );
       pommes.emplace_back(x, y, i, false);
 
    }
@@ -60,19 +66,18 @@ void AreneDeCombat::initialiserSerpent() {
    for (unsigned i = 1; i <= AreneDeCombat::nbSerpent; ++i ) {
       do {
 
-         x = aleatoireEntreDeuxEntiersPositifs(min, largeur);
-         y = aleatoireEntreDeuxEntiersPositifs(min, longueur);
+         x = aleatoireEntreDeuxValeurs(min, largeur);
+         y = aleatoireEntreDeuxValeurs(min, hauteur);
 
-      }while( placeEstLibre(x, y) );
+      }while(placeEstOccupee(x, y) );
       serpents.emplace_back(x, y, i, true);
    }
 
 }
 
-bool AreneDeCombat::placeEstLibre(unsigned int x, unsigned int y) {
+bool AreneDeCombat::placeEstOccupee(unsigned int x, unsigned int y) {
 
-//   return !serpentPresent(x, y) and !pommePresente(x, y);
-   return (serpentPresent(x, y) or pommePresente(x, y)); /// pas d'accord avec ça
+   return (serpentPresent(x, y) or pommePresente(x, y));
 }
 
 bool AreneDeCombat::serpentPresent(unsigned int x, unsigned int y) {
@@ -95,9 +100,60 @@ bool AreneDeCombat::pommePresente(unsigned int x, unsigned int y) {
    return false;
 }
 
-void AreneDeCombat::commencerCombat(){
+void AreneDeCombat::nouvellePomme(Pomme pommeMangee) {
+   const unsigned min = 1;
+   do {
 
-   Affichage2d affichage(this->largeur, this->longueur, 50, 6);
+      pommeMangee.setX(aleatoireEntreDeuxValeurs(min, largeur));
+      pommeMangee.setY(aleatoireEntreDeuxValeurs(min, hauteur));
+
+   }while(placeEstOccupee(pommeMangee.getCoordX(), pommeMangee.getCoordY()) );
+
+}
+
+//----------------------- Méthodes pour le déplacement --------------------
+
+coordonneesXY AreneDeCombat::bonnePomme(const std::vector<Snake>& serpents,
+                                        const std::vector<Pomme>& pommes) {
+   for(const Snake& monSerpent : serpents) {
+      for(Pomme maPommes : pommes) {
+         if(monSerpent.getId() == maPommes.getId()) {
+            return maPommes.getCoordonnes();
+         }
+      }
+   }
+
+}
+
+void AreneDeCombat::tourDeJeu() {
+
+   for(Snake& monSerpent : serpents) {
+      monSerpent.deplacerVersObjet(bonnePomme(serpents, pommes),
+                                   largeur,
+                                   hauteur);
+      if(serpentPresent(monSerpent.getCoordX(),monSerpent.getCoordY())) {
+         //utilisé monSerpent.tuer();
+
+      }
+      if(pommePresente(monSerpent.getCoordX(),monSerpent.getCoordY())) {
+         for(Pomme maPomme : pommes) {
+            if(maPomme.getId() == monSerpent.getId()) {
+               monSerpent.mangerPomme();
+               nouvellePomme(maPomme);
+            }
+         }
+      }
+   }
+}
+
+
+
+//--------------------------- Méthode pour l'affichage --------------------
+
+
+void AreneDeCombat::commencerCombat() {
+
+   Affichage2d affichage(this->largeur, this->hauteur, 50, 6);
 
    affichage.initalisationAffichage();
 
@@ -107,21 +163,25 @@ void AreneDeCombat::commencerCombat(){
    ajouterPommeAffichage(affichage);
 
 
+
+
    affichage.mettreAjourAffichage();
 
 }
-void AreneDeCombat::ajouterSerpentAffichage(Affichage2d& affichage){
+void AreneDeCombat::ajouterSerpentAffichage(Affichage2d& affichage) {
 
-   for(Snake serpent : serpents){
+   for(Snake serpent : serpents) {
       affichage.ajouterElementAffichage(serpent.getCoordX(), serpent.getCoordY(), Couleur::noir);
    }
 
 }
 
-void AreneDeCombat::ajouterPommeAffichage(Affichage2d& affichage){
-   for(Pomme pomme : pommes){
+void AreneDeCombat::ajouterPommeAffichage(Affichage2d& affichage) {
+   for(Pomme pomme : pommes) {
 
       affichage.ajouterElementAffichage(pomme.getCoordX(), pomme.getCoordY(), Couleur::rouge);
 
    }
 }
+
+

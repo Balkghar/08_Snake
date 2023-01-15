@@ -23,6 +23,7 @@ Compilateur : gcc version 11.2.0
 
 class AreneDeCombat {
 public:
+   //------------------------ Constructeurs -------------------------------
    AreneDeCombat() : AreneDeCombat(100, 100, 10) {}
    AreneDeCombat(unsigned largeur, unsigned longueur, unsigned nbSerpent);
 
@@ -30,19 +31,32 @@ public:
 
 private:
    unsigned largeur;
-   unsigned longueur;
+   unsigned hauteur;
    unsigned nbSerpent;
    std::vector<Snake> serpents;
    std::vector<Pomme> pommes;
 
-   bool placeEstLibre( unsigned x, unsigned y );
+   //------------------------ Méthodes d'initialisation --------------------
+   bool placeEstOccupee(unsigned x, unsigned y );
    bool serpentPresent(unsigned int x, unsigned int y);
    bool pommePresente(unsigned int x, unsigned int y);
-
-   void initialiserPomme();
+   void initialiserPommes();
    void initialiserSerpent();
+   void nouvellePomme(Pomme pommeMangee);
+
+
+   //------------------------ Méthodes pour le déplacement ----------------
+   static coordonneesXY bonnePomme(const std::vector<Snake>& serpents,
+                                   const std::vector<Pomme>& pommes);
+
+   void tourDeJeu();
+
+
+   //------------------------ Méthode pour l'affichage --------------------
+
    void ajouterSerpentAffichage(Affichage2d& affichage);
    void ajouterPommeAffichage(Affichage2d& affichage);
+
 
 };
 

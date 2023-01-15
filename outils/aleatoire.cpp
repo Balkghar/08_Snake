@@ -4,7 +4,7 @@
   Nom du labo : Labo8 - Robots
   Auteur(s)   : Delétraz Alexandre - Germano Hugo
   Date        : 11.01.2023
-  But         : Définition de la fonction aleatoireEntreDeuxEntiersPositifs.
+  But         : Définition de la fonction aleatoireEntreDeuxValeurs.
 
   Remarque(s) :
 
@@ -17,8 +17,8 @@
 
 using namespace std;
 
-template <typename T>
-T aleatoireEntreDeuxEntiersPositifs(T min, T max) {
+template<typename T, typename U>
+T aleatoireEntreDeuxValeurs(T min, U max) {
 
    random_device                  rand_dev;
    default_random_engine          generator(rand_dev());

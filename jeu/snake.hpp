@@ -18,30 +18,45 @@ Compilateur : gcc version 11.2.0
 
 #include <vector>
 
+#include "outils/structureCoordonnees.hpp"
+
 class Snake {
 public:
+   //------------------------ Constructeur --------------------------------
    Snake(unsigned x,
          unsigned y,
          const unsigned id,
          bool estEnVie);
 
+   //------------------------ Setter et getter ----------------------------
    void setCoordX(unsigned x);
    void setCoordY(unsigned y);
-   void deplacerVersPomme(unsigned int xPomme, unsigned int yPomme,
-                          const unsigned idPomme,
-                          unsigned largeur,
-                          unsigned hauteur,
-                          std::vector<Snake>& serpents);
+   void setLongueurAAjouter(unsigned x);
 
    unsigned getCoordX();
    unsigned getCoordY();
    unsigned getId() const;
 
-   static bool peutSeDeplacer(unsigned int x, unsigned int y, unsigned largeur,
-                       unsigned hauteur) ;
+   std::vector<coordonneesXY> getCoord();
+
+   //------------------------ Méthode pour le déplacement -----------------
+
+   void deplacerVersObjet(coordonneesXY coordonnesObjet,
+                          unsigned largeur,
+                          unsigned hauteur);
+
+   static bool peutSeDeplacer(unsigned int x,
+                              unsigned int y,
+                              unsigned largeur,
+                              unsigned hauteur) ;
+
+   //------------------------ Méthode lié au combat -----------------------
+   void tuer(Snake& victime);
+   void mangerPomme();
+
 
 private:
-   std::vector<std::vector<unsigned>> coordonnee;
+   std::vector<coordonneesXY> coordonnees;
    unsigned longueur = 10;
    const unsigned id;
    unsigned longueurAAjouter;

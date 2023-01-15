@@ -17,24 +17,31 @@ Compilateur : gcc version 11.2.0
 #define LABO8_SNAKES_JEU_POMME_HPP
 
 #include <array>
+#include "outils/structureCoordonnees.hpp"
 
 class Pomme {
 public:
+   //------------------------ constructeur --------------------------------
    Pomme(unsigned x,
          unsigned y,
          const unsigned id,
          bool estMangee,
          std::array <short,4> coul = {255, 0, 0, 255});
 
+   //------------------------ getter et setter ----------------------------
+
    unsigned getCoordX();
    unsigned getCoordY();
    unsigned getId();
+   coordonneesXY getCoordonnes();
 
-   void nouvellePomme();
+   void setX(unsigned x);
+   void setY(unsigned y);
 
 private:
 
-   std::array<unsigned, 2> coordonnes;
+//   std::array<unsigned, 2> coordonnes;
+   coordonneesXY coordonnes;
    const unsigned id;
    bool estMangee;
    std::array <short,4> couleurs;
