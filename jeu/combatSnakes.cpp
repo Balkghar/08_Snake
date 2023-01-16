@@ -112,13 +112,14 @@ void Combat::commencerCombat(){
 }
 void Combat::combatSerpents(Affichage2d& affichage){
 
-   for(int i = 0; i < 500 ; ++i){
+   for(int i = 0; i < 200 ; ++i){
 
       afficher(affichage);
 
       for(int i = 0; i < serpents.size(); ++i){
          serpents.at(i).deplacerVersXY(pommes.at(i).getCoordX(), pommes.at(i).getCoordY());
          mangerPomme(serpents.at(i), pommes.at(i));
+         
       }
    }
 }
@@ -130,7 +131,7 @@ void Combat::afficher(Affichage2d& affichage){
    ajouterSerpentAffichage(affichage);
 
    ajouterPommeAffichage(affichage);
-   
+
    affichage.mettreAjourAffichage();
 
 }
