@@ -15,6 +15,7 @@ Compilateur : gcc version 11.2.0
 
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include "affichage2d.hpp"
 
 using namespace std;
