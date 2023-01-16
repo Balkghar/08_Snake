@@ -28,10 +28,38 @@ Snake::Snake(unsigned x,unsigned y, const unsigned id, bool estEnVie, unsigned l
 
 }
 
-void Snake::deplacerSerpent() {
+unsigned Snake::combattreSerpent(Snake& serpent){
+   for(coordonneesXY coord: serpent.getCoord()){
+      if(coord.x == serpent.getCoordX() && coord.y == serpent.getCoordY()){
+         if(serpent.getCoordX() == this->getCoordX() && serpent.getCoordY() == this->getCoordY()){
+            if(this->getCoord().size() < serpent.getCoord().size()){
 
+               return 1;
+            }
+            else{
+               return 2;
+            }
+            
+         }
+         else{
+            this->longueurAAjouterSupl(serpent.couperSerpent(coord));
+            return 0;
+         }
+      }
+   }
+   return 0;
 }
-
+unsigned Snake::couperSerpent(coordonneesXY& coord){
+   unsigned i = coordonnee.size();
+   for(std::vector<coordonneesXY>::iterator it = coordonnee.begin(); it != coordonnee.end(); ++it) {
+      --i;
+      if((*it).x == coord.x && (*it).y == coord.y){
+         //coordonnee.erase(it, coordonnee.end());
+         return i;
+      }
+   }
+   return 0;
+}
 void Snake::setCoordX(unsigned x) {
    coordonnee.at(0).x = x;
 

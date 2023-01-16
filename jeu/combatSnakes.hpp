@@ -46,6 +46,7 @@ private:
    void mangerPomme(Snake& serpent, Pomme& pomme);
    void combatSerpents(Affichage2d& affichage);
    void afficher(Affichage2d& affichage);
+   void combatSerpent(Snake& serpent);
 };
 
 #endif

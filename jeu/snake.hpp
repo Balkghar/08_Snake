@@ -32,7 +32,6 @@ public:
          const unsigned id,
          bool estEnVie, unsigned longueur);
 
-   void deplacerSerpent();
    void setCoordX(unsigned x);
    void setCoordY(unsigned y);
    void deplacerVersXY(unsigned x, unsigned y);
@@ -42,13 +41,12 @@ public:
    unsigned getCoordY();
    unsigned getId();
    std::vector<coordonneesXY> getCoord();
-   void faireCombattreSerpent(Snake& serpent);
-
-   bool peutSeDeplacer(unsigned x, unsigned y) const;
+   unsigned combattreSerpent(Snake& serpent);
 
 private:
    void deplacerVers(Direction dir);
    void agrandirSerpent(Direction dir);
+   unsigned couperSerpent(coordonneesXY& coord);
    std::vector<coordonneesXY> coordonnee;
    const unsigned id;
    unsigned longueurAAjouter;

@@ -119,7 +119,15 @@ void Combat::combatSerpents(Affichage2d& affichage){
       for(int i = 0; i < serpents.size(); ++i){
          serpents.at(i).deplacerVersXY(pommes.at(i).getCoordX(), pommes.at(i).getCoordY());
          mangerPomme(serpents.at(i), pommes.at(i));
-         
+         combatSerpent(serpents.at(i));
+      }
+   }
+}
+
+void Combat::combatSerpent(Snake& serpent){
+   for(int i = 0; i < serpents.size(); ++i){
+      if(serpents.at(i).getId() != serpent.getId()){
+         serpent.combattreSerpent(serpents.at(i));
       }
    }
 }
