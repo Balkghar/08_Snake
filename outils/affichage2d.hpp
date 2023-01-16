@@ -45,7 +45,6 @@ enum Couleur{blanc, noir, rouge};
          SDL_Window*    window         = nullptr;
          SDL_Renderer*  renderer       = nullptr;
          SDL_Event      event;
-         bool           appIsRunning   = true;
    };
 
 

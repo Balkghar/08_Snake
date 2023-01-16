@@ -59,7 +59,6 @@ bool Affichage2d::initalisationAffichage (){
 bool Affichage2d::nettoyerAffichage(Couleur couleur){
    SDL_PollEvent(&event);
    if (event.type == SDL_QUIT) {
-      appIsRunning = false;
       return true;
    }
             
