@@ -30,7 +30,7 @@ public:
    Snake(unsigned x,
          unsigned y,
          const unsigned id,
-         bool estEnVie);
+         bool estEnVie, unsigned longueur);
 
    void deplacerSerpent();
    void setCoordX(unsigned x);
@@ -50,7 +50,6 @@ private:
    void deplacerVers(Direction dir);
    void agrandirSerpent(Direction dir);
    std::vector<coordonneesXY> coordonnee;
-   unsigned longueur = 10;
    const unsigned id;
    unsigned longueurAAjouter;
    bool     estEnVie;

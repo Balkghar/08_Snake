@@ -15,7 +15,7 @@
 #include <vector>
 #include <cmath>
 
-Snake::Snake(unsigned x,unsigned y, const unsigned id, bool estEnVie) : id(id), estEnVie(estEnVie) {
+Snake::Snake(unsigned x,unsigned y, const unsigned id, bool estEnVie, unsigned longueur) : id(id), estEnVie(estEnVie) {
 
    coordonnee.resize(1);
 
@@ -23,8 +23,7 @@ Snake::Snake(unsigned x,unsigned y, const unsigned id, bool estEnVie) : id(id), 
    coordonnee.at(0).y = y;
 
 
-   longueurAAjouter = longueur;
-   longueur = 1;
+   longueurAAjouter = longueur-1;
 
 
 }

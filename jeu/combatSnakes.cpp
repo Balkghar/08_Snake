@@ -65,7 +65,7 @@ void Combat::initialiserSerpent() {
          y = aleatoireEntreDeuxEntiersPositifs(min, longueur);
 
       }while( placeEstOccupee(x, y) );
-      serpents.emplace_back(x, y, i, true);
+      serpents.emplace_back(x, y, i, true,10);
    }
 
 }
@@ -112,7 +112,7 @@ void Combat::commencerCombat(){
 }
 void Combat::combatSerpents(Affichage2d& affichage){
 
-   for(int i = 0; i < 200 ; ++i){
+   for(int i = 0; i < 500 ; ++i){
 
       afficher(affichage);
 
