@@ -33,3 +33,5 @@
 
 .vscode
 main
+
+compile.sh
