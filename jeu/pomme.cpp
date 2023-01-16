@@ -18,6 +18,7 @@ Pomme::Pomme(unsigned x, unsigned y, const unsigned id,
              bool estMangee, std::array<short, 4> coul) : id(id), estMangee(estMangee),couleurs(coul){
    coordonnes.at(0) = x;
    coordonnes.at(1) = y;
+   valeur=1;
 
 }
 
@@ -29,8 +30,13 @@ unsigned Pomme::getCoordY() {
    return coordonnes.at(1);
 }
 
+unsigned Pomme::getValeur(){
+   return valeur;
+}
 // TODO
-void Pomme::nouvellePomme() {
+void Pomme::nouvellePomme(unsigned x, unsigned y) {
+   coordonnes.at(0) = x;
+   coordonnes.at(1) = y;
 
 }
 

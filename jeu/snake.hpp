@@ -23,6 +23,8 @@ struct coordonneesXY{
   unsigned y;
 } ;
 
+enum Direction{ haut, bas, droite, gauche};
+
 class Snake {
 public:
    Snake(unsigned x,
@@ -33,7 +35,8 @@ public:
    void deplacerSerpent();
    void setCoordX(unsigned x);
    void setCoordY(unsigned y);
-   void deplacerVersPomme(unsigned x, unsigned y);
+   void deplacerVersXY(unsigned x, unsigned y);
+   void longueurAAjouterSupl(unsigned valeur);
 
    unsigned getCoordX();
    unsigned getCoordY();
@@ -43,6 +46,8 @@ public:
    bool peutSeDeplacer(unsigned x, unsigned y) const;
 
 private:
+   void deplacerVers(Direction dir);
+   void agrandirSerpent(Direction dir);
    std::vector<coordonneesXY> coordonnee;
    unsigned longueur = 10;
    const unsigned id;

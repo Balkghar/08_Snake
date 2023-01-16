@@ -29,11 +29,13 @@ public:
    unsigned getCoordX();
    unsigned getCoordY();
    unsigned getId();
+   unsigned getValeur();
 
-   void nouvellePomme();
+   void nouvellePomme(unsigned x, unsigned y);
 
 private:
    std::array<unsigned, 2> coordonnes;
+   unsigned valeur;
    const unsigned id;
    bool estMangee;
    std::array <short,4> couleurs;

@@ -43,6 +43,7 @@ private:
    void initialiserSerpent();
    void ajouterSerpentAffichage(Affichage2d& affichage);
    void ajouterPommeAffichage(Affichage2d& affichage);
+   bool serpentEstArrive(Snake& serpent, Pomme& pomme);
 };
 
 #endif
