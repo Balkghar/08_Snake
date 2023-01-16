@@ -106,18 +106,13 @@ void Combat::commencerCombat(){
    affichage.initalisationAffichage();
 
 
-      affichage.nettoyerAffichage(Couleur::blanc);
+   affichage.nettoyerAffichage(Couleur::blanc);
 
-      ajouterSerpentAffichage(affichage);
+   ajouterSerpentAffichage(affichage);
       
-      ajouterPommeAffichage(affichage);
+   ajouterPommeAffichage(affichage);
 
-      affichage.mettreAjourAffichage();
-
-
-      //TODO affrontement des serpents et mangement des pommes
-
-
+   affichage.mettreAjourAffichage();
 
 }
 
