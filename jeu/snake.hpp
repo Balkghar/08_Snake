@@ -42,6 +42,7 @@ public:
    unsigned getCoordY();
    unsigned getId();
    std::vector<coordonneesXY> getCoord();
+   void faireCombattreSerpent(Snake& serpent);
 
    bool peutSeDeplacer(unsigned x, unsigned y) const;
 

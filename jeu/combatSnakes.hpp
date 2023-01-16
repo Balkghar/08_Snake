@@ -43,7 +43,9 @@ private:
    void initialiserSerpent();
    void ajouterSerpentAffichage(Affichage2d& affichage);
    void ajouterPommeAffichage(Affichage2d& affichage);
-   bool serpentEstArrive(Snake& serpent, Pomme& pomme);
+   void mangerPomme(Snake& serpent, Pomme& pomme);
+   void combatSerpents(Affichage2d& affichage);
+   void afficher(Affichage2d& affichage);
 };
 
 #endif

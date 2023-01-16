@@ -58,7 +58,6 @@ std::vector<coordonneesXY> Snake::getCoord(){
 void Snake::longueurAAjouterSupl(unsigned valeur){
    longueurAAjouter += valeur;
 }
-
 // TODO
 void Snake::deplacerVersXY(unsigned int x, unsigned int y) {
 
