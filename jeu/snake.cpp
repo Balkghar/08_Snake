@@ -37,9 +37,9 @@ unsigned Snake::combattreSerpent(Snake& serpent){
                return 1;
             }
             else{
+
                return 2;
             }
-            
          }
          else{
             this->longueurAAjouterSupl(serpent.couperSerpent(coord));
@@ -55,7 +55,7 @@ unsigned Snake::couperSerpent(coordonneesXY& coord){
       --i;
       if((*it).x == coord.x && (*it).y == coord.y){
          //coordonnee.erase(it, coordonnee.end());
-         return i;
+         return 0;
       }
    }
    return 0;
@@ -135,7 +135,7 @@ void Snake::deplacerVersXY(unsigned int x, unsigned int y) {
 
 void Snake::deplacerVers(Direction dir){
 
-   if(coordonnee.size() > 2){
+   if(coordonnee.size() > 1){
       for(int i = coordonnee.size()-1; i >= 1 ; --i){
          coordonnee.at(i) = coordonnee.at(i-1);
       }

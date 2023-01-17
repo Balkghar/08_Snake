@@ -127,9 +127,26 @@ void Combat::combatSerpents(Affichage2d& affichage){
 void Combat::combatSerpent(Snake& serpent){
    for(int i = 0; i < serpents.size(); ++i){
       if(serpents.at(i).getId() != serpent.getId()){
-         serpent.combattreSerpent(serpents.at(i));
+
+         if(unsigned d = serpent.combattreSerpent(serpents.at(i))){
+            if(d == 1){
+               
+            }
+            else{
+
+            }
+         }
       }
    }
+}
+
+void Combat::eliminerSerpent(Snake& serpent){
+   for (std::vector<Snake>::iterator it = serpents.begin(); it != serpents.end(); ++it) {
+      if(serpent.getId() == (*it).getId()){
+         serpents.erase()
+      }
+    }
+
 }
 
 void Combat::afficher(Affichage2d& affichage){
