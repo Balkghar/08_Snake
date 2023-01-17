@@ -143,7 +143,7 @@ void Combat::combatSerpent(Snake& serpent){
 void Combat::eliminerSerpent(Snake& serpent){
    for (std::vector<Snake>::iterator it = serpents.begin(); it != serpents.end(); ++it) {
       if(serpent.getId() == (*it).getId()){
-         serpents.erase()
+         serpents.erase(it);
       }
     }
 
