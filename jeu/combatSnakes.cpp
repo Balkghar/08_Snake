@@ -108,7 +108,7 @@ void Combat::commencerCombat(){
 }
 void Combat::combatSerpents(Affichage2d& affichage){
 
-   for(int i = 0; i < 500 ; ++i){
+   do{
 
       afficher(affichage);
 
@@ -124,13 +124,15 @@ void Combat::combatSerpents(Affichage2d& affichage){
             }
          }
       }
-   }
+   }while(nbSerpent > 1);
 }
 
 void Combat::combatSerpent(Snake& serpent){
    for(int i = 0; i < serpents.size(); ++i){
       if(serpents.at(i).getId() != serpent.getId() && serpent.getEstEnVie() && serpents.at(i).getEstEnVie()){
-         serpent.combattreSerpent(serpents.at(i));
+         if(serpent.combattreSerpent(serpents.at(i))){
+            --nbSerpent;
+         }
       }
    }
 }

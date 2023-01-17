@@ -28,15 +28,17 @@ Snake::Snake(unsigned x,unsigned y, const unsigned id, bool estEnVie, unsigned l
 
 }
 
-void Snake::combattreSerpent(Snake& serpent){
+bool Snake::combattreSerpent(Snake& serpent){
    for(coordonneesXY coord: serpent.getCoord()){
       if(coord.x == serpent.getCoordX() && coord.y == serpent.getCoordY()){
          if(serpent.getCoordX() == this->getCoordX() && serpent.getCoordY() == this->getCoordY()){
             if(this->getCoord().size() < serpent.getCoord().size()){
                this->tuerSerpent(serpent);
+               return true;
             }
             else{
                serpent.tuerSerpent((*this));
+               return true;
             }
          }
          else{
@@ -44,8 +46,10 @@ void Snake::combattreSerpent(Snake& serpent){
          }
       }
    }
+   return false;
 }
 void Snake::couperSerpent(coordonneesXY& coord, Snake& serpent){
+   //le serpent qui appelle la fonction et celui qui est en paramètre est celui qui reçoit la longueur
    
 }
 unsigned Snake::calculAjoutLongueur(unsigned longueur, unsigned pourcentage){
@@ -53,7 +57,6 @@ unsigned Snake::calculAjoutLongueur(unsigned longueur, unsigned pourcentage){
 }
 void Snake::setCoordX(unsigned x) {
    coordonnee.at(0).x = x;
-
 }
 
 void Snake::setCoordY(unsigned y) {
@@ -80,8 +83,8 @@ void Snake::deplacerVersXY(unsigned int x, unsigned int y) {
 
    if(getCoordX() != x || getCoordY() != y){
 
-      unsigned diffX = abs(getCoordX() - x);
-      unsigned diffY = abs(getCoordY() - y);
+      int diffX = abs((int)getCoordX() - (int)x);
+      int diffY = abs((int)getCoordY() - (int)y);
 
       
       

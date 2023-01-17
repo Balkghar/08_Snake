@@ -42,7 +42,7 @@ public:
    unsigned getId();
    bool     getEstEnVie();
    std::vector<coordonneesXY> getCoord();
-   void combattreSerpent(Snake& serpent);
+   bool combattreSerpent(Snake& serpent);
 
 private:
    void deplacerVers(Direction dir);

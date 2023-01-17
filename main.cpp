@@ -26,13 +26,8 @@ using namespace std;
 //-----------------------------------------------------------------------------
 int main() {
   
-  Combat combat(200, 150, 40);
+  Combat combat(100, 100, 200);
 
   combat.commencerCombat();
-  
-
-  cin.ignore(numeric_limits<streamsize>::max(), '\n');
-
-
   return EXIT_SUCCESS;
 }

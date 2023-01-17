@@ -33,7 +33,7 @@ public:
 private:
    const unsigned largeur;
    const unsigned longueur;
-   const unsigned nbSerpent; // pas nécessaire de stocker cette variable (selon l'assistant)
+   unsigned nbSerpent; // pas nécessaire de stocker cette variable (selon l'assistant)
    std::vector<Snake> serpents;
    std::vector<Pomme> pommes;
    bool placeEstOccupee( unsigned x, unsigned y );
