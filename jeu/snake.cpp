@@ -54,6 +54,7 @@ void Snake::couperSerpent(coordonneesXY& coord, Snake& serpent){
       ++i;
       if(coordo.x == coord.x && coordo.y == coord.y){
          this->longueurAAjouterSupl(calculAjoutLongueur(serpent.coordonnee.size()-1, 40));
+         serpent.longueurAAjouter = 0;
          serpent.coordonnee.resize(i);
          break;
       }
