@@ -43,7 +43,7 @@ void Combat::initialiserPomme() {
          y = aleatoireEntreDeuxEntiersPositifs(min, longueur);
 
       }while( placeEstOccupee(x, y) );
-      pommes.emplace_back(x, y, i, false);
+      pommes.emplace_back(x, y, i, true);
 
    }
 }
@@ -60,10 +60,8 @@ void Combat::initialiserSerpent() {
 
    for ( unsigned i = 1; i <= Combat::nbSerpent; ++i ) {
       do {
-
          x = aleatoireEntreDeuxEntiersPositifs(min, largeur);
          y = aleatoireEntreDeuxEntiersPositifs(min, longueur);
-
       }while( placeEstOccupee(x, y) );
       serpents.emplace_back(x, y, i, true,10);
    }
@@ -71,7 +69,6 @@ void Combat::initialiserSerpent() {
 }
 
 bool Combat::placeEstOccupee(unsigned int x, unsigned int y) {
-
    return (serpentPresent(x, y) or pommePresente(x, y));
 }
 
@@ -94,7 +91,6 @@ bool Combat::pommePresente(unsigned int x, unsigned int y) {
          return true;
       }
    }
-
    return false;
 }
 
@@ -116,46 +112,27 @@ void Combat::combatSerpents(Affichage2d& affichage){
 
       afficher(affichage);
 
-      for(int i = 0; i < serpents.size(); ++i){
-         serpents.at(i).deplacerVersXY(pommes.at(i).getCoordX(), pommes.at(i).getCoordY());
-         mangerPomme(serpents.at(i), pommes.at(i));
-         combatSerpent(serpents.at(i));
-      }
-   }
-}
-
-void Combat::combatSerpent(Snake& serpent){
-   for(int i = 0; i < serpents.size(); ++i){
-      if(serpents.at(i).getId() != serpent.getId()){
-
-         if(unsigned d = serpent.combattreSerpent(serpents.at(i))){
-            if(d == 1){
-               
-            }
-            else{
-
+      for(size_t d = 0; d < serpents.size(); ++d){
+         if(serpents.at(d).getEstEnVie()){
+            serpents.at(d).deplacerVersXY(pommes.at(d).getCoordX(), pommes.at(d).getCoordY());
+            mangerPomme(serpents.at(d), pommes.at(d));
+            combatSerpent(serpents.at(d));
+         }
+         else{
+            if(pommes.at(d).getEstMangee()){
+               pommes.at(d).pommeEstMangee();
             }
          }
       }
    }
 }
 
-void Combat::eliminerSerpent(Snake& serpent){
-   for (std::vector<Snake>::iterator it = serpents.begin(); it != serpents.end(); ++it) {
-      if(serpent.getId() == (*it).getId()){
-         effacerPomme(serpent.getId());
-         serpents.erase(it);
+void Combat::combatSerpent(Snake& serpent){
+   for(int i = 0; i < serpents.size(); ++i){
+      if(serpents.at(i).getId() != serpent.getId() && serpent.getEstEnVie() && serpents.at(i).getEstEnVie()){
+         serpent.combattreSerpent(serpents.at(i));
       }
-    }
-
-}
-
-void Combat::effacerPomme(unsigned id){
-   for (std::vector<Pomme>::iterator it = pommes.begin(); it != pommes.end(); ++it) {
-      if(id == (*it).getId()){
-         pommes.erase(it);
-      }
-    }
+   }
 }
 
 void Combat::afficher(Affichage2d& affichage){
@@ -192,15 +169,17 @@ void Combat::ajouterSerpentAffichage(Affichage2d& affichage){
 
    for(Snake& serpent : serpents){
       for(coordonneesXY& coord : serpent.getCoord()){
-         affichage.ajouterElementAffichage(coord.x, coord.y, Couleur::noir);
+         if(serpent.getEstEnVie()){
+            affichage.ajouterElementAffichage(coord.x, coord.y, Couleur::noir);
+         }
       }
    }
 }
 
 void Combat::ajouterPommeAffichage(Affichage2d& affichage){
    for(Pomme& pomme : pommes){
-
-      affichage.ajouterElementAffichage(pomme.getCoordX(), pomme.getCoordY(), Couleur::rouge);
-
+      if(pomme.getEstMangee()){
+         affichage.ajouterElementAffichage(pomme.getCoordX(), pomme.getCoordY(), Couleur::rouge);
+      }
    }
 }

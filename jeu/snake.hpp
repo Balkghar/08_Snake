@@ -40,13 +40,16 @@ public:
    unsigned getCoordX();
    unsigned getCoordY();
    unsigned getId();
+   bool     getEstEnVie();
    std::vector<coordonneesXY> getCoord();
-   unsigned combattreSerpent(Snake& serpent);
+   void combattreSerpent(Snake& serpent);
 
 private:
    void deplacerVers(Direction dir);
    void agrandirSerpent(Direction dir);
-   unsigned couperSerpent(coordonneesXY& coord);
+   void couperSerpent(coordonneesXY& coord, Snake& serpent);
+   void tuerSerpent(Snake& serpent);
+   unsigned calculAjoutLongueur(unsigned longueur, unsigned pourcentage);
    std::vector<coordonneesXY> coordonnee;
    const unsigned id;
    unsigned longueurAAjouter;

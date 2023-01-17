@@ -28,36 +28,27 @@ Snake::Snake(unsigned x,unsigned y, const unsigned id, bool estEnVie, unsigned l
 
 }
 
-unsigned Snake::combattreSerpent(Snake& serpent){
+void Snake::combattreSerpent(Snake& serpent){
    for(coordonneesXY coord: serpent.getCoord()){
       if(coord.x == serpent.getCoordX() && coord.y == serpent.getCoordY()){
          if(serpent.getCoordX() == this->getCoordX() && serpent.getCoordY() == this->getCoordY()){
             if(this->getCoord().size() < serpent.getCoord().size()){
-
-               return 1;
+               this->tuerSerpent(serpent);
             }
             else{
-
-               return 2;
+               serpent.tuerSerpent((*this));
             }
          }
          else{
-            this->longueurAAjouterSupl(serpent.couperSerpent(coord));
-            return 0;
+            serpent.couperSerpent(coord, (*this));
          }
       }
    }
-   return 0;
 }
-unsigned Snake::couperSerpent(coordonneesXY& coord){
-   unsigned i = coordonnee.size();
-   for(std::vector<coordonneesXY>::iterator it = coordonnee.begin(); it != coordonnee.end(); ++it) {
-      --i;
-      if((*it).x == coord.x && (*it).y == coord.y){
-         //coordonnee.erase(it, coordonnee.end());
-         return 0;
-      }
-   }
+void Snake::couperSerpent(coordonneesXY& coord, Snake& serpent){
+   
+}
+unsigned Snake::calculAjoutLongueur(unsigned longueur, unsigned pourcentage){
    return 0;
 }
 void Snake::setCoordX(unsigned x) {
@@ -75,7 +66,6 @@ unsigned Snake::getCoordX() {
 
 unsigned Snake::getCoordY() {
    return this->coordonnee.at(0).y;
-
 }
 
 std::vector<coordonneesXY> Snake::getCoord(){
@@ -85,7 +75,7 @@ std::vector<coordonneesXY> Snake::getCoord(){
 void Snake::longueurAAjouterSupl(unsigned valeur){
    longueurAAjouter += valeur;
 }
-// TODO
+
 void Snake::deplacerVersXY(unsigned int x, unsigned int y) {
 
    if(getCoordX() != x || getCoordY() != y){
@@ -128,9 +118,11 @@ void Snake::deplacerVersXY(unsigned int x, unsigned int y) {
          }
       }
    }
-   
+}
 
-
+void Snake::tuerSerpent(Snake& serpent){
+   this->estEnVie = false;
+   serpent.longueurAAjouterSupl(this->coordonnee.size());
 }
 
 void Snake::deplacerVers(Direction dir){
@@ -183,4 +175,8 @@ void Snake::agrandirSerpent(Direction dir){
 
 unsigned Snake::getId() {
    return id;
+}
+
+bool Snake::getEstEnVie(){
+   return this->estEnVie;
 }

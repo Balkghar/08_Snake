@@ -26,10 +26,13 @@ public:
          bool estMangee,
          std::array <short,4> coul = {255, 0, 0, 255});
 
+   void     pommeEstMangee();
+
    unsigned getCoordX();
    unsigned getCoordY();
    unsigned getId();
    unsigned getValeur();
+   bool     getEstMangee();
 
    void nouvellePomme(unsigned x, unsigned y);
 

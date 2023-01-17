@@ -40,6 +40,13 @@ void Pomme::nouvellePomme(unsigned x, unsigned y) {
 
 }
 
+void Pomme::pommeEstMangee(){
+   this->estMangee = false;
+}
+
 unsigned Pomme::getId() {
    return id;
+}
+bool Pomme::getEstMangee(){
+   return this->estMangee;
 }

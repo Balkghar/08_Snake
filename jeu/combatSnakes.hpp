@@ -47,7 +47,6 @@ private:
    void combatSerpents(Affichage2d& affichage);
    void afficher(Affichage2d& affichage);
    void combatSerpent(Snake& serpent);
-   void eliminerSerpent(Snake& serpent);
 };
 
 #endif
