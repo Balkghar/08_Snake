@@ -143,10 +143,19 @@ void Combat::combatSerpent(Snake& serpent){
 void Combat::eliminerSerpent(Snake& serpent){
    for (std::vector<Snake>::iterator it = serpents.begin(); it != serpents.end(); ++it) {
       if(serpent.getId() == (*it).getId()){
+         effacerPomme(serpent.getId());
          serpents.erase(it);
       }
     }
 
+}
+
+void Combat::effacerPomme(unsigned id){
+   for (std::vector<Pomme>::iterator it = pommes.begin(); it != pommes.end(); ++it) {
+      if(id == (*it).getId()){
+         pommes.erase(it);
+      }
+    }
 }
 
 void Combat::afficher(Affichage2d& affichage){
