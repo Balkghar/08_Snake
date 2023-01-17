@@ -49,11 +49,20 @@ bool Snake::combattreSerpent(Snake& serpent){
    return false;
 }
 void Snake::couperSerpent(coordonneesXY& coord, Snake& serpent){
-   //le serpent qui appelle la fonction et celui qui est en paramètre est celui qui reçoit la longueur
-   
+   unsigned i = 1;
+   for(coordonneesXY& coordo : serpent.coordonnee){
+      ++i;
+      if(coordo.x == coord.x && coordo.y == coord.y){
+         this->longueurAAjouterSupl(calculAjoutLongueur(serpent.coordonnee.size()-1, 40));
+         serpent.coordonnee.resize(i);
+         break;
+      }
+   }
+
 }
-unsigned Snake::calculAjoutLongueur(unsigned longueur, unsigned pourcentage){
-   return 0;
+unsigned Snake::calculAjoutLongueur(unsigned longu, unsigned pourcentage){
+   double i =  ((double)longu/100.)*(double)pourcentage;
+   return (unsigned)std::round(i);
 }
 void Snake::setCoordX(unsigned x) {
    coordonnee.at(0).x = x;
@@ -125,17 +134,17 @@ void Snake::deplacerVersXY(unsigned int x, unsigned int y) {
 
 void Snake::tuerSerpent(Snake& serpent){
    this->estEnVie = false;
-   serpent.longueurAAjouterSupl(this->coordonnee.size());
+   serpent.longueurAAjouterSupl(calculAjoutLongueur( this->coordonnee.size(), 60));
 }
 
 void Snake::deplacerVers(Direction dir){
-
+   coordonneesXY tmpCoord = coordonnee.back();
    if(coordonnee.size() > 1){
       for(int i = coordonnee.size()-1; i >= 1 ; --i){
          coordonnee.at(i) = coordonnee.at(i-1);
       }
    }
-
+   
    switch(dir){
       case Direction::haut :
          --coordonnee.at(0).y;
@@ -152,27 +161,11 @@ void Snake::deplacerVers(Direction dir){
    }
 
    if(this->longueurAAjouter){
-      agrandirSerpent(dir);
+      agrandirSerpent(tmpCoord);
       this->longueurAAjouter -= 1;
    }
 }
-void Snake::agrandirSerpent(Direction dir){
-   coordonneesXY coord = this->coordonnee.back();
-
-   switch(dir){
-         case Direction::haut :
-            ++coord.y;
-         break;
-         case Direction::bas :
-            --coord.y;
-         break;
-         case Direction::droite :
-            --coord.x;
-         break;
-         case Direction::gauche :
-            ++coord.x;
-         break;
-   }
+void Snake::agrandirSerpent(coordonneesXY coord){
    this->coordonnee.push_back(coord);
 }
 
