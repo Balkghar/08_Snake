@@ -19,29 +19,30 @@ Compilateur : gcc version 11.2.0
 #include <array>
 
 class Pomme {
-public:
-   Pomme(unsigned x,
-         unsigned y,
-         const unsigned id,
-         bool estMangee,
-         std::array <short,4> coul = {255, 0, 0, 255});
+ public:
+  Pomme(int x,
+        int y,
+        const unsigned id,
+        bool estMangee,
+        std::array<short, 4> coul = {255, 0, 0, 255}
+  );
 
-   unsigned getCoordX();
-   unsigned getCoordY();
-   unsigned getId();
-   unsigned getValeur();
+  int getCoordX();
+  int getCoordY();
+  unsigned getId() const;
+  unsigned getValeur() const;
 
-   void nouvellePomme(unsigned x, unsigned y);
+  void nouvellePomme(int x,
+                     int y
+  );
 
-private:
-   std::array<unsigned, 2> coordonnes;
-   unsigned valeur;
-   const unsigned id;
-   bool estMangee;
-   std::array <short,4> couleurs;
+ private:
+  std::array<int, 2> coordonnes;
+  unsigned valeur;
+  const unsigned id;
+  bool estMangee;
+  std::array<short, 4> couleurs;
 
 };
-
-
 
 #endif

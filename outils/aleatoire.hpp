@@ -23,6 +23,8 @@ Compilateur : gcc version 11.2.0
  * @param max un entier non signé. Borne supérieur de l'intervalle.
  * @return
  */
-unsigned aleatoireEntreDeuxEntiersPositifs(unsigned min, unsigned max);
+unsigned aleatoireEntreDeuxEntiersPositifs(unsigned min,
+                                           unsigned max
+);
 
 #endif

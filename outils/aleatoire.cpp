@@ -17,11 +17,13 @@
 
 using namespace std;
 
-unsigned aleatoireEntreDeuxEntiersPositifs(unsigned min, unsigned max) {
+unsigned aleatoireEntreDeuxEntiersPositifs(unsigned min,
+                                           unsigned max
+) {
 
-   random_device                  rand_dev;
-   default_random_engine          generator(rand_dev());
-   uniform_int_distribution<int>  distr(min, max);
+  random_device rand_dev;
+  default_random_engine generator(rand_dev());
+  uniform_int_distribution<int> distr(min, max);
 
-   return distr(generator);
+  return distr(generator);
 }

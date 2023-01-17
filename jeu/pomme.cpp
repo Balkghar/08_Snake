@@ -14,32 +14,39 @@ Compilateur : gcc version 11.2.0
 
 #include "pomme.hpp"
 
-Pomme::Pomme(unsigned x, unsigned y, const unsigned id,
-             bool estMangee, std::array<short, 4> coul) : id(id), estMangee(estMangee),couleurs(coul){
-   coordonnes.at(0) = x;
-   coordonnes.at(1) = y;
-   valeur=1;
+Pomme::Pomme(int x,
+             int y,
+             const unsigned id,
+             bool estMangee,
+             std::array<short, 4> coul
+) : id(id), estMangee(estMangee), couleurs(coul) {
+  coordonnes.at(0) = x;
+  coordonnes.at(1) = y;
+  valeur = 1;
 
 }
 
-unsigned Pomme::getCoordX() {
-   return coordonnes.at(0);
+int Pomme::getCoordX() {
+  return coordonnes.at(0);
 }
 
-unsigned Pomme::getCoordY() {
-   return coordonnes.at(1);
+int Pomme::getCoordY() {
+  return coordonnes.at(1);
 }
 
-unsigned Pomme::getValeur(){
-   return valeur;
+unsigned Pomme::getValeur() const {
+  return valeur;
 }
+
 // TODO
-void Pomme::nouvellePomme(unsigned x, unsigned y) {
-   coordonnes.at(0) = x;
-   coordonnes.at(1) = y;
+void Pomme::nouvellePomme(int x,
+                          int y
+) {
+  coordonnes.at(0) = x;
+  coordonnes.at(1) = y;
 
 }
 
-unsigned Pomme::getId() {
-   return id;
+unsigned Pomme::getId() const {
+  return id;
 }

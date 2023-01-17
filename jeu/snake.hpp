@@ -18,41 +18,44 @@ Compilateur : gcc version 11.2.0
 
 #include <vector>
 
-struct coordonneesXY{
-  unsigned x;
-  unsigned y;
-} ;
-
-enum Direction{ haut, bas, droite, gauche};
-
-class Snake {
-public:
-   Snake(unsigned x,
-         unsigned y,
-         const unsigned id,
-         bool estEnVie, unsigned longueur);
-
-   void setCoordX(unsigned x);
-   void setCoordY(unsigned y);
-   void deplacerVersXY(unsigned x, unsigned y);
-   void longueurAAjouterSupl(unsigned valeur);
-
-   unsigned getCoordX();
-   unsigned getCoordY();
-   unsigned getId();
-   std::vector<coordonneesXY> getCoord();
-   unsigned combattreSerpent(Snake& serpent);
-
-private:
-   void deplacerVers(Direction dir);
-   void agrandirSerpent(Direction dir);
-   unsigned couperSerpent(coordonneesXY& coord);
-   std::vector<coordonneesXY> coordonnee;
-   const unsigned id;
-   unsigned longueurAAjouter;
-   bool     estEnVie;
-
+struct coordonneesXY {
+  int x;
+  int y;
 };
 
+enum Direction { haut, bas, droite, gauche };
+
+class Snake {
+ public:
+  Snake(int x,
+        int y,
+        const unsigned id,
+        bool estEnVie,
+        unsigned longueur
+  );
+
+  void setCoordX(int x);
+  void setCoordY(int y);
+  void deplacerVersXY(int x,
+                      int y
+  );
+  void longueurAAjouterSupl(unsigned valeur);
+
+  int getCoordX();
+  int getCoordY();
+  unsigned getId() const;
+  std::vector<coordonneesXY> getCoord();
+  unsigned combattreSerpent(Snake &serpent);
+
+ private:
+  void deplacerVers(Direction dir);
+  void agrandirSerpent(Direction dir);
+  unsigned couperSerpent(coordonneesXY &coord);
+  std::vector<coordonneesXY> coordonnee;
+  const unsigned id;
+  unsigned longueurAAjouter;
+  bool estEnVie;
+
+};
 
 #endif
