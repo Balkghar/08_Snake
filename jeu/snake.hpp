@@ -51,7 +51,7 @@ class Snake {
   void agrandirSerpent(coordonneesXY &coord);
   void couperSerpent(coordonneesXY &coord, Snake &serpent);
   void tuerSerpent(Snake &serpent);
-  unsigned calculAjoutLongueur(unsigned long long int longu, unsigned pourcentage);
+  unsigned calculAjoutLongueur(std::size_t longu, unsigned pourcentage);
   std::vector<coordonneesXY> coordonnee;
   const unsigned id;
   unsigned longueurAAjouter;

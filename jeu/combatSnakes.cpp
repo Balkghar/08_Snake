@@ -44,7 +44,7 @@ void Combat::initialiserPomme() {
       y = aleatoireEntreDeuxValeurs(min, (int) longueur);
 
     } while (placeEstOccupee(x, y));
-    pommes.emplace_back(x, y, i, false);
+    pommes.emplace_back(x, y, i, true);
 
   }
 }
@@ -172,15 +172,18 @@ void Combat::ajouterSerpentAffichage(Affichage2d &affichage) {
 
   for (Snake &serpent : serpents) {
     for (coordonneesXY &coord : serpent.getCoord()) {
-      affichage.ajouterElementAffichage(coord.x, coord.y, Couleur::noir);
+      if(serpent.getEstEnVie()){
+         affichage.ajouterElementAffichage(coord.x, coord.y, Couleur::noir);
+      }
     }
   }
 }
 
 void Combat::ajouterPommeAffichage(Affichage2d &affichage) {
   for (Pomme &pomme : pommes) {
-
-    affichage.ajouterElementAffichage(pomme.getCoordX(), pomme.getCoordY(), Couleur::rouge);
+   if(pomme.getEstMangee()){
+      affichage.ajouterElementAffichage(pomme.getCoordX(), pomme.getCoordY(), Couleur::rouge);
+   }
 
   }
 }

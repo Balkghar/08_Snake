@@ -62,8 +62,8 @@ void Snake::couperSerpent(coordonneesXY &coord, Snake &serpent) {
   }
 
 }
-unsigned Snake::calculAjoutLongueur(size_t longu, unsigned pourcentage) {
-  double i = ((double) longu / 100.) * (double) pourcentage;
+unsigned Snake::calculAjoutLongueur(std::size_t longu, unsigned pourcentage) {
+  double i = ((double) (longu / 100.)) * (double) pourcentage;
   return (unsigned) std::round(i);
 }
 void Snake::setCoordX(int x
