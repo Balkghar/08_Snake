@@ -46,7 +46,7 @@ public:
 
 private:
    void deplacerVers(Direction dir);
-   void agrandirSerpent(coordonneesXY coord);
+   void agrandirSerpent(coordonneesXY& coord);
    void couperSerpent(coordonneesXY& coord, Snake& serpent);
    void tuerSerpent(Snake& serpent);
    unsigned calculAjoutLongueur(unsigned longueur, unsigned pourcentage);

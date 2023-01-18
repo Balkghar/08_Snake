@@ -53,7 +53,7 @@ void Snake::couperSerpent(coordonneesXY& coord, Snake& serpent){
    for(coordonneesXY& coordo : serpent.coordonnee){
       ++i;
       if(coordo.x == coord.x && coordo.y == coord.y){
-         this->longueurAAjouterSupl(calculAjoutLongueur(serpent.coordonnee.size()-1, 40));
+         this->longueurAAjouterSupl(calculAjoutLongueur(serpent.coordonnee.size()-i, 40));
          serpent.longueurAAjouter = 0;
          serpent.coordonnee.resize(i);
          break;
@@ -89,7 +89,7 @@ void Snake::longueurAAjouterSupl(unsigned valeur){
    longueurAAjouter += valeur;
 }
 
-void Snake::deplacerVersXY(unsigned int x, unsigned int y) {
+void Snake::deplacerVersXY(unsigned x, unsigned y) {
 
    if(getCoordX() != x || getCoordY() != y){
 
@@ -140,6 +140,7 @@ void Snake::tuerSerpent(Snake& serpent){
 
 void Snake::deplacerVers(Direction dir){
    coordonneesXY tmpCoord = coordonnee.back();
+   
    if(coordonnee.size() > 1){
       for(int i = coordonnee.size()-1; i >= 1 ; --i){
          coordonnee.at(i) = coordonnee.at(i-1);
@@ -166,7 +167,7 @@ void Snake::deplacerVers(Direction dir){
       this->longueurAAjouter -= 1;
    }
 }
-void Snake::agrandirSerpent(coordonneesXY coord){
+void Snake::agrandirSerpent(coordonneesXY& coord){
    this->coordonnee.push_back(coord);
 }
 

@@ -20,7 +20,7 @@ Compilateur : gcc version 11.2.0
 using namespace std;
 
 
-Combat::Combat(unsigned int largeur, unsigned int longueur, unsigned int nbSerpent)
+Combat::Combat(unsigned largeur, unsigned longueur, unsigned nbSerpent)
    : largeur(largeur), longueur(longueur), nbSerpent(nbSerpent) {
 
    initialiserSerpent();
@@ -68,7 +68,7 @@ void Combat::initialiserSerpent() {
 
 }
 
-bool Combat::placeEstOccupee(unsigned int x, unsigned int y) {
+bool Combat::placeEstOccupee(unsigned x, unsigned y) {
    return (serpentPresent(x, y) or pommePresente(x, y));
 }
 
