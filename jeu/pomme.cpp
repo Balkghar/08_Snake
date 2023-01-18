@@ -14,39 +14,43 @@ Compilateur : gcc version 11.2.0
 
 #include "pomme.hpp"
 
-Pomme::Pomme(unsigned x, unsigned y, const unsigned id,
-             bool estMangee, std::array<short, 4> coul) : id(id), estMangee(estMangee),couleurs(coul){
-   coordonnes.at(0) = x;
-   coordonnes.at(1) = y;
-   valeur=1;
+Pomme::Pomme(int x,
+             int y,
+             const unsigned id,
+             bool estMangee,
+             std::array<short, 4> coul
+) : id(id), estMangee(estMangee), couleurs(coul) {
+  coordonnes.at(0) = x;
+  coordonnes.at(1) = y;
+  valeur = 1;
 
 }
 
-unsigned Pomme::getCoordX() {
-   return coordonnes.at(0);
+int Pomme::getCoordX() {
+  return coordonnes.at(0);
 }
 
-unsigned Pomme::getCoordY() {
-   return coordonnes.at(1);
+int Pomme::getCoordY() {
+  return coordonnes.at(1);
 }
 
-unsigned Pomme::getValeur(){
-   return valeur;
+unsigned Pomme::getValeur() {
+  return valeur;
 }
-// TODO
-void Pomme::nouvellePomme(unsigned x, unsigned y) {
-   coordonnes.at(0) = x;
-   coordonnes.at(1) = y;
+
+void Pomme::nouvellePomme(int x, int y) {
+  coordonnes.at(0) = x;
+  coordonnes.at(1) = y;
 
 }
 
-void Pomme::pommeEstMangee(){
-   this->estMangee = false;
+void Pomme::pommeEstMangee() {
+  this->estMangee = false;
 }
 
 unsigned Pomme::getId() {
-   return id;
+  return id;
 }
-bool Pomme::getEstMangee(){
-   return this->estMangee;
+bool Pomme::getEstMangee() {
+  return this->estMangee;
 }

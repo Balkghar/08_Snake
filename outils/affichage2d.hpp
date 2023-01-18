@@ -25,28 +25,34 @@ Compilateur : gcc version 11.2.0
 #include <SDL2/SDL.h>
 #endif
 
+enum Couleur { blanc, noir, rouge };
 
-enum Couleur{blanc, noir, rouge};
-
-   class Affichage2d {
-      public:
-         Affichage2d(const unsigned larg, const unsigned haut, const unsigned sdl_del, const unsigned nbr_vals) : largeur(larg), hauteur(haut), sdl_delay(sdl_del), nbre_values(nbr_vals){}
-         bool initalisationAffichage();
-         bool ajouterElementAffichage(unsigned x, unsigned y, Couleur couleur);
-         bool nettoyerAffichage(Couleur couleur);
-         bool fermerAffichage();
-         bool mettreAjourAffichage();
-      private:
-         void confCouleur(Couleur couleur);
-         const unsigned largeur;
-         const unsigned hauteur;
-         const unsigned sdl_delay;
-         const unsigned nbre_values;
-         SDL_Window*    window         = nullptr;
-         SDL_Renderer*  renderer       = nullptr;
-         SDL_Event      event;
-   };
-
-
+class Affichage2d {
+ public:
+  Affichage2d(const unsigned larg,
+              const unsigned haut,
+              const unsigned sdl_del,
+              const unsigned nbr_vals
+  ) : largeur(larg), hauteur(haut), sdl_delay(sdl_del), nbre_values(nbr_vals) {}
+  bool initalisationAffichage();
+  bool ajouterElementAffichage(int x,
+                               int y,
+                               Couleur couleur
+  );
+  bool nettoyerAffichage(Couleur couleur
+  );
+  bool fermerAffichage();
+  bool mettreAjourAffichage();
+ private:
+  void confCouleur(Couleur couleur
+  );
+  const unsigned largeur;
+  const unsigned hauteur;
+  const unsigned sdl_delay;
+  const unsigned nbre_values;
+  SDL_Window *window = nullptr;
+  SDL_Renderer *renderer = nullptr;
+  SDL_Event event;
+};
 
 #endif
