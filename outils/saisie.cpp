@@ -20,38 +20,38 @@
 using namespace std;
 
 void viderBuffer() {
-   cin.ignore(numeric_limits<streamsize>::max(), '\n');
+  cin.ignore(numeric_limits<streamsize>::max(), '\n');
 }
 
-template <typename T, typename U>
-T saisirIntervalle(T minInt,
-                   U maxInt,
-                   const string &message,
-                   const string &message_erreur){
+int saisirIntervalle(int minInt,
+                     int maxInt,
+                     const string &message,
+                     const string &message_erreur
+) {
 
-   T saisie;
-   bool erreur;
+  int saisie;
+  bool erreur;
 
-   //continue jusqu'à ce que les conditions soient remplies
-   do {
+  //continue jusqu'à ce que les conditions soient remplies
+  do {
 
-      // message et saisie
-      cout << message;
-      cin  >> saisie;
+    // message et saisie
+    cout << message;
+    cin >> saisie;
 
-      erreur = cin.fail() or saisie < minInt or saisie > maxInt;
+    erreur = cin.fail() or saisie < minInt or saisie > maxInt;
 
-      if ( erreur ) {
+    if (erreur) {
 
-         cout << message_erreur << endl;
-         cin.clear();
+      cout << message_erreur << endl;
+      cin.clear();
 
-      }
+    }
 
-      viderBuffer();
+    viderBuffer();
 
-   } while(erreur);
+  } while (erreur);
 
-   return saisie;
+  return saisie;
 
 }

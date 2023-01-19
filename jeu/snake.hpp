@@ -1,68 +1,82 @@
 /*
----------------------------------------------------------------------------
-Fichier     : snake.hpp
-Nom du labo : Labo8 - Snake
-Auteur(s)   : Delétraz Alexandre - Germano Hugo
-Date        : 10.01.2022
-But         : Déclaration de la classe snake et  des fonctions membres de la
-              classe snake.
+  ---------------------------------------------------------------------------
+  Fichier     : snake.hpp
+  Nom du labo : Labo8 - Snake
+  Auteur(s)   : Delétraz Alexandre - Germano Hugo
+  Date        : 10.01.2023
+  But         : Déclaration de la classe snake et  des fonctions membres de la
+                classe snake.
 
-Remarque(s) :
+  Remarque(s) :
 
-Compilateur : gcc version 11.2.0
----------------------------------------------------------------------------
+  Compilateur : gcc version 11.2.0
+  ---------------------------------------------------------------------------
 */
 
 #ifndef LABO8_SNAKES_JEU_SNAKE_HPP
 #define LABO8_SNAKES_JEU_SNAKE_HPP
 
 #include <vector>
+#include <string>
+#include "../outils/struct_coordonnees.hpp"
 
-#include "outils/structureCoordonnees.hpp"
+enum Direction { haut, bas, droite, gauche };
 
 class Snake {
-public:
-   //------------------------ Constructeur --------------------------------
-   Snake(unsigned x,
-         unsigned y,
-         const unsigned id,
-         bool estEnVie);
+ public:
+  //------------------------- Constructeur --------------------------------
+  Snake(int x,
+        int y,
+        const unsigned id,
+        bool estEnVie,
+        unsigned longueur
+  );
 
-   //------------------------ Setter et getter ----------------------------
-   void setCoordX(unsigned x);
-   void setCoordY(unsigned y);
-   void setLongueurAAjouter(unsigned x);
+  //------------------------- Déplacements --------------------------------
+  /**
+   * @brief Permet de se déplacer vers une coordonnées.
+   * @param x
+   * @param y
+   */
+  void deplacerVersXY(int x, int y);
+  /**
+   * @brief Permet de se déplacer dans une certaine direction (Haut, bas droite, gauche)
+   * @param dir
+   */
+  void deplacerVers(Direction dir);
 
-   unsigned getCoordX();
-   unsigned getCoordY();
-   unsigned getId() const;
+  //------------------------- getter et setter ----------------------------
+  int getCoordX() const;
+  int getCoordY() const;
+  unsigned getId() const;
+  bool getEstEnVie() const;
+  std::vector<CoordonneesXY> getCoord() const;
 
-   std::vector<coordonneesXY> getCoord();
+  //------------------------- autres --------------------------------------
+  void longueurAAjouterSupl(unsigned valeur);
+  bool combattreSerpent(Snake &serpent);
 
-   //------------------------ Méthode pour le déplacement -----------------
+ private:
 
-   void deplacerVersObjet(coordonneesXY coordonnesObjet,
-                          unsigned largeur,
-                          unsigned hauteur);
+  //------------------------- Agrandissement ------------------------------
+  void agrandirSerpent(CoordonneesXY &coord);
+  unsigned calculAjoutLongueur(std::size_t longu, unsigned pourcentage);
 
-   static bool peutSeDeplacer(unsigned int x,
-                              unsigned int y,
-                              unsigned largeur,
-                              unsigned hauteur) ;
+  //------------------------- Méthodes de combat --------------------------
+  void couperSerpent(Snake &serpent);
 
-   //------------------------ Méthode lié au combat -----------------------
-   void tuer(Snake& victime);
-   void mangerPomme();
+  /**
+   * @brief fait mourir le serpent envoyé en paramètre.
+   * @param serpent
+   */
+  void mourir(Snake &serpent);
 
-
-private:
-   std::vector<coordonneesXY> coordonnees;
-   unsigned longueur = 10;
-   const unsigned id;
-   unsigned longueurAAjouter;
-   bool     estEnVie;
+  //------------------------- Données -------------------------------------
+  const unsigned id;
+  unsigned longueurAAjouter;
+  bool estEnVie;
+  std::vector<CoordonneesXY> coordonnees;
 
 };
-
 
 #endif

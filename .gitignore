@@ -33,3 +33,7 @@
 
 .vscode
 main
+
+compile.sh
+
+build

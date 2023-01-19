@@ -23,7 +23,8 @@ Compilateur : gcc version 11.2.0
  * @param max un entier non signé. Borne supérieur de l'intervalle.
  * @return
  */
-template<typename T, typename U>
-T aleatoireEntreDeuxValeurs(T min, U max );
+
+
+int aleatoireEntreDeuxValeurs(int min, int max);
 
 #endif

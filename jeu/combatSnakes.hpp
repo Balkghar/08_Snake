@@ -3,7 +3,7 @@
 Fichier     : combatSnakes.hpp
 Nom du labo : Labo8 - Snake
 Auteur(s)   : Delétraz Alexandre - Germano Hugo
-Date        : 10.01.2022
+Date        : 10.01.2023
 But         : Déclaration de la classe combat et des fonctions membres de la classe
               combat.
 
@@ -17,47 +17,59 @@ Compilateur : gcc version 11.2.0
 #define LABO8_SNAKES_JEU_COMBATSNAKES_HPP
 
 #include <vector>
+#include <string>
 #include "snake.hpp"
 #include "pomme.hpp"
 #include "../outils/affichage2d.hpp"
 
-class AreneDeCombat {
-public:
-   //------------------------ Constructeurs -------------------------------
-   AreneDeCombat() : AreneDeCombat(100, 100, 10) {}
-   AreneDeCombat(unsigned largeur, unsigned longueur, unsigned nbSerpent);
+class Combat {
+ public:
+  //------------------------- Constructeur --------------------------------
+  Combat() : Combat(100, 100, 10) {}
+  Combat(unsigned largeur,
+         unsigned longueur,
+         unsigned nbSerpent
+  );
 
-   void commencerCombat();
+  //------------------------- lancement du combat -------------------------
+  void commencerCombat();
 
-private:
-   unsigned largeur;
-   unsigned hauteur;
-   unsigned nbSerpent;
-   std::vector<Snake> serpents;
-   std::vector<Pomme> pommes;
+ private:
 
-   //------------------------ Méthodes d'initialisation --------------------
-   bool placeEstOccupee(unsigned x, unsigned y );
-   bool serpentPresent(unsigned int x, unsigned int y);
-   bool pommePresente(unsigned int x, unsigned int y);
-   void initialiserPommes();
-   void initialiserSerpent();
-   void nouvellePomme(Pomme pommeMangee);
+  //------------------------- méthodes d'initialisation -------------------
+  void initialiserPomme();
+  void initialiserSerpent();
+  CoordonneesXY generateurDeCoord();
 
+  //------------------------- contrôle de présence ------------------------
+  bool placeEstOccupee(int x, int y);
+  bool serpentPresent(int x, int y);
+  bool pommePresente(int x, int y);
 
-   //------------------------ Méthodes pour le déplacement ----------------
-   static coordonneesXY bonnePomme(const std::vector<Snake>& serpents,
-                                   const std::vector<Pomme>& pommes);
+  //------------------------- méthodes du jeu -----------------------------
+  void mangerPomme(Snake &serpent, Pomme &pomme);
+  void combatSerpent(Snake &serpent);
 
-   void tourDeJeu();
+  //------------------------- méthodes d'affichage ------------------------
+  void ajouterSerpentAffichage(Affichage2d &affichage);
+  void ajouterPommeAffichage(Affichage2d &affichage);
+  void afficher(Affichage2d &affichage);
+  void faireCombattreSerpents(Affichage2d &affichage);
 
+  //------------------------- Données -------------------------------------
+  const unsigned largeur;
+  const unsigned longueur;
+  unsigned largeurAffichage;
+  unsigned longueurAffichage;
+  unsigned nbSerpent;
 
-   //------------------------ Méthode pour l'affichage --------------------
+  static const unsigned SDL_DELAY = 50;
+  static const unsigned AUGMENT_PIXEL = 4;
+  static const unsigned MIN = 0;
 
-   void ajouterSerpentAffichage(Affichage2d& affichage);
-   void ajouterPommeAffichage(Affichage2d& affichage);
-
-
+  std::string serpentTueur;
+  std::vector<Snake> serpents;
+  std::vector<Pomme> pommes;
 };
 
 #endif

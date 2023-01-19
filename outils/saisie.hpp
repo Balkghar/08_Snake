@@ -3,7 +3,7 @@
   Fichier     : saisie.hpp
   Nom du labo : Labo7 - Robots
   Auteur(s)   : Delétraz Alexandre - Germano Hugo
-  Date        : 13.12.2022
+  Date        : 13.12.2023
   But         : Déclaration des fonctions nécessaires à la saisie sécurisée d'un
                 entier.
 
@@ -18,19 +18,12 @@
 
 #include <string>
 
-
-// nom         viderBuffer
-// but         vider les valeurs qui pourraient se trouver dans le buffer.
-//
-// param       aucun
-// return      aucun
-// exception   n/a
 void viderBuffer();
 
-template <typename T, typename U>
-T saisirIntervalle(T minInt,
-                   U maxInt,
-                   const std::string& message,
-                   const std::string& message_erreur);
+int saisirIntervalle(int minInt,
+                     int maxInt,
+                     const std::string &message,
+                     const std::string &message_erreur
+);
 
 #endif

@@ -3,7 +3,7 @@
 Fichier     : combatSnakes.cpp
 Nom du labo : Labo8 - Snake
 Auteur(s)   : Delétraz Alexandre - Germano Hugo
-Date        : 10.01.2022
+Date        : 10.01.2023
 But         : Définition des fonctions membres de la classe
               combat.
 
@@ -14,174 +14,191 @@ Compilateur : gcc version 11.2.0
 */
 
 #include "combatSnakes.hpp"
-#include "snake.hpp"
-#include "pomme.hpp"
-#include "outils/aleatoire.hpp"
+#include "../outils/aleatoire.hpp"
+#include <iostream>
 
 using namespace std;
+//=========================== Partie public ===============================
 
-//--------------------------- Constructeur --------------------------------
+//------------------------- Constructeur --------------------------------
+Combat::Combat(unsigned int largeur,
+               unsigned int longueur,
+               unsigned int nbSerpent
+) : largeur(largeur), longueur(longueur), nbSerpent(nbSerpent) {
 
-AreneDeCombat::AreneDeCombat(unsigned int largeur,
-                             unsigned int longueur,
-                             unsigned int nbSerpent)
-   : largeur(largeur), hauteur(longueur), nbSerpent(nbSerpent) {
-   initialiserSerpent();
-   initialiserPommes();
+  // L'affichage SDL partant de 0, pour que l'affichage soit correct à l'écran,
+  // il faut faire moins 1 à la valeur entrée par l'utilisateur.
+  longueurAffichage = longueur - 1;
+  largeurAffichage = largeur - 1;
+
+  initialiserSerpent();
+  initialiserPomme();
+}
+//------------------------- lancement du combat -------------------------
+void Combat::commencerCombat() {
+
+  Affichage2d affichage(largeur, longueur, SDL_DELAY, AUGMENT_PIXEL);
+
+  affichage.initalisationAffichage();
+
+  faireCombattreSerpents(affichage);
+
+  affichage.fermerAffichage();
 
 }
 
-//--------------------------- Méthodes d'initialisation --------------------
+//=========================== Partie privée ===============================
 
-void AreneDeCombat::initialiserPommes() {
+//------------------------- méthodes d'initialisation -------------------
+void Combat::initialiserPomme() {
 
-   pommes.reserve(nbSerpent);
+  pommes.reserve(nbSerpent);
 
-   const unsigned min = 1;
+  for (unsigned i = 1; i <= Combat::nbSerpent; ++i) {
+    CoordonneesXY nouvelleCoord = generateurDeCoord();
 
-   unsigned x;
-   unsigned y;
+    pommes.emplace_back(nouvelleCoord.x, nouvelleCoord.y, i, true);
 
-   for (unsigned i = 1; i <= AreneDeCombat::nbSerpent; ++i ) {
-      do {
-
-         x = aleatoireEntreDeuxValeurs(min, largeur);
-         y = aleatoireEntreDeuxValeurs(min, hauteur);
-
-      }while(placeEstOccupee(x, y) );
-      pommes.emplace_back(x, y, i, false);
-
-   }
+  }
 }
 
-void AreneDeCombat::initialiserSerpent() {
+void Combat::initialiserSerpent() {
 
-   serpents.reserve(nbSerpent);
+  serpents.reserve(nbSerpent);
 
-   const unsigned min = 1;
+  for (unsigned i = 1; i <= Combat::nbSerpent; ++i) {
+    CoordonneesXY nouvelleCoord = generateurDeCoord();
 
-   unsigned x;
-   unsigned y;
-
-   for (unsigned i = 1; i <= AreneDeCombat::nbSerpent; ++i ) {
-      do {
-
-         x = aleatoireEntreDeuxValeurs(min, largeur);
-         y = aleatoireEntreDeuxValeurs(min, hauteur);
-
-      }while(placeEstOccupee(x, y) );
-      serpents.emplace_back(x, y, i, true);
-   }
+    serpents.emplace_back(nouvelleCoord.x, nouvelleCoord.y, i, true, 10);
+  }
 
 }
 
-bool AreneDeCombat::placeEstOccupee(unsigned int x, unsigned int y) {
+CoordonneesXY Combat::generateurDeCoord() {
+  CoordonneesXY nouvelleCoord = {0, 0};
 
-   return (serpentPresent(x, y) or pommePresente(x, y));
+  do {
+    nouvelleCoord.x = aleatoireEntreDeuxValeurs(MIN, (int) largeurAffichage);
+    nouvelleCoord.y = aleatoireEntreDeuxValeurs(MIN, (int) longueurAffichage);
+  } while (placeEstOccupee(nouvelleCoord.x, nouvelleCoord.y));
+
+  return nouvelleCoord;
 }
 
-bool AreneDeCombat::serpentPresent(unsigned int x, unsigned int y) {
-   for (Snake monSerpent: serpents) {
-      if (monSerpent.getCoordX() == x and monSerpent.getCoordY() == y) {
-         return true;
+//------------------------- contrôle de présence ------------------------
+bool Combat::placeEstOccupee(int x, int y) {
+  return (serpentPresent(x, y) or pommePresente(x, y));
+}
+
+bool Combat::serpentPresent(int x, int y) {
+  for (Snake &serpent : serpents) {
+    for (CoordonneesXY &coord : serpent.getCoord()) {
+      if (coord.x == x and coord.y == y) {
+        return true;
       }
-   }
+    }
+  }
 
-   return false;
+  return false;
 }
 
-bool AreneDeCombat::pommePresente(unsigned int x, unsigned int y) {
-   for(Pomme mesPommes : pommes) {
-      if(mesPommes.getCoordX() == x and mesPommes.getCoordY() == y) {
-         return true;
+bool Combat::pommePresente(int x, int y) {
+  for (Pomme &mesPommes : pommes) {
+    if (mesPommes.getCoordX() == x and mesPommes.getCoordY() == y) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+//------------------------- méthodes du jeu -----------------------------
+
+void Combat::mangerPomme(Snake &serpent, Pomme &pomme) {
+
+  if (serpent.getCoordX() == pomme.getCoordX() && serpent.getCoordY() == pomme.getCoordY()) {
+    CoordonneesXY nouvelleCoord = generateurDeCoord();
+
+    serpent.longueurAAjouterSupl(pomme.getValeur());
+    pomme.setCoordPomme(nouvelleCoord.x, nouvelleCoord.y);
+    pomme.setValPomme();
+  }
+}
+
+void Combat::faireCombattreSerpents(Affichage2d &affichage) {
+
+  do {
+
+    afficher(affichage);
+
+    for (size_t d = 0; d < serpents.size(); ++d) {
+      if (serpents.at(d).getEstEnVie()) {
+        serpents.at(d).deplacerVersXY(pommes.at(d).getCoordX(), pommes.at(d).getCoordY());
+        mangerPomme(serpents.at(d), pommes.at(d));
+        combatSerpent(serpents.at(d));
+      } else {
+        if (pommes.at(d).estIntacte()) {
+          pommes.at(d).pommeEstMangee();
+        }
       }
-   }
-
-   return false;
+    }
+  } while (nbSerpent > 1);
 }
 
-void AreneDeCombat::nouvellePomme(Pomme pommeMangee) {
-   const unsigned min = 1;
-   do {
+void Combat::combatSerpent(Snake &serpent) {
 
-      pommeMangee.setX(aleatoireEntreDeuxValeurs(min, largeur));
-      pommeMangee.setY(aleatoireEntreDeuxValeurs(min, hauteur));
+  const string txtSerpent = "Le serpent "s;
+  const string txtAction = " a tuer le serpent "s;
 
-   }while(placeEstOccupee(pommeMangee.getCoordX(), pommeMangee.getCoordY()) );
-
-}
-
-//----------------------- Méthodes pour le déplacement --------------------
-
-coordonneesXY AreneDeCombat::bonnePomme(const std::vector<Snake>& serpents,
-                                        const std::vector<Pomme>& pommes) {
-   for(const Snake& monSerpent : serpents) {
-      for(Pomme maPommes : pommes) {
-         if(monSerpent.getId() == maPommes.getId()) {
-            return maPommes.getCoordonnes();
-         }
+  for (size_t i = 0; i < serpents.size(); ++i) {
+    if (serpents.at(i).getId() != serpent.getId() && serpent.getEstEnVie()
+        && serpents.at(i).getEstEnVie()) {
+      if (serpent.combattreSerpent(serpents.at(i))) {
+        if (!serpent.getEstEnVie()) {
+          cout << txtSerpent + to_string(serpents.at(i).getId()) + txtAction
+              + to_string(serpent.getId()) + "\n"s;
+        } else {
+          cout << txtSerpent + to_string(serpent.getId()) + txtAction
+              + to_string(serpents.at(i).getId()) + "\n"s;
+        }
+        --nbSerpent;
       }
-   }
+    }
 
+  }
 }
 
-void AreneDeCombat::tourDeJeu() {
+//------------------------- méthodes d'affichage ------------------------
 
-   for(Snake& monSerpent : serpents) {
-      monSerpent.deplacerVersObjet(bonnePomme(serpents, pommes),
-                                   largeur,
-                                   hauteur);
-      if(serpentPresent(monSerpent.getCoordX(),monSerpent.getCoordY())) {
-         //utilisé monSerpent.tuer();
+void Combat::ajouterSerpentAffichage(Affichage2d &affichage) {
 
+  for (Snake &serpent : serpents) {
+    for (CoordonneesXY &coord : serpent.getCoord()) {
+      if (serpent.getEstEnVie()) {
+        affichage.ajouterElementAffichage(coord.x, coord.y, Couleur::noir);
       }
-      if(pommePresente(monSerpent.getCoordX(),monSerpent.getCoordY())) {
-         for(Pomme maPomme : pommes) {
-            if(maPomme.getId() == monSerpent.getId()) {
-               monSerpent.mangerPomme();
-               nouvellePomme(maPomme);
-            }
-         }
-      }
-   }
+    }
+  }
 }
 
+void Combat::ajouterPommeAffichage(Affichage2d &affichage) {
 
-
-//--------------------------- Méthode pour l'affichage --------------------
-
-
-void AreneDeCombat::commencerCombat() {
-
-   Affichage2d affichage(this->largeur, this->hauteur, 50, 6);
-
-   affichage.initalisationAffichage();
-
-   affichage.nettoyerAffichage(Couleur::blanc);
-
-   ajouterSerpentAffichage(affichage);
-   ajouterPommeAffichage(affichage);
-
-
-
-
-   affichage.mettreAjourAffichage();
-
-}
-void AreneDeCombat::ajouterSerpentAffichage(Affichage2d& affichage) {
-
-   for(Snake serpent : serpents) {
-      affichage.ajouterElementAffichage(serpent.getCoordX(), serpent.getCoordY(), Couleur::noir);
-   }
-
-}
-
-void AreneDeCombat::ajouterPommeAffichage(Affichage2d& affichage) {
-   for(Pomme pomme : pommes) {
-
+  for (Pomme &pomme : pommes) {
+    if (pomme.estIntacte()) {
       affichage.ajouterElementAffichage(pomme.getCoordX(), pomme.getCoordY(), Couleur::rouge);
+    }
 
-   }
+  }
 }
 
+void Combat::afficher(Affichage2d &affichage) {
 
+  affichage.nettoyerAffichage(Couleur::blanc);
+
+  ajouterSerpentAffichage(affichage);
+
+  ajouterPommeAffichage(affichage);
+
+  affichage.mettreAjourAffichage();
+
+}
