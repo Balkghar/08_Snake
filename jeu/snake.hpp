@@ -17,6 +17,8 @@ Compilateur : gcc version 11.2.0
 #define LABO8_SNAKES_JEU_SNAKE_HPP
 
 #include <vector>
+#include <string>
+
 #include "outils/struct_coordonnees.hpp"
 
 enum Direction { haut, bas, droite, gauche };
@@ -54,14 +56,14 @@ class Snake {
 
   //------------------------- Méthodes de combat --------------------------
   void couperSerpent(CoordonneesXY &coord, Snake &serpent);
-  void tuerSerpent(Snake &serpent);
+  void mourir(Snake &serpent);
 
   //------------------------- Données -------------------------------------
-
-  std::vector<CoordonneesXY> coordonnee;
   const unsigned id;
   unsigned longueurAAjouter;
   bool estEnVie;
+  std::string tueur;
+  std::vector<CoordonneesXY> coordonnees;
 
 };
 

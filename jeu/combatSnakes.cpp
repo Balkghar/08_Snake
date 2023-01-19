@@ -41,7 +41,7 @@ void Combat::commencerCombat() {
 
   affichage.initalisationAffichage();
 
-  combatSerpents(affichage);
+  AffichercombatSerpents(affichage);
 
   affichage.fermerAffichage();
 
@@ -50,7 +50,6 @@ void Combat::commencerCombat() {
 //=========================== Partie privée ===============================
 
 //------------------------- méthodes d'initialisation -------------------
-
 void Combat::initialiserPomme() {
 
   pommes.reserve(nbSerpent);
@@ -121,11 +120,12 @@ void Combat::mangerPomme(Snake &serpent, Pomme &pomme) {
     CoordonneesXY nouvelleCoord = generateurDeCoord();
 
     serpent.longueurAAjouterSupl(pomme.getValeur());
-    pomme.nouvellePomme(nouvelleCoord.x, nouvelleCoord.y);
+    pomme.setCoordPomme(nouvelleCoord.x, nouvelleCoord.y);
+    pomme.setValPomme();
   }
 }
 
-void Combat::combatSerpents(Affichage2d &affichage) {
+void Combat::AffichercombatSerpents(Affichage2d &affichage) {
 
   do {
 
@@ -150,15 +150,23 @@ void Combat::combatSerpent(Snake &serpent) {
     if (serpents.at(i).getId() != serpent.getId() && serpent.getEstEnVie()
         && serpents.at(i).getEstEnVie()) {
       if (serpent.combattreSerpent(serpents.at(i))) {
+        if (!serpent.getEstEnVie()) {
+          //ce serpent.getId() a été tué par getId()
+          cout << "Le serpent "s + to_string(serpents.at(i).getId()) + " a tuer le serpent "s
+              + to_string(serpent.getId()) + "\n"s;
+        } else {
+          //this a été tué par ce serpent
+          cout << "Le serpent "s + to_string(serpent.getId()) + " a tuer le serpent "s
+              + to_string(serpents.at(i).getId()) + "\n"s;
+        }
         --nbSerpent;
       }
     }
+
   }
 }
 
 //------------------------- méthodes d'affichage ------------------------
-
-
 
 void Combat::ajouterSerpentAffichage(Affichage2d &affichage) {
 

@@ -12,11 +12,10 @@
   ---------------------------------------------------------------------------
 */
 
-#include <iostream>
 #include <cstdlib>
-#include <limits>
-#include <outils/saisie.hpp>
+#include <iostream>
 
+#include "outils/saisie.hpp"
 #include "jeu/combatSnakes.hpp"
 
 using namespace std;
@@ -80,6 +79,7 @@ int main(int argv, char **args) {
 
   //======================== Début du programme ===================================
 
+  cout << MSG_DEBUT << endl;
   Combat combat((unsigned) saisirIntervalle(MIN_LARGEUR, MAX_LARGEUR,
                                             MSG_LARG_TERRAIN, MSG_ERR_TAILLE),
                 (unsigned) saisirIntervalle(MIN_LONGUEUR, MAX_LONGUEUR,
@@ -89,5 +89,6 @@ int main(int argv, char **args) {
                                             MSG_ERR_SERPENT));
 
   combat.commencerCombat();
+  cout << MSG_FIN << endl;
   return EXIT_SUCCESS;
 }

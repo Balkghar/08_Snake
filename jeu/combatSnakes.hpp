@@ -17,6 +17,7 @@ Compilateur : gcc version 11.2.0
 #define LABO8_SNAKES_JEU_COMBATSNAKES_HPP
 
 #include <vector>
+#include <string>
 #include "snake.hpp"
 #include "pomme.hpp"
 #include "../outils/affichage2d.hpp"
@@ -47,25 +48,26 @@ class Combat {
 
   //------------------------- méthodes du jeu -----------------------------
   void mangerPomme(Snake &serpent, Pomme &pomme);
-  void combatSerpents(Affichage2d &affichage);
   void combatSerpent(Snake &serpent);
 
   //------------------------- méthodes d'affichage ------------------------
   void ajouterSerpentAffichage(Affichage2d &affichage);
   void ajouterPommeAffichage(Affichage2d &affichage);
   void afficher(Affichage2d &affichage);
+  void AffichercombatSerpents(Affichage2d &affichage);
 
   //------------------------- Données -------------------------------------
   const unsigned largeur;
   const unsigned longueur;
   unsigned largeurAffichage;
   unsigned longueurAffichage;
-
-  static const unsigned SDL_DELAY = 50;
-  static const unsigned AUGMENT_PIXEL = 6;
-  static const unsigned MIN = 0;
   unsigned nbSerpent;
 
+  static const unsigned SDL_DELAY = 50;
+  static const unsigned AUGMENT_PIXEL = 4;
+  static const unsigned MIN = 0;
+
+  std::string serpentTueur;
   std::vector<Snake> serpents;
   std::vector<Pomme> pommes;
 };

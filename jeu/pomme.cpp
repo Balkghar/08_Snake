@@ -51,10 +51,11 @@ void Pomme::pommeEstMangee() {
   estMangee = false;
 }
 
-//------------------------- nouvelle place pomme ------------------------
-void Pomme::nouvellePomme(int x, int y) {
+void Pomme::setCoordPomme(int x, int y) {
   coordonnees.x = x;
   coordonnees.y = y;
-  valeur = (unsigned) aleatoireEntreDeuxValeurs(0, 10);
+}
 
+void Pomme::setValPomme() {
+  valeur = (unsigned) aleatoireEntreDeuxValeurs(1, 10);
 }

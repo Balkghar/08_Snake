@@ -35,9 +35,8 @@ class Pomme {
   unsigned getValeur() const;
   bool estIntacte() const;
   void pommeEstMangee();
-
-  //------------------------- nouvelle place pomme ------------------------
-  void nouvellePomme(int x, int y);
+  void setCoordPomme(int x, int y);
+  void setValPomme();
 
  private:
   //------------------------- Données -------------------------------------
