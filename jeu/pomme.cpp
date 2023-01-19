@@ -13,8 +13,9 @@ Compilateur : gcc version 11.2.0
 */
 
 #include "pomme.hpp"
+#include "outils/aleatoire.hpp"
 
-//=========================== Partei public ===============================
+//=========================== Partie public ===============================
 
 //--------------------------- Constructeur --------------------------------
 Pomme::Pomme(int x,
@@ -54,5 +55,6 @@ void Pomme::pommeEstMangee() {
 void Pomme::nouvellePomme(int x, int y) {
   coordonnees.x = x;
   coordonnees.y = y;
+  valeur = (unsigned) aleatoireEntreDeuxValeurs(0, 10);
 
 }
