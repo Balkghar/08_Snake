@@ -20,7 +20,6 @@ Compilateur : gcc version 11.2.0
 #if defined(__linux__)  // Or #if __linux__
 #include <SDL2/SDL.h>
 #elif _WIN32
-#include <SDL_main.h>
 #include <SDL.h>
 #else
 #include <SDL2/SDL.h>
@@ -40,13 +39,11 @@ class Affichage2d {
                                int y,
                                Couleur couleur
   );
-  bool nettoyerAffichage(Couleur couleur
-  );
+  bool nettoyerAffichage(Couleur couleur);
   bool fermerAffichage();
   bool mettreAjourAffichage();
  private:
-  void confCouleur(Couleur couleur
-  );
+  void confCouleur(Couleur couleur);
   const unsigned largeur;
   const unsigned hauteur;
   const unsigned sdl_delay;

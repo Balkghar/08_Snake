@@ -20,18 +20,18 @@ Pomme::Pomme(int x,
              bool estMangee,
              std::array<short, 4> coul
 ) : id(id), estMangee(estMangee), couleurs(coul) {
-  coordonnes.at(0) = x;
-  coordonnes.at(1) = y;
+  coordonnees.x = x;
+  coordonnees.y = y;
   valeur = 1;
 
 }
 
 int Pomme::getCoordX() {
-  return coordonnes.at(0);
+  return coordonnees.x;
 }
 
 int Pomme::getCoordY() {
-  return coordonnes.at(1);
+  return coordonnees.y;
 }
 
 unsigned Pomme::getValeur() {
@@ -39,8 +39,8 @@ unsigned Pomme::getValeur() {
 }
 
 void Pomme::nouvellePomme(int x, int y) {
-  coordonnes.at(0) = x;
-  coordonnes.at(1) = y;
+  coordonnees.x = x;
+  coordonnees.y = y;
 
 }
 
@@ -51,6 +51,6 @@ void Pomme::pommeEstMangee() {
 unsigned Pomme::getId() {
   return id;
 }
-bool Pomme::getEstMangee() {
+bool Pomme::estIntacte() {
   return this->estMangee;
 }

@@ -23,10 +23,10 @@ void viderBuffer() {
   cin.ignore(numeric_limits<streamsize>::max(), '\n');
 }
 
-int saisirIntervaleInt(int minInt,
-                       int maxInt,
-                       const string &message,
-                       const string &message_erreur
+int saisirIntervalle(int minInt,
+                     int maxInt,
+                     const string &message,
+                     const string &message_erreur
 ) {
 
   int saisie;

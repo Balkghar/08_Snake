@@ -74,7 +74,7 @@ bool Combat::placeEstOccupee(int x, int y) {
 
 bool Combat::serpentPresent(int x, int y) {
   for (Snake &serpent : serpents) {
-    for (coordonneesXY &coord : serpent.getCoord()) {
+    for (CoordonneesXY &coord : serpent.getCoord()) {
       if (coord.x == x and coord.y == y) {
         return true;
       }
@@ -119,7 +119,7 @@ void Combat::combatSerpents(Affichage2d &affichage
         mangerPomme(serpents.at(d), pommes.at(d));
         combatSerpent(serpents.at(d));
       } else {
-        if (pommes.at(d).getEstMangee()) {
+        if (pommes.at(d).estIntacte()) {
           pommes.at(d).pommeEstMangee();
         }
       }
@@ -171,9 +171,9 @@ void Combat::mangerPomme(Snake &serpent, Pomme &pomme) {
 void Combat::ajouterSerpentAffichage(Affichage2d &affichage) {
 
   for (Snake &serpent : serpents) {
-    for (coordonneesXY &coord : serpent.getCoord()) {
-      if(serpent.getEstEnVie()){
-         affichage.ajouterElementAffichage(coord.x, coord.y, Couleur::noir);
+    for (CoordonneesXY &coord : serpent.getCoord()) {
+      if (serpent.getEstEnVie()) {
+        affichage.ajouterElementAffichage(coord.x, coord.y, Couleur::noir);
       }
     }
   }
@@ -181,9 +181,9 @@ void Combat::ajouterSerpentAffichage(Affichage2d &affichage) {
 
 void Combat::ajouterPommeAffichage(Affichage2d &affichage) {
   for (Pomme &pomme : pommes) {
-   if(pomme.getEstMangee()){
+    if (pomme.estIntacte()) {
       affichage.ajouterElementAffichage(pomme.getCoordX(), pomme.getCoordY(), Couleur::rouge);
-   }
+    }
 
   }
 }

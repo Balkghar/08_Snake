@@ -32,7 +32,7 @@ Snake::Snake(int x,
 }
 
 bool Snake::combattreSerpent(Snake &serpent) {
-  for (coordonneesXY coord : serpent.getCoord()) {
+  for (CoordonneesXY coord : serpent.getCoord()) {
     if (coord.x == serpent.getCoordX() && coord.y == serpent.getCoordY()) {
       if (serpent.getCoordX() == this->getCoordX() && serpent.getCoordY() == this->getCoordY()) {
         if (this->getCoord().size() < serpent.getCoord().size()) {
@@ -49,9 +49,9 @@ bool Snake::combattreSerpent(Snake &serpent) {
   }
   return false;
 }
-void Snake::couperSerpent(coordonneesXY &coord, Snake &serpent) {
+void Snake::couperSerpent(CoordonneesXY &coord, Snake &serpent) {
   unsigned i = 1;
-  for (coordonneesXY &coordo : serpent.coordonnee) {
+  for (CoordonneesXY &coordo : serpent.coordonnee) {
     ++i;
     if (coordo.x == coord.x && coordo.y == coord.y) {
       this->longueurAAjouterSupl(calculAjoutLongueur(serpent.coordonnee.size() - i, 40));
@@ -84,7 +84,7 @@ int Snake::getCoordY() {
 
 }
 
-std::vector<coordonneesXY> Snake::getCoord() {
+std::vector<CoordonneesXY> Snake::getCoord() {
   return this->coordonnee;
 }
 
@@ -133,7 +133,7 @@ void Snake::tuerSerpent(Snake &serpent) {
 }
 
 void Snake::deplacerVers(Direction dir) {
-  coordonneesXY tmpCoord = coordonnee.back();
+  CoordonneesXY tmpCoord = coordonnee.back();
 
   if (coordonnee.size() > 1) {
     for (size_t i = coordonnee.size() - 1; i >= 1; --i) {
@@ -157,7 +157,7 @@ void Snake::deplacerVers(Direction dir) {
     this->longueurAAjouter -= 1;
   }
 }
-void Snake::agrandirSerpent(coordonneesXY &coord) {
+void Snake::agrandirSerpent(CoordonneesXY &coord) {
   this->coordonnee.push_back(coord);
 }
 

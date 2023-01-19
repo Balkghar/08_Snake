@@ -58,8 +58,7 @@ bool Affichage2d::initalisationAffichage() {
   return false;
 }
 
-bool Affichage2d::nettoyerAffichage(Couleur couleur
-) {
+bool Affichage2d::nettoyerAffichage(Couleur couleur) {
   SDL_PollEvent(&event);
   if (event.type == SDL_QUIT) {
     return true;
@@ -72,10 +71,7 @@ bool Affichage2d::nettoyerAffichage(Couleur couleur
   return false;
 }
 
-bool Affichage2d::ajouterElementAffichage(int x,
-                                          int y,
-                                          Couleur couleur
-) {
+bool Affichage2d::ajouterElementAffichage(int x, int y, Couleur couleur) {
 
   confCouleur(couleur);
 

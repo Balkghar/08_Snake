@@ -26,10 +26,10 @@
 // exception   n/a
 void viderBuffer();
 
-int saisirIntervaleInt(int minInt,
-                       int maxInt,
-                       const std::string &message,
-                       const std::string &message_erreur
+int saisirIntervalle(int minInt,
+                     int maxInt,
+                     const std::string &message,
+                     const std::string &message_erreur
 );
 
 #endif

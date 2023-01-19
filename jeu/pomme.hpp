@@ -17,6 +17,7 @@ Compilateur : gcc version 11.2.0
 #define LABO8_SNAKES_JEU_POMME_HPP
 
 #include <array>
+#include "outils/struct_coordonnees.hpp"
 
 class Pomme {
  public:
@@ -33,12 +34,13 @@ class Pomme {
   int getCoordY();
   unsigned getId();
   unsigned getValeur();
-  bool getEstMangee();
+  bool estIntacte();
 
   void nouvellePomme(int x, int y);
 
  private:
-  std::array<int, 2> coordonnes;
+//  std::array<int, 2> coordonnees;
+  CoordonneesXY coordonnees;
   unsigned valeur;
   const unsigned id;
   bool estMangee;
