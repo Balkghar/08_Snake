@@ -14,6 +14,9 @@ Compilateur : gcc version 11.2.0
 
 #include "pomme.hpp"
 
+//=========================== Partei public ===============================
+
+//--------------------------- Constructeur --------------------------------
 Pomme::Pomme(int x,
              int y,
              const unsigned id,
@@ -26,31 +29,30 @@ Pomme::Pomme(int x,
 
 }
 
-int Pomme::getCoordX() {
+//--------------------------- getter et setter ----------------------------
+int Pomme::getCoordX() const {
   return coordonnees.x;
 }
 
-int Pomme::getCoordY() {
+int Pomme::getCoordY() const {
   return coordonnees.y;
 }
 
-unsigned Pomme::getValeur() {
+unsigned Pomme::getValeur() const {
   return valeur;
 }
 
+bool Pomme::estIntacte() const {
+  return estMangee;
+}
+
+void Pomme::pommeEstMangee() {
+  estMangee = false;
+}
+
+//------------------------- nouvelle place pomme ------------------------
 void Pomme::nouvellePomme(int x, int y) {
   coordonnees.x = x;
   coordonnees.y = y;
 
-}
-
-void Pomme::pommeEstMangee() {
-  this->estMangee = false;
-}
-
-unsigned Pomme::getId() {
-  return id;
-}
-bool Pomme::estIntacte() {
-  return this->estMangee;
 }

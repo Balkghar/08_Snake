@@ -23,38 +23,45 @@ using namespace std;
 // SDL library
 
 
-void Affichage2d::confCouleur(Couleur couleur
-) {
+//=========================== Partie public ===============================
 
-  switch (couleur) {
-    case Couleur::rouge:SDL_SetRenderDrawColor(renderer, 255, 0, 0, SDL_ALPHA_OPAQUE);
-      break;
-    case Couleur::blanc:SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-      break;
-    case Couleur::noir:SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
-      break;
-  }
-}
+//--------------------------- constructeur --------------------------------
+Affichage2d::Affichage2d(const unsigned int larg,
+                         const unsigned int haut,
+                         const unsigned int sdl_del,
+                         const unsigned int nbr_vals
+) : largeur(larg), hauteur(haut), sdl_delay(sdl_del), nbre_values(nbr_vals) {}
 
+//------------------------- méthode d'affichage -------------------------
 bool Affichage2d::initalisationAffichage() {
   //--------------------------------------------------------------------------
   //    SDL settings
   //--------------------------------------------------------------------------
-  const unsigned SCREEN_WIDTH = this->largeur;
-  const unsigned SCREEN_HEIGTH = this->hauteur;
+  const unsigned SCREEN_WIDTH = largeur;
+  const unsigned SCREEN_HEIGTH = hauteur;
 
   SDL_Init(SDL_INIT_VIDEO);
-  SDL_CreateWindowAndRenderer(int(SCREEN_WIDTH * this->nbre_values),
-                              int(SCREEN_HEIGTH * this->nbre_values),
+  SDL_CreateWindowAndRenderer(int(SCREEN_WIDTH * nbre_values),
+                              int(SCREEN_HEIGTH * nbre_values),
                               SDL_WINDOW_SHOWN,
                               &window,
-                              &renderer);
+                              &renderer
+  );
   if (window == nullptr or renderer == nullptr) {
     cout << "SDL not ready ... quitting" << endl;
     return true;
   }
-  //SDL_RenderSetScale(renderer, (float)SCREEN_WIDTH/(float)this->nbre_values, (float)SCREEN_HEIGTH/(float)this->nbre_values);
-  SDL_RenderSetScale(renderer, (float) this->nbre_values, (float) this->nbre_values);
+
+  SDL_RenderSetScale(renderer, (float) nbre_values, (float) nbre_values);
+  return false;
+}
+
+bool Affichage2d::ajouterElementAffichage(int x, int y, Couleur couleur) {
+
+  confCouleur(couleur);
+
+  SDL_RenderDrawPoint(renderer, x, y);
+
   return false;
 }
 
@@ -71,11 +78,12 @@ bool Affichage2d::nettoyerAffichage(Couleur couleur) {
   return false;
 }
 
-bool Affichage2d::ajouterElementAffichage(int x, int y, Couleur couleur) {
+bool Affichage2d::fermerAffichage() {
 
-  confCouleur(couleur);
-
-  SDL_RenderDrawPoint(renderer, x, y);
+  // clear SDL ressources
+  SDL_DestroyWindow(window);
+  SDL_DestroyRenderer(renderer);
+  SDL_Quit();
 
   return false;
 }
@@ -88,12 +96,18 @@ bool Affichage2d::mettreAjourAffichage() {
   return false;
 }
 
-bool Affichage2d::fermerAffichage() {
 
-  // clear SDL ressources
-  SDL_DestroyWindow(window);
-  SDL_DestroyRenderer(renderer);
-  SDL_Quit();
+//=========================== partie privée ===============================
 
-  return false;
+//--------------------------- gestion couleur -----------------------------
+void Affichage2d::confCouleur(Couleur couleur) {
+
+  switch (couleur) {
+    case Couleur::rouge:SDL_SetRenderDrawColor(renderer, 255, 0, 0, SDL_ALPHA_OPAQUE);
+      break;
+    case Couleur::blanc:SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+      break;
+    case Couleur::noir:SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+      break;
+  }
 }

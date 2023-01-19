@@ -28,22 +28,24 @@ Compilateur : gcc version 11.2.0
 enum Couleur { blanc, noir, rouge };
 
 class Affichage2d {
+  //-------------------------- Constructeur --------------------------------
  public:
   Affichage2d(const unsigned larg,
               const unsigned haut,
               const unsigned sdl_del,
               const unsigned nbr_vals
-  ) : largeur(larg), hauteur(haut), sdl_delay(sdl_del), nbre_values(nbr_vals) {}
-  bool initalisationAffichage();
-  bool ajouterElementAffichage(int x,
-                               int y,
-                               Couleur couleur
   );
+
+  //------------------------- méthode d'affichage -------------------------
+  bool initalisationAffichage();
+  bool ajouterElementAffichage(int x, int y, Couleur couleur);
   bool nettoyerAffichage(Couleur couleur);
   bool fermerAffichage();
   bool mettreAjourAffichage();
  private:
   void confCouleur(Couleur couleur);
+
+  //------------------------- Données -------------------------------------
   const unsigned largeur;
   const unsigned hauteur;
   const unsigned sdl_delay;

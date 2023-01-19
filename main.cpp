@@ -33,8 +33,8 @@ int main(int argv, char **args) {
   //--------------------------- Numériques -----------------------------------
   const unsigned MIN_SERPENT = 2;
   const unsigned MAX_SERPENT = 1'000;
-  const unsigned MIN_HAUTEUR = 50;
-  const unsigned MAX_HAUTEUR = 800;
+  const unsigned MIN_LONGUEUR = 50;
+  const unsigned MAX_LONGUEUR = 800;
   const unsigned MIN_LARGEUR = 50;
   const unsigned MAX_LARGEUR = 1200;
 
@@ -50,9 +50,9 @@ int main(int argv, char **args) {
       "combat"s
           ".\n"s +
       "Elle doit etre comprise entre "s +
-      to_string(MIN_HAUTEUR) +
+      to_string(MIN_LONGUEUR) +
       " et "s +
-      to_string(MAX_HAUTEUR) +
+      to_string(MAX_LONGUEUR) +
       " : "s;
   const string MSG_ERR_TAILLE = "Taille invalide, veuillez recommencer"s;
 
@@ -82,7 +82,7 @@ int main(int argv, char **args) {
 
   Combat combat((unsigned) saisirIntervalle(MIN_LARGEUR, MAX_LARGEUR,
                                             MSG_LARG_TERRAIN, MSG_ERR_TAILLE),
-                (unsigned) saisirIntervalle(MIN_HAUTEUR, MAX_HAUTEUR,
+                (unsigned) saisirIntervalle(MIN_LONGUEUR, MAX_LONGUEUR,
                                             MSG_HAUT_TERRAIN, MSG_ERR_TAILLE),
                 (unsigned) saisirIntervalle(MIN_SERPENT, MAX_SERPENT,
                                             MSG_SAISIE_SERPENT,

@@ -21,6 +21,7 @@ Compilateur : gcc version 11.2.0
 
 class Pomme {
  public:
+  //------------------------- constructeur --------------------------------
   Pomme(int x,
         int y,
         const unsigned id,
@@ -28,22 +29,22 @@ class Pomme {
         std::array<short, 4> coul = {255, 0, 0, 255}
   );
 
+  //------------------------- getter et setter ----------------------------
+  int getCoordX() const;
+  int getCoordY() const;
+  unsigned getValeur() const;
+  bool estIntacte() const;
   void pommeEstMangee();
 
-  int getCoordX();
-  int getCoordY();
-  unsigned getId();
-  unsigned getValeur();
-  bool estIntacte();
-
+  //------------------------- nouvelle place pomme ------------------------
   void nouvellePomme(int x, int y);
 
  private:
-//  std::array<int, 2> coordonnees;
-  CoordonneesXY coordonnees;
+  //------------------------- Données -------------------------------------
   unsigned valeur;
   const unsigned id;
   bool estMangee;
+  CoordonneesXY coordonnees;
   std::array<short, 4> couleurs;
 
 };

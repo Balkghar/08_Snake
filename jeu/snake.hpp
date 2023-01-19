@@ -23,6 +23,7 @@ enum Direction { haut, bas, droite, gauche };
 
 class Snake {
  public:
+  //------------------------- Constructeur --------------------------------
   Snake(int x,
         int y,
         const unsigned id,
@@ -30,24 +31,33 @@ class Snake {
         unsigned longueur
   );
 
-  void setCoordX(int x);
-  void setCoordY(int y);
+  //------------------------- Déplacements --------------------------------
   void deplacerVersXY(int x, int y);
-  void longueurAAjouterSupl(unsigned valeur);
+  void deplacerVers(Direction dir);
 
-  int getCoordX();
-  int getCoordY();
-  unsigned getId();
-  bool getEstEnVie();
-  std::vector<CoordonneesXY> getCoord();
+  //------------------------- getter et setter ----------------------------
+  int getCoordX() const;
+  int getCoordY() const;
+  unsigned getId() const;
+  bool getEstEnVie() const;
+  std::vector<CoordonneesXY> getCoord() const;
+
+  //------------------------- autres --------------------------------------
+  void longueurAAjouterSupl(unsigned valeur);
   bool combattreSerpent(Snake &serpent);
 
  private:
-  void deplacerVers(Direction dir);
+
+  //------------------------- Agrandissement ------------------------------
   void agrandirSerpent(CoordonneesXY &coord);
+  unsigned calculAjoutLongueur(std::size_t longu, unsigned pourcentage);
+
+  //------------------------- Méthodes de combat --------------------------
   void couperSerpent(CoordonneesXY &coord, Snake &serpent);
   void tuerSerpent(Snake &serpent);
-  unsigned calculAjoutLongueur(std::size_t longu, unsigned pourcentage);
+
+  //------------------------- Données -------------------------------------
+
   std::vector<CoordonneesXY> coordonnee;
   const unsigned id;
   unsigned longueurAAjouter;

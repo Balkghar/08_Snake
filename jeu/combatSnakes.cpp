@@ -18,33 +18,47 @@ Compilateur : gcc version 11.2.0
 #include <iostream>
 
 using namespace std;
+//=========================== Partie public ===============================
 
+//------------------------- Constructeur --------------------------------
 Combat::Combat(unsigned int largeur,
                unsigned int longueur,
                unsigned int nbSerpent
 ) : largeur(largeur), longueur(longueur), nbSerpent(nbSerpent) {
 
+  // L'affichage SDL partant de 0, pour que l'affichage soit correct à l'écran,
+  // il faut faire moins 1 à la valeur entrée par l'utilisateur.
+  longueurAffichage = longueur - 1;
+  largeurAffichage = largeur - 1;
+
   initialiserSerpent();
   initialiserPomme();
 }
+//------------------------- lancement du combat -------------------------
+void Combat::commencerCombat() {
+
+  Affichage2d affichage(largeur, longueur, sdlDelay, augmentPixel);
+
+  affichage.initalisationAffichage();
+
+  combatSerpents(affichage);
+
+  affichage.fermerAffichage();
+
+}
+
+//=========================== Partie privée ===============================
+
+//------------------------- méthodes d'initialisation -------------------
 
 void Combat::initialiserPomme() {
 
   pommes.reserve(nbSerpent);
 
-  const unsigned min = 1;
-
-  int x;
-  int y;
-
   for (unsigned i = 1; i <= Combat::nbSerpent; ++i) {
-    do {
+    CoordonneesXY nouvelleCoord = generateurDeCoord();
 
-      x = aleatoireEntreDeuxValeurs(min, (int) largeur);
-      y = aleatoireEntreDeuxValeurs(min, (int) longueur);
-
-    } while (placeEstOccupee(x, y));
-    pommes.emplace_back(x, y, i, true);
+    pommes.emplace_back(nouvelleCoord.x, nouvelleCoord.y, i, true);
 
   }
 }
@@ -53,21 +67,26 @@ void Combat::initialiserSerpent() {
 
   serpents.reserve(nbSerpent);
 
-  const unsigned min = 1;
-
-  int x;
-  int y;
-
   for (unsigned i = 1; i <= Combat::nbSerpent; ++i) {
-    do {
-      x = aleatoireEntreDeuxValeurs(min, (int) largeur);
-      y = aleatoireEntreDeuxValeurs(min, (int) longueur);
-    } while (placeEstOccupee(x, y));
-    serpents.emplace_back(x, y, i, true, 10);
+    CoordonneesXY nouvelleCoord = generateurDeCoord();
+
+    serpents.emplace_back(nouvelleCoord.x, nouvelleCoord.y, i, true, 10);
   }
 
 }
 
+CoordonneesXY Combat::generateurDeCoord() {
+  CoordonneesXY nouvelleCoord = {0, 0};
+
+  do {
+    nouvelleCoord.x = aleatoireEntreDeuxValeurs(min, (int) largeurAffichage);
+    nouvelleCoord.y = aleatoireEntreDeuxValeurs(min, (int) longueurAffichage);
+  } while (placeEstOccupee(nouvelleCoord.x, nouvelleCoord.y));
+
+  return nouvelleCoord;
+}
+
+//------------------------- contrôle de présence ------------------------
 bool Combat::placeEstOccupee(int x, int y) {
   return (serpentPresent(x, y) or pommePresente(x, y));
 }
@@ -79,7 +98,6 @@ bool Combat::serpentPresent(int x, int y) {
         return true;
       }
     }
-
   }
 
   return false;
@@ -95,19 +113,19 @@ bool Combat::pommePresente(int x, int y) {
   return false;
 }
 
-void Combat::commencerCombat() {
+//------------------------- méthodes du jeu -----------------------------
 
-  Affichage2d affichage(this->largeur, this->longueur, 50, 6);
+void Combat::mangerPomme(Snake &serpent, Pomme &pomme) {
 
-  affichage.initalisationAffichage();
+  if (serpent.getCoordX() == pomme.getCoordX() && serpent.getCoordY() == pomme.getCoordY()) {
+    CoordonneesXY nouvelleCoord = generateurDeCoord();
 
-  combatSerpents(affichage);
-
-  affichage.fermerAffichage();
-
+    serpent.longueurAAjouterSupl(pomme.getValeur());
+    pomme.nouvellePomme(nouvelleCoord.x, nouvelleCoord.y);
+  }
 }
-void Combat::combatSerpents(Affichage2d &affichage
-) {
+
+void Combat::combatSerpents(Affichage2d &affichage) {
 
   do {
 
@@ -138,35 +156,9 @@ void Combat::combatSerpent(Snake &serpent) {
   }
 }
 
-void Combat::afficher(Affichage2d &affichage) {
+//------------------------- méthodes d'affichage ------------------------
 
-  affichage.nettoyerAffichage(Couleur::blanc);
 
-  ajouterSerpentAffichage(affichage);
-
-  ajouterPommeAffichage(affichage);
-
-  affichage.mettreAjourAffichage();
-
-}
-void Combat::mangerPomme(Snake &serpent, Pomme &pomme) {
-
-  const unsigned min = 1;
-
-  int x, y;
-
-  if (serpent.getCoordX() == pomme.getCoordX() && serpent.getCoordY() == pomme.getCoordY()) {
-
-    do {
-
-      x = aleatoireEntreDeuxValeurs(min, (int) largeur);
-      y = aleatoireEntreDeuxValeurs(min, (int) longueur);
-
-    } while (placeEstOccupee(x, y));
-    serpent.longueurAAjouterSupl(pomme.getValeur());
-    pomme.nouvellePomme(x, y);
-  }
-}
 
 void Combat::ajouterSerpentAffichage(Affichage2d &affichage) {
 
@@ -186,4 +178,16 @@ void Combat::ajouterPommeAffichage(Affichage2d &affichage) {
     }
 
   }
+}
+
+void Combat::afficher(Affichage2d &affichage) {
+
+  affichage.nettoyerAffichage(Couleur::blanc);
+
+  ajouterSerpentAffichage(affichage);
+
+  ajouterPommeAffichage(affichage);
+
+  affichage.mettreAjourAffichage();
+
 }
