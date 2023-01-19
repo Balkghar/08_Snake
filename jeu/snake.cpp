@@ -13,8 +13,6 @@
 */
 #include "snake.hpp"
 #include <vector>
-#include <cmath>
-
 #include <cstdlib>
 
 using namespace std;
@@ -131,14 +129,14 @@ void Snake::longueurAAjouterSupl(unsigned valeur) {
 
 bool Snake::combattreSerpent(Snake &serpent) {
   if (serpent.getCoordX() == getCoordX() && serpent.getCoordY() == getCoordY()) {
-      if (coordonnees.size() < serpent.coordonnees.size()) {
-        mourir(serpent);
-        return true;
-      } else {
-        serpent.mourir((*this));
-        return true;
-      }
-  }else{
+    if (coordonnees.size() < serpent.coordonnees.size()) {
+      mourir(serpent);
+      return true;
+    } else {
+      serpent.mourir((*this));
+      return true;
+    }
+  } else {
     serpent.couperSerpent((*this));
   }
   return false;
