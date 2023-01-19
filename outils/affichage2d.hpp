@@ -20,6 +20,7 @@ Compilateur : gcc version 11.2.0
 #if defined(__linux__)  // Or #if __linux__
 #include <SDL2/SDL.h>
 #elif _WIN32
+#include <SDL_main.h>
 #include <SDL.h>
 #else
 #include <SDL2/SDL.h>

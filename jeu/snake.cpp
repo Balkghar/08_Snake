@@ -63,17 +63,15 @@ void Snake::couperSerpent(coordonneesXY &coord, Snake &serpent) {
 
 }
 unsigned Snake::calculAjoutLongueur(std::size_t longu, unsigned pourcentage) {
-  double i = ((double) (longu / 100.)) * (double) pourcentage;
+  double i = (((double) longu / 100.)) * (double) pourcentage;
   return (unsigned) std::round(i);
 }
-void Snake::setCoordX(int x
-) {
+void Snake::setCoordX(int x) {
   coordonnee.at(0).x = x;
 
 }
 
-void Snake::setCoordY(int y
-) {
+void Snake::setCoordY(int y) {
   coordonnee.at(0).y = y;
 }
 

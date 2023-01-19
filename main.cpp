@@ -16,16 +16,16 @@
 #include <cstdlib>
 #include <limits>
 
-
 #include "jeu/combatSnakes.hpp"
-
 
 using namespace std;
 
-
 //-----------------------------------------------------------------------------
-int main() {
-  
+int main(int argv, char **args) {
+// int argc, char* argv[] are important for SDL2 on Windows
+  (void) argv;       // use these arguments
+  (void) args;       // .. to avoid a warning
+
   Combat combat(100, 100, 20);
 
   combat.commencerCombat();
