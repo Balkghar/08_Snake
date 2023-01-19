@@ -41,7 +41,7 @@ void Combat::commencerCombat() {
 
   affichage.initalisationAffichage();
 
-  AffichercombatSerpents(affichage);
+  faireCombattreSerpents(affichage);
 
   affichage.fermerAffichage();
 
