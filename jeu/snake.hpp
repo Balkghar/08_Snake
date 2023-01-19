@@ -19,7 +19,7 @@ Compilateur : gcc version 11.2.0
 #include <vector>
 #include <string>
 
-#include "outils/struct_coordonnees.hpp"
+#include "../outils/struct_coordonnees.hpp"
 
 enum Direction { haut, bas, droite, gauche };
 
@@ -55,14 +55,13 @@ class Snake {
   unsigned calculAjoutLongueur(std::size_t longu, unsigned pourcentage);
 
   //------------------------- Méthodes de combat --------------------------
-  void couperSerpent(CoordonneesXY &coord, Snake &serpent);
+  void couperSerpent(Snake &serpent);
   void mourir(Snake &serpent);
 
   //------------------------- Données -------------------------------------
   const unsigned id;
   unsigned longueurAAjouter;
   bool estEnVie;
-  std::string tueur;
   std::vector<CoordonneesXY> coordonnees;
 
 };

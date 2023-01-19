@@ -76,6 +76,7 @@ void Snake::deplacerVersXY(int x, int y) {
 }
 
 void Snake::deplacerVers(Direction dir) {
+  
   CoordonneesXY tmpCoord = coordonnees.back();
 
   if (coordonnees.size() > 1) {
@@ -128,25 +129,16 @@ void Snake::longueurAAjouterSupl(unsigned valeur) {
 }
 
 bool Snake::combattreSerpent(Snake &serpent) {
-  tueur.erase();
-  for (CoordonneesXY coord : serpent.coordonnees) {
-    if (coord.x == serpent.getCoordX() && coord.y == serpent.getCoordY()) {
-      if (serpent.getCoordX() == getCoordX() && serpent.getCoordY() == getCoordY()) {
-        if (coordonnees.size() < serpent.coordonnees.size()) {
-          tueur = "Le serpent "s + std::to_string(serpent.id) + " a tuer le serpent "s
-              + std::to_string(this->id) + "\n"s;
-          mourir(serpent);
-          return true;
-        } else {
-          tueur = "Le serpent "s + to_string(this->id) + " a tuer le serpent "s
-              + to_string(serpent.id) + "\n"s;
-          serpent.mourir((*this));
-          return true;
-        }
+  if (serpent.getCoordX() == getCoordX() && serpent.getCoordY() == getCoordY()) {
+      if (coordonnees.size() < serpent.coordonnees.size()) {
+        mourir(serpent);
+        return true;
       } else {
-        serpent.couperSerpent(coord, (*this));
+        serpent.mourir((*this));
+        return true;
       }
-    }
+  }else{
+    serpent.couperSerpent((*this));
   }
   return false;
 }
@@ -164,19 +156,17 @@ void Snake::agrandirSerpent(CoordonneesXY &coord) {
 }
 
 //------------------------- Méthodes de combat --------------------------
-void Snake::couperSerpent(CoordonneesXY &coord, Snake &serpent) {
+void Snake::couperSerpent(Snake &serpent) {
   unsigned i = 1;
-  for (CoordonneesXY &coordo : serpent.coordonnees) {
-    if (coordo.x == coord.x && coordo.y == coord.y) {
+  for (const CoordonneesXY &coordo : serpent.coordonnees) {
+    if (coordo.x == (*this).getCoordX() && coordo.y == (*this).getCoordY()) {
       longueurAAjouterSupl(calculAjoutLongueur(serpent.coordonnees.size() - i, 40));
       serpent.longueurAAjouter = 0;
       serpent.coordonnees.resize(i);
       break;
     }
     ++i;
-
   }
-
 }
 
 void Snake::mourir(Snake &serpent) {

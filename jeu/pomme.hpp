@@ -17,7 +17,7 @@ Compilateur : gcc version 11.2.0
 #define LABO8_SNAKES_JEU_POMME_HPP
 
 #include <array>
-#include "outils/struct_coordonnees.hpp"
+#include "../outils/struct_coordonnees.hpp"
 
 class Pomme {
  public:

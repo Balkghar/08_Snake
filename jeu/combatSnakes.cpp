@@ -41,7 +41,7 @@ void Combat::commencerCombat() {
 
   affichage.initalisationAffichage();
 
-  AffichercombatSerpents(affichage);
+  faireCombattreSerpents(affichage);
 
   affichage.fermerAffichage();
 
@@ -125,7 +125,7 @@ void Combat::mangerPomme(Snake &serpent, Pomme &pomme) {
   }
 }
 
-void Combat::AffichercombatSerpents(Affichage2d &affichage) {
+void Combat::faireCombattreSerpents(Affichage2d &affichage) {
 
   do {
 
