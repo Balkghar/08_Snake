@@ -1,7 +1,7 @@
 /*
   ---------------------------------------------------------------------------
   Fichier     : aleatoire.cpp
-  Nom du labo : Labo8 - Robots
+  Nom du labo : Labo8 - Snake
   Auteur(s)   : Delétraz Alexandre - Germano Hugo
   Date        : 11.01.2023
   But         : Définition de la fonction aleatoireEntreDeuxValeurs.

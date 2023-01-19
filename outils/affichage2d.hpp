@@ -3,7 +3,7 @@
 Fichier     : affichage2d.hpp
 Nom du labo : Labo8 - Snake
 Auteur(s)   : Delétraz Alexandre - Germano Hugo
-Date        : 10.01.2022
+Date        : 10.01.2023
 But         : Déclaration des fonctions qui permettent d'afficher une fenêtre d'une
               taille personnalisée en utilisant la libraire SDL
               (simple DirectMedia Layer)
@@ -43,7 +43,7 @@ class Affichage2d {
   bool fermerAffichage();
   bool mettreAjourAffichage();
  private:
-  void confCouleur(Couleur couleur);
+  void configCouleur(Couleur couleur);
 
   //------------------------- Données -------------------------------------
   const unsigned largeur;

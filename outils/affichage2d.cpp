@@ -3,7 +3,7 @@
 Fichier     : affichage2d.cpp
 Nom du labo : Labo8 - Snake
 Auteur(s)   : Delétraz Alexandre - Germano Hugo
-Date        : 10.01.2022
+Date        : 10.01.2023
 But         : Permet d'afficher une fenêtre d'une taille personnalisée en utilisant
               la libraire SDL (simple DirectMedia Layer)
 
@@ -58,7 +58,7 @@ bool Affichage2d::initalisationAffichage() {
 
 bool Affichage2d::ajouterElementAffichage(int x, int y, Couleur couleur) {
 
-  confCouleur(couleur);
+  configCouleur(couleur);
 
   SDL_RenderDrawPoint(renderer, x, y);
 
@@ -66,12 +66,13 @@ bool Affichage2d::ajouterElementAffichage(int x, int y, Couleur couleur) {
 }
 
 bool Affichage2d::nettoyerAffichage(Couleur couleur) {
+
   SDL_PollEvent(&event);
   if (event.type == SDL_QUIT) {
     return true;
   }
 
-  confCouleur(couleur);
+  configCouleur(couleur);
 
   SDL_RenderClear(renderer);
 
@@ -100,7 +101,7 @@ bool Affichage2d::mettreAjourAffichage() {
 //=========================== partie privée ===============================
 
 //--------------------------- gestion couleur -----------------------------
-void Affichage2d::confCouleur(Couleur couleur) {
+void Affichage2d::configCouleur(Couleur couleur) {
 
   switch (couleur) {
     case Couleur::rouge:SDL_SetRenderDrawColor(renderer, 255, 0, 0, SDL_ALPHA_OPAQUE);

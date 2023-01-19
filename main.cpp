@@ -3,10 +3,10 @@
   Fichier     : main.cpp
   Nom du labo : Labo8 - Snake
   Auteur(s)   : Delétraz Alexandre - Germano Hugo
-  Date        : 10.01.2022
+  Date        : 10.01.2023
   But         : 
 
-  Remarque(s) :
+  Remarque(s) : Le style de format de code est importé de Google.
 
   Compilateur : gcc version 11.2.0
   ---------------------------------------------------------------------------
@@ -65,16 +65,16 @@ int main(int argv, char **args) {
 
   const string MSG_ERR_SERPENT = "Valeur invalide, veuillez recommencer"s;
 
-  const string MSG_DEBUT = "Bienvenue dans Snake battle simulator© de la "s
-      "Green Katze Korporation™ !\n"s
-          "Ici, vous pouvez faire combattre à mort des "s
-              "serpents innocents de tous crimes, jusqu'à "s
+  const string MSG_DEBUT = "Bienvenue dans Snake battle simulator de la "s
+      "Green Katze Korporation !\n"s
+          "Ici, vous pouvez faire combattre a mort des "s
+              "serpents innocents de tous crimes, jusqu'a "s
                   "ce qu'il n'en reste plus qu'un !\n"s;
-  const string MSG_FIN = "La Green Katze Korporation™ vous remercie "s
-      "d'avoir utilisé Snake battle simulator©.\n"s
-          "Grâce à votre simulation, nous avons pu "s
-              "récolter de précieuses informations pour "s
-                  "l'avenir de l'humanité.\n"s +
+  const string MSG_FIN = "La Green Katze Korporation vous remercie "s
+      "d'avoir utilise Snake battle simulator.\n"s
+          "Grace a votre simulation, nous avons pu "s
+              "recolter de précieuses informations pour "s
+                  "l'avenir de l'humanite.\n"s +
       "Veuillez appuyer sur ENTER pour quitter."s;
 
   //======================== Début du programme ===================================
@@ -90,5 +90,6 @@ int main(int argv, char **args) {
 
   combat.commencerCombat();
   cout << MSG_FIN << endl;
+  viderBuffer();
   return EXIT_SUCCESS;
 }

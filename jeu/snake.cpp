@@ -3,7 +3,7 @@
   Fichier     : snake.cpp
   Nom du labo : Labo8 - Snake
   Auteur(s)   : Delétraz Alexandre - Germano Hugo
-  Date        : 10.01.2022
+  Date        : 10.01.2023
   But         : Définition des fonctions membres de la classe snake.
 
   Remarque(s) : 
@@ -13,8 +13,6 @@
 */
 #include "snake.hpp"
 #include <vector>
-#include <cmath>
-
 #include <cstdlib>
 
 using namespace std;
@@ -76,6 +74,7 @@ void Snake::deplacerVersXY(int x, int y) {
 }
 
 void Snake::deplacerVers(Direction dir) {
+
   CoordonneesXY tmpCoord = coordonnees.back();
 
   if (coordonnees.size() > 1) {
@@ -124,22 +123,19 @@ std::vector<CoordonneesXY> Snake::getCoord() const {
 
 //------------------------- autres --------------------------------------
 void Snake::longueurAAjouterSupl(unsigned valeur) {
+
   longueurAAjouter += valeur;
 }
 
 bool Snake::combattreSerpent(Snake &serpent) {
-  tueur.erase();
+
   for (CoordonneesXY coord : serpent.coordonnees) {
     if (coord.x == serpent.getCoordX() && coord.y == serpent.getCoordY()) {
       if (serpent.getCoordX() == getCoordX() && serpent.getCoordY() == getCoordY()) {
         if (coordonnees.size() < serpent.coordonnees.size()) {
-          tueur = "Le serpent "s + std::to_string(serpent.id) + " a tuer le serpent "s
-              + std::to_string(this->id) + "\n"s;
           mourir(serpent);
           return true;
         } else {
-          tueur = "Le serpent "s + to_string(this->id) + " a tuer le serpent "s
-              + to_string(serpent.id) + "\n"s;
           serpent.mourir((*this));
           return true;
         }
@@ -155,6 +151,7 @@ bool Snake::combattreSerpent(Snake &serpent) {
 
 //------------------------- Agrandissement ------------------------------
 unsigned Snake::calculAjoutLongueur(std::size_t longu, unsigned pourcentage) {
+
   unsigned i = ((unsigned) ((double) longu / 100.) * pourcentage);
   return i;
 }
@@ -165,6 +162,7 @@ void Snake::agrandirSerpent(CoordonneesXY &coord) {
 
 //------------------------- Méthodes de combat --------------------------
 void Snake::couperSerpent(CoordonneesXY &coord, Snake &serpent) {
+
   unsigned i = 1;
   for (CoordonneesXY &coordo : serpent.coordonnees) {
     if (coordo.x == coord.x && coordo.y == coord.y) {
@@ -180,6 +178,7 @@ void Snake::couperSerpent(CoordonneesXY &coord, Snake &serpent) {
 }
 
 void Snake::mourir(Snake &serpent) {
+
   estEnVie = false;
   serpent.longueurAAjouterSupl(calculAjoutLongueur(coordonnees.size(), 60));
 }

@@ -3,7 +3,7 @@
 Fichier     : combatSnakes.hpp
 Nom du labo : Labo8 - Snake
 Auteur(s)   : Delétraz Alexandre - Germano Hugo
-Date        : 10.01.2022
+Date        : 10.01.2023
 But         : Déclaration de la classe combat et des fonctions membres de la classe
               combat.
 
@@ -54,7 +54,7 @@ class Combat {
   void ajouterSerpentAffichage(Affichage2d &affichage);
   void ajouterPommeAffichage(Affichage2d &affichage);
   void afficher(Affichage2d &affichage);
-  void AffichercombatSerpents(Affichage2d &affichage);
+  void affichercombatSerpents(Affichage2d &affichage);
 
   //------------------------- Données -------------------------------------
   const unsigned largeur;

@@ -3,7 +3,7 @@
 Fichier     : pomme.cpp
 Nom du labo : Labo8 - Snake
 Auteur(s)   : Delétraz Alexandre - Germano Hugo
-Date        : 10.01.2022
+Date        : 10.01.2023
 But         : Définition des fonctions membres de la classe pomme.
 
 Remarque(s) :
@@ -52,6 +52,7 @@ void Pomme::pommeEstMangee() {
 }
 
 void Pomme::setCoordPomme(int x, int y) {
+
   coordonnees.x = x;
   coordonnees.y = y;
 }

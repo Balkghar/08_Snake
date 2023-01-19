@@ -1,16 +1,16 @@
 /*
----------------------------------------------------------------------------
-Fichier     : snake.hpp
-Nom du labo : Labo8 - Snake
-Auteur(s)   : Delétraz Alexandre - Germano Hugo
-Date        : 10.01.2022
-But         : Déclaration de la classe snake et  des fonctions membres de la
-              classe snake.
+  ---------------------------------------------------------------------------
+  Fichier     : snake.hpp
+  Nom du labo : Labo8 - Snake
+  Auteur(s)   : Delétraz Alexandre - Germano Hugo
+  Date        : 10.01.2023
+  But         : Déclaration de la classe snake et  des fonctions membres de la
+                classe snake.
 
-Remarque(s) :
+  Remarque(s) :
 
-Compilateur : gcc version 11.2.0
----------------------------------------------------------------------------
+  Compilateur : gcc version 11.2.0
+  ---------------------------------------------------------------------------
 */
 
 #ifndef LABO8_SNAKES_JEU_SNAKE_HPP
@@ -18,7 +18,6 @@ Compilateur : gcc version 11.2.0
 
 #include <vector>
 #include <string>
-
 #include "outils/struct_coordonnees.hpp"
 
 enum Direction { haut, bas, droite, gauche };
@@ -34,7 +33,16 @@ class Snake {
   );
 
   //------------------------- Déplacements --------------------------------
+  /**
+   * @brief Permet de se déplacer vers une coordonnées.
+   * @param x
+   * @param y
+   */
   void deplacerVersXY(int x, int y);
+  /**
+   * @brief Permet de se déplacer dans une certaine direction (Haut, bas droite, gauche)
+   * @param dir
+   */
   void deplacerVers(Direction dir);
 
   //------------------------- getter et setter ----------------------------
@@ -56,13 +64,17 @@ class Snake {
 
   //------------------------- Méthodes de combat --------------------------
   void couperSerpent(CoordonneesXY &coord, Snake &serpent);
+
+  /**
+   * @brief fait mourir le serpent envoyé en paramètre.
+   * @param serpent
+   */
   void mourir(Snake &serpent);
 
   //------------------------- Données -------------------------------------
   const unsigned id;
   unsigned longueurAAjouter;
   bool estEnVie;
-  std::string tueur;
   std::vector<CoordonneesXY> coordonnees;
 
 };
