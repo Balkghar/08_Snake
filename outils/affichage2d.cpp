@@ -92,7 +92,7 @@ bool Affichage2d::mettreAjourAffichage() {
 
   // SDL display the window
   SDL_RenderPresent(renderer);
-  SDL_Delay(this->sdl_delay);
+  SDL_Delay(sdl_delay);
   return false;
 }
 

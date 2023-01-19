@@ -61,9 +61,9 @@ class Combat {
   unsigned largeurAffichage;
   unsigned longueurAffichage;
 
-  static const unsigned sdlDelay = 50;
-  static const unsigned augmentPixel = 6;
-  static const unsigned min = 0;
+  static const unsigned SDL_DELAY = 50;
+  static const unsigned AUGMENT_PIXEL = 6;
+  static const unsigned MIN = 0;
   unsigned nbSerpent;
 
   std::vector<Snake> serpents;

@@ -37,7 +37,7 @@ Combat::Combat(unsigned int largeur,
 //------------------------- lancement du combat -------------------------
 void Combat::commencerCombat() {
 
-  Affichage2d affichage(largeur, longueur, sdlDelay, augmentPixel);
+  Affichage2d affichage(largeur, longueur, SDL_DELAY, AUGMENT_PIXEL);
 
   affichage.initalisationAffichage();
 
@@ -79,8 +79,8 @@ CoordonneesXY Combat::generateurDeCoord() {
   CoordonneesXY nouvelleCoord = {0, 0};
 
   do {
-    nouvelleCoord.x = aleatoireEntreDeuxValeurs(min, (int) largeurAffichage);
-    nouvelleCoord.y = aleatoireEntreDeuxValeurs(min, (int) longueurAffichage);
+    nouvelleCoord.x = aleatoireEntreDeuxValeurs(MIN, (int) largeurAffichage);
+    nouvelleCoord.y = aleatoireEntreDeuxValeurs(MIN, (int) longueurAffichage);
   } while (placeEstOccupee(nouvelleCoord.x, nouvelleCoord.y));
 
   return nouvelleCoord;
