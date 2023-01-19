@@ -18,7 +18,7 @@
 
 #include <vector>
 #include <string>
-#include "outils/struct_coordonnees.hpp"
+#include "../outils/struct_coordonnees.hpp"
 
 enum Direction { haut, bas, droite, gauche };
 
@@ -63,7 +63,7 @@ class Snake {
   unsigned calculAjoutLongueur(std::size_t longu, unsigned pourcentage);
 
   //------------------------- Méthodes de combat --------------------------
-  void couperSerpent(CoordonneesXY &coord, Snake &serpent);
+  void couperSerpent(Snake &serpent);
 
   /**
    * @brief fait mourir le serpent envoyé en paramètre.

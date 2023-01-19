@@ -13,6 +13,8 @@
 */
 #include "snake.hpp"
 #include <vector>
+#include <cmath>
+
 #include <cstdlib>
 
 using namespace std;
@@ -128,21 +130,16 @@ void Snake::longueurAAjouterSupl(unsigned valeur) {
 }
 
 bool Snake::combattreSerpent(Snake &serpent) {
-
-  for (CoordonneesXY coord : serpent.coordonnees) {
-    if (coord.x == serpent.getCoordX() && coord.y == serpent.getCoordY()) {
-      if (serpent.getCoordX() == getCoordX() && serpent.getCoordY() == getCoordY()) {
-        if (coordonnees.size() < serpent.coordonnees.size()) {
-          mourir(serpent);
-          return true;
-        } else {
-          serpent.mourir((*this));
-          return true;
-        }
+  if (serpent.getCoordX() == getCoordX() && serpent.getCoordY() == getCoordY()) {
+      if (coordonnees.size() < serpent.coordonnees.size()) {
+        mourir(serpent);
+        return true;
       } else {
-        serpent.couperSerpent(coord, (*this));
+        serpent.mourir((*this));
+        return true;
       }
-    }
+  }else{
+    serpent.couperSerpent((*this));
   }
   return false;
 }
@@ -161,20 +158,17 @@ void Snake::agrandirSerpent(CoordonneesXY &coord) {
 }
 
 //------------------------- Méthodes de combat --------------------------
-void Snake::couperSerpent(CoordonneesXY &coord, Snake &serpent) {
-
+void Snake::couperSerpent(Snake &serpent) {
   unsigned i = 1;
-  for (CoordonneesXY &coordo : serpent.coordonnees) {
-    if (coordo.x == coord.x && coordo.y == coord.y) {
+  for (const CoordonneesXY &coordo : serpent.coordonnees) {
+    if (coordo.x == (*this).getCoordX() && coordo.y == (*this).getCoordY()) {
       longueurAAjouterSupl(calculAjoutLongueur(serpent.coordonnees.size() - i, 40));
       serpent.longueurAAjouter = 0;
       serpent.coordonnees.resize(i);
       break;
     }
     ++i;
-
   }
-
 }
 
 void Snake::mourir(Snake &serpent) {

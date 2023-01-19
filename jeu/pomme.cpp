@@ -13,7 +13,7 @@ Compilateur : gcc version 11.2.0
 */
 
 #include "pomme.hpp"
-#include "outils/aleatoire.hpp"
+#include "../outils/aleatoire.hpp"
 
 //=========================== Partie public ===============================
 
