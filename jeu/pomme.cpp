@@ -21,9 +21,8 @@ Compilateur : gcc version 11.2.0
 Pomme::Pomme(int x,
              int y,
              const unsigned id,
-             bool estMangee,
-             std::array<short, 4> coul
-) : id(id), estMangee(estMangee), couleurs(coul) {
+             bool estMangee
+) : id(id), estMangee(estMangee) {
   coordonnees.x = x;
   coordonnees.y = y;
   valeur = 1;

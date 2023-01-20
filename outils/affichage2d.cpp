@@ -33,7 +33,7 @@ Affichage2d::Affichage2d(const unsigned int larg,
 ) : largeur(larg), hauteur(haut), sdl_delay(sdl_del), nbre_values(nbr_vals) {}
 
 //------------------------- méthode d'affichage -------------------------
-bool Affichage2d::initalisationAffichage() {
+void Affichage2d::initalisationAffichage() {
   //--------------------------------------------------------------------------
   //    SDL settings
   //--------------------------------------------------------------------------
@@ -47,54 +47,40 @@ bool Affichage2d::initalisationAffichage() {
                               &window,
                               &renderer
   );
-  if (window == nullptr or renderer == nullptr) {
-    cout << "SDL not ready ... quitting" << endl;
-    return true;
-  }
 
   SDL_RenderSetScale(renderer, (float) nbre_values, (float) nbre_values);
-  return false;
 }
 
-bool Affichage2d::ajouterElementAffichage(int x, int y, Couleur couleur) {
+void Affichage2d::ajouterElementAffichage(int x, int y, Couleur couleur) {
 
   configCouleur(couleur);
 
   SDL_RenderDrawPoint(renderer, x, y);
 
-  return false;
 }
 
-bool Affichage2d::nettoyerAffichage(Couleur couleur) {
+void Affichage2d::nettoyerAffichage(Couleur couleur) {
 
   SDL_PollEvent(&event);
-  if (event.type == SDL_QUIT) {
-    return true;
-  }
 
   configCouleur(couleur);
 
   SDL_RenderClear(renderer);
-
-  return false;
 }
 
-bool Affichage2d::fermerAffichage() {
+void Affichage2d::fermerAffichage() {
 
   // clear SDL ressources
   SDL_DestroyWindow(window);
   SDL_DestroyRenderer(renderer);
   SDL_Quit();
-
-  return false;
 }
 
-bool Affichage2d::mettreAjourAffichage() {
+void Affichage2d::mettreAjourAffichage() {
 
   // SDL display the window
   SDL_RenderPresent(renderer);
   SDL_Delay(sdl_delay);
-  return false;
 }
 
 

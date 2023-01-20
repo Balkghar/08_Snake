@@ -37,11 +37,11 @@ class Affichage2d {
   );
 
   //------------------------- méthode d'affichage -------------------------
-  bool initalisationAffichage();
-  bool ajouterElementAffichage(int x, int y, Couleur couleur);
-  bool nettoyerAffichage(Couleur couleur);
-  bool fermerAffichage();
-  bool mettreAjourAffichage();
+  void initalisationAffichage();
+  void ajouterElementAffichage(int x, int y, Couleur couleur);
+  void nettoyerAffichage(Couleur couleur);
+  void fermerAffichage();
+  void mettreAjourAffichage();
  private:
   void configCouleur(Couleur couleur);
 

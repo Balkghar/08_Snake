@@ -25,8 +25,7 @@ class Pomme {
   Pomme(int x,
         int y,
         const unsigned id,
-        bool estMangee,
-        std::array<short, 4> coul = {255, 0, 0, 255} // valeur pour le rouge
+        bool estMangee // valeur pour le rouge
   );
 
   //------------------------- getter et setter ----------------------------
@@ -44,7 +43,6 @@ class Pomme {
   const unsigned id;
   bool estMangee;
   CoordonneesXY coordonnees;
-  std::array<short, 4> couleurs;
 
 };
 
