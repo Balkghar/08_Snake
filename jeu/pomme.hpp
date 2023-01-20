@@ -20,29 +20,30 @@ Compilateur : gcc version 11.2.0
 #include "../outils/struct_coordonnees.hpp"
 
 class Pomme {
- public:
-  //------------------------- constructeur --------------------------------
-  Pomme(int x,
-        int y,
-        const unsigned id,
-        bool estMangee // valeur pour le rouge
-  );
+public:
+   //------------------------- constructeur --------------------------------
+   Pomme(CoordonneesXY coord, bool estMangee);
 
-  //------------------------- getter et setter ----------------------------
-  int getCoordX() const;
-  int getCoordY() const;
-  unsigned getValeur() const;
-  bool estIntacte() const;
-  void pommeEstMangee();
-  void setCoordPomme(int x, int y);
-  void setValPomme();
+   //------------------------- getter et setter ----------------------------
+   int getCoordX() const;
 
- private:
-  //------------------------- Données -------------------------------------
-  unsigned valeur;
-  const unsigned id;
-  bool estMangee;
-  CoordonneesXY coordonnees;
+   int getCoordY() const;
+
+   unsigned getValeur() const;
+
+   bool estIntacte() const;
+
+   void pommeEstMangee();
+
+   void setCoordPomme(int x, int y);
+
+   void setValPomme();
+
+private:
+   //------------------------- Données -------------------------------------
+   unsigned valeur;
+   bool estMangee;
+   CoordonneesXY coordonnees;
 
 };
 

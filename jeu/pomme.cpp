@@ -18,44 +18,39 @@ Compilateur : gcc version 11.2.0
 //=========================== Partie public ===============================
 
 //--------------------------- Constructeur --------------------------------
-Pomme::Pomme(int x,
-             int y,
-             const unsigned id,
-             bool estMangee
-) : id(id), estMangee(estMangee) {
-  coordonnees.x = x;
-  coordonnees.y = y;
-  valeur = 1;
+Pomme::Pomme(CoordonneesXY coord, bool estMangee)
+   : estMangee(estMangee), coordonnees(coord) {
+   valeur = 1;
 
 }
 
 //--------------------------- getter et setter ----------------------------
 int Pomme::getCoordX() const {
-  return coordonnees.x;
+   return coordonnees.x;
 }
 
 int Pomme::getCoordY() const {
-  return coordonnees.y;
+   return coordonnees.y;
 }
 
 unsigned Pomme::getValeur() const {
-  return valeur;
+   return valeur;
 }
 
 bool Pomme::estIntacte() const {
-  return estMangee;
+   return estMangee;
 }
 
 void Pomme::pommeEstMangee() {
-  estMangee = false;
+   estMangee = false;
 }
 
 void Pomme::setCoordPomme(int x, int y) {
 
-  coordonnees.x = x;
-  coordonnees.y = y;
+   coordonnees.x = x;
+   coordonnees.y = y;
 }
 
 void Pomme::setValPomme() {
-  valeur = (unsigned) aleatoireEntreDeuxValeurs(1, 10);
+   valeur = (unsigned) aleatoireEntreDeuxValeurs(1, 10);
 }
