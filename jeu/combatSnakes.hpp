@@ -34,7 +34,7 @@ class Combat {
   //------------------------- lancement du combat -------------------------
   void commencerCombat();
 
- private:
+private:
 
   //------------------------- méthodes d'initialisation -------------------
   void initialiserPomme();
@@ -67,9 +67,15 @@ class Combat {
   static const unsigned AUGMENT_PIXEL = 4;
   static const unsigned MIN = 0;
 
-  std::string serpentTueur;
+  static const Couleur couleurSerpents = Couleur::noir;
+  static const Couleur couleurPommes = Couleur::rouge;
+  
+  inline static const std::string txtSerpent = "Le serpent ";
+  inline static const std::string txtAction = " a tué le serpent ";
+
   std::vector<Snake> serpents;
   std::vector<Pomme> pommes;
+
 };
 
 #endif

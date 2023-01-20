@@ -20,8 +20,6 @@
 #include <string>
 #include "../outils/struct_coordonnees.hpp"
 
-enum Direction { haut, bas, droite, gauche };
-
 class Snake {
  public:
   //------------------------- Constructeur --------------------------------
@@ -39,11 +37,6 @@ class Snake {
    * @param y
    */
   void deplacerVersXY(int x, int y);
-  /**
-   * @brief Permet de se déplacer dans une certaine direction (Haut, bas droite, gauche)
-   * @param dir
-   */
-  void deplacerVers(Direction dir);
 
   //------------------------- getter et setter ----------------------------
   int getCoordX() const;
@@ -55,12 +48,28 @@ class Snake {
   //------------------------- autres --------------------------------------
   void longueurAAjouterSupl(unsigned valeur);
   bool combattreSerpent(Snake &serpent);
+  
 
  private:
 
+  enum class Direction { haut, bas, droite, gauche };
+
+  static const Direction haut = Direction::haut;
+  static const Direction bas = Direction::bas;
+  static const Direction droite = Direction::droite;
+  static const Direction gauche = Direction::gauche;
+
+  /**
+   * @brief Permet de se déplacer dans une certaine direction (Haut, bas droite, gauche)
+   * @param dir
+   */
+  void deplacerVers(Direction dir);
+
+
   //------------------------- Agrandissement ------------------------------
   void agrandirSerpent(CoordonneesXY &coord);
-  unsigned calculAjoutLongueur(std::size_t longu, unsigned pourcentage);
+  //------------------------- ami ------------------------------
+  friend unsigned calculAjoutLongueur(std::size_t longu, unsigned pourcentage);
 
   //------------------------- Méthodes de combat --------------------------
   void couperSerpent(Snake &serpent);

@@ -147,15 +147,12 @@ void Combat::faireCombattreSerpents(Affichage2d &affichage) {
 
 void Combat::combatSerpent(Snake &serpent) {
 
-  const string txtSerpent = "Le serpent "s;
-  const string txtAction = " a tuer le serpent "s;
-
   for (size_t i = 0; i < serpents.size(); ++i) {
     if (serpents.at(i).getId() != serpent.getId() && serpent.getEstEnVie()
         && serpents.at(i).getEstEnVie()) {
       if (serpent.combattreSerpent(serpents.at(i))) {
         if (!serpent.getEstEnVie()) {
-          cout << txtSerpent + to_string(serpents.at(i).getId()) + txtAction
+          cout << Combat::txtSerpent + to_string(serpents.at(i).getId()) + Combat::txtAction
               + to_string(serpent.getId()) + "\n"s;
         } else {
           cout << txtSerpent + to_string(serpent.getId()) + txtAction
@@ -175,7 +172,7 @@ void Combat::ajouterSerpentAffichage(Affichage2d &affichage) {
   for (Snake &serpent : serpents) {
     for (CoordonneesXY &coord : serpent.getCoord()) {
       if (serpent.getEstEnVie()) {
-        affichage.ajouterElementAffichage(coord.x, coord.y, Couleur::noir);
+        affichage.ajouterElementAffichage(coord.x, coord.y, Combat::couleurSerpents);
       }
     }
   }
@@ -185,7 +182,7 @@ void Combat::ajouterPommeAffichage(Affichage2d &affichage) {
 
   for (Pomme &pomme : pommes) {
     if (pomme.estIntacte()) {
-      affichage.ajouterElementAffichage(pomme.getCoordX(), pomme.getCoordY(), Couleur::rouge);
+      affichage.ajouterElementAffichage(pomme.getCoordX(), pomme.getCoordY(), Combat::couleurPommes);
     }
 
   }

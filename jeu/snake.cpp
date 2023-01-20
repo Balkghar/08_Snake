@@ -47,27 +47,27 @@ void Snake::deplacerVersXY(int x, int y) {
 
     if (getCoordX() <= x && getCoordY() <= y) {
       if (diffX < diffY) {
-        deplacerVers(Direction::bas);
+        deplacerVers(Snake::bas);
       } else {
-        deplacerVers(Direction::droite);
+        deplacerVers(Snake::droite);
       }
     } else if (getCoordX() >= x && getCoordY() <= y) {
       if (diffX < diffY) {
-        deplacerVers(Direction::bas);
+        deplacerVers(Snake::bas);
       } else {
-        deplacerVers(Direction::gauche);
+        deplacerVers(Snake::gauche);
       }
     } else if (getCoordX() >= x && getCoordY() >= y) {
       if (diffX < diffY) {
-        deplacerVers(Direction::haut);
+        deplacerVers(Snake::haut);
       } else {
-        deplacerVers(Direction::gauche);
+        deplacerVers(Snake::gauche);
       }
     } else if (getCoordX() <= x && getCoordY() >= y) {
       if (diffX < diffY) {
-        deplacerVers(Direction::haut);
+        deplacerVers(Snake::haut);
       } else {
-        deplacerVers(Direction::droite);
+        deplacerVers(Snake::droite);
       }
     }
   }
@@ -84,13 +84,13 @@ void Snake::deplacerVers(Direction dir) {
   }
 
   switch (dir) {
-    case Direction::haut :--coordonnees.at(0).y;
+    case Snake::haut :--coordonnees.at(0).y;
       break;
-    case Direction::bas :++coordonnees.at(0).y;
+    case Snake::bas :++coordonnees.at(0).y;
       break;
-    case Direction::droite :++coordonnees.at(0).x;
+    case Snake::droite :++coordonnees.at(0).x;
       break;
-    case Direction::gauche :--coordonnees.at(0).x;
+    case Snake::gauche :--coordonnees.at(0).x;
       break;
   }
 
@@ -144,8 +144,10 @@ bool Snake::combattreSerpent(Snake &serpent) {
 
 //=========================== Partie privée ===============================
 
+
+
 //------------------------- Agrandissement ------------------------------
-unsigned Snake::calculAjoutLongueur(std::size_t longu, unsigned pourcentage) {
+unsigned calculAjoutLongueur(std::size_t longu, unsigned pourcentage) {
 
   unsigned i = ((unsigned) ((double) longu / 100.) * pourcentage);
   return i;

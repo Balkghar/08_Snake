@@ -25,7 +25,7 @@ Compilateur : gcc version 11.2.0
 #include <SDL2/SDL.h>
 #endif
 
-enum Couleur { blanc, noir, rouge };
+enum class Couleur { blanc, noir, rouge };
 
 class Affichage2d {
   //-------------------------- Constructeur --------------------------------
