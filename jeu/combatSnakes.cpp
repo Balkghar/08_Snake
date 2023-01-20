@@ -139,16 +139,17 @@ void Combat::faireCombattreSerpents(Affichage2d &affichage) {
                serpent.deplacerVersXY(pomme.getCoord());
                mangerPomme(serpent, pomme);
                combatSerpent(serpent);
-            } else {
+            } else {/*
                if (serpent.getId() == pomme.getId() && pomme.getEstIntacte()) {
                   pomme.pommeEstMangee();
                   suppressionPommes();
-               }
+               }*/
             }
          }
       }
 
       suppressionSerpent();
+
    } while (nbSerpent > 1);
    cout << Combat::txtSerpent << to_string(serpents.at(0).getId())
         << Combat::txtVictoire << endl;
@@ -227,7 +228,17 @@ void Combat::suppressionSerpent() {
       .rend();
         ++iterSerpent) {
       if (!iterSerpent->getEstEnVie()) {
+         supprimerPomme(iterSerpent->getId());
          serpents.erase(iterSerpent.base() - 1);
+      }
+   }
+}
+
+void Combat::supprimerPomme(unsigned id)
+{
+   for(Pomme& pomme : pommes){
+      if(pomme.getId() == id){
+         pomme.pommeEstMangee();
       }
    }
 }

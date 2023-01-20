@@ -18,6 +18,7 @@ Compilateur : gcc version 11.2.0
 
 #include <vector>
 #include <string>
+#include <algorithm>
 #include "snake.hpp"
 #include "pomme.hpp"
 #include "../outils/struct_coordonnees.hpp"
@@ -71,6 +72,8 @@ private:
    void suppressionPommes();
 
    void suppressionSerpent();
+
+   void supprimerPomme(unsigned id);
 
 
    //------------------------- Données -------------------------------------
