@@ -27,6 +27,19 @@ Pomme::Pomme(CoordonneesXY coord,
    valeur = 1;
 }
 
+//--------------------------- Surcharge d'opérateur -----------------------
+
+Pomme &Pomme::operator=(const Pomme &autrePomme) {
+   if (this == &autrePomme) {
+      return *this;
+   }
+   this->coordonnees = autrePomme.coordonnees;
+   this->valeur = autrePomme.valeur;
+   this->entiere = autrePomme.entiere;
+   (unsigned &) this->id = (unsigned &) autrePomme.id;
+   return *this;
+}
+
 //--------------------------- getter et setter ----------------------------
 int Pomme::getCoordX() const {
    return coordonnees.x;
@@ -40,7 +53,7 @@ unsigned Pomme::getValeur() const {
    return valeur;
 }
 
-bool Pomme::estIntacte() const {
+bool Pomme::getEstIntacte() const {
    return entiere;
 }
 
@@ -49,7 +62,6 @@ void Pomme::pommeEstMangee() {
 }
 
 void Pomme::setCoordPomme(CoordonneesXY coord) {
-
    coordonnees.x = coord.x;
    coordonnees.y = coord.y;
 }

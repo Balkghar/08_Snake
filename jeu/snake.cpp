@@ -20,7 +20,7 @@ using namespace std;
 
 //--------------------------- Fonction amie -------------------------------
 
-//fonction utile pour le shuffle
+// Fonction utile pour le shuffle. Surcharge de la fonction swap.
 void swap(Snake &s1, Snake &s2) {
    std::swap((unsigned &) s1.id, (unsigned &) s2.id);
    std::swap(s1.estEnVie, s2.estEnVie);
@@ -49,6 +49,25 @@ Snake::Snake(CoordonneesXY coord,
 Snake::Snake(const Snake &s
 ) : id(s.id), estEnVie(s.estEnVie), coordonnees(s.coordonnees) {
    longueurAAjouter = 0;
+}
+
+
+//--------------------------- Destructeur ---------------------------------
+Snake::~Snake() {
+   coordonnees.clear();
+
+}
+
+//--------------------------- Surcharge d'opérateur -----------------------
+Snake &Snake::operator=(const Snake &autreSerpent) {
+   if (this == &autreSerpent) {
+      return *this;
+   }
+   this->coordonnees = autreSerpent.coordonnees;
+   this->longueurAAjouter = autreSerpent.longueurAAjouter;
+   this->estEnVie = autreSerpent.estEnVie;
+   (unsigned &) this->id = (unsigned &) autreSerpent.id;
+   return *this;
 }
 
 
@@ -194,3 +213,5 @@ void Snake::mourir(Snake &serpent) {
    estEnVie = false;
    serpent.longueurAAjouterSupl(calculAjoutLongueur(coordonnees.size(), 60));
 }
+
+

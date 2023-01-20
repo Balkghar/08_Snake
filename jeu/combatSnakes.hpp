@@ -47,11 +47,11 @@ private:
    CoordonneesXY generateurDeCoord();
 
    //------------------------- contrôle de présence ------------------------
-   bool placeEstOccupee(int x, int y);
+   bool placeEstOccupee(CoordonneesXY coordonnees);
 
-   bool serpentPresent(int x, int y);
+   bool serpentPresent(CoordonneesXY coordonnees);
 
-   bool pommePresente(int x, int y);
+   bool pommePresente(CoordonneesXY coordonnees);
 
    //------------------------- méthodes du jeu -----------------------------
    void mangerPomme(Snake &serpent, Pomme &pomme);
@@ -67,6 +67,12 @@ private:
 
    void faireCombattreSerpents(Affichage2d &affichage);
 
+   //------------------------ autres --------------------------------------
+   void suppressionPommes();
+
+   void suppressionSerpent();
+
+
    //------------------------- Données -------------------------------------
    const unsigned largeur;
    const unsigned longueur;
@@ -74,7 +80,7 @@ private:
    unsigned longueurAffichage;
    unsigned nbSerpent;
 
-   static const unsigned SDL_DELAY = 50;
+   static const unsigned SDL_DELAY = 1;
    static const unsigned AUGMENT_PIXEL = 4;
    static const unsigned MIN = 0;
 
@@ -83,6 +89,7 @@ private:
 
    inline static const std::string txtSerpent = "Le serpent ";
    inline static const std::string txtAction = " a tue le serpent ";
+   inline static const std::string txtVictoire = " a gagner la partie!";
 
    std::vector<Snake> serpents;
    std::vector<Pomme> pommes;

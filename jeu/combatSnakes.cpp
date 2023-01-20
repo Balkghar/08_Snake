@@ -82,20 +82,20 @@ CoordonneesXY Combat::generateurDeCoord() {
    do {
       nouvelleCoord.x = aleatoireEntreDeuxValeurs(MIN, (int) largeurAffichage);
       nouvelleCoord.y = aleatoireEntreDeuxValeurs(MIN, (int) longueurAffichage);
-   } while (placeEstOccupee(nouvelleCoord.x, nouvelleCoord.y));
+   } while (placeEstOccupee(nouvelleCoord));
 
    return nouvelleCoord;
 }
 
 //------------------------- contrôle de présence ------------------------
-bool Combat::placeEstOccupee(int x, int y) {
-   return (serpentPresent(x, y) or pommePresente(x, y));
+bool Combat::placeEstOccupee(CoordonneesXY coordonnees) {
+   return (serpentPresent(coordonnees) or pommePresente(coordonnees));
 }
 
-bool Combat::serpentPresent(int x, int y) {
+bool Combat::serpentPresent(CoordonneesXY coordonnees) {
    for (Snake &serpent: serpents) {
       for (CoordonneesXY &coord: serpent.getCoord()) {
-         if (coord.x == x and coord.y == y) {
+         if (coord.x == coordonnees.x and coord.y == coordonnees.y) {
             return true;
          }
       }
@@ -104,9 +104,9 @@ bool Combat::serpentPresent(int x, int y) {
    return false;
 }
 
-bool Combat::pommePresente(int x, int y) {
+bool Combat::pommePresente(CoordonneesXY coordonnees) {
    for (Pomme &mesPommes: pommes) {
-      if (mesPommes.getCoordX() == x and mesPommes.getCoordY() == y) {
+      if (mesPommes.getCoordX() == coordonnees.x and mesPommes.getCoordY() == coordonnees.y) {
          return true;
       }
    }
@@ -128,9 +128,6 @@ void Combat::mangerPomme(Snake &serpent, Pomme &pomme) {
 }
 
 void Combat::faireCombattreSerpents(Affichage2d &affichage) {
-   // nous ne faisons qu'une seule fois un shuffle juste pour que l'ordre de base du
-   // vecteur ne soit pas prédictible.
-   shuffle(serpents.begin(), serpents.end(), mt19937(random_device()()));
 
    do {
       shuffle(serpents.begin(), serpents.end(), mt19937(random_device()()));
@@ -143,32 +140,35 @@ void Combat::faireCombattreSerpents(Affichage2d &affichage) {
                mangerPomme(serpent, pomme);
                combatSerpent(serpent);
             } else {
-               if (pomme.estIntacte()) {
+               if (serpent.getId() == pomme.getId() && pomme.getEstIntacte()) {
                   pomme.pommeEstMangee();
+                  suppressionPommes();
                }
             }
-
          }
       }
 
+      suppressionSerpent();
    } while (nbSerpent > 1);
+   cout << Combat::txtSerpent << to_string(serpents.at(0).getId())
+        << Combat::txtVictoire << endl;
 }
 
 void Combat::combatSerpent(Snake &serpent) {
 
-
-   for (size_t i = 0; i < serpents.size(); ++i) {
-      if (serpents.at(i).getId() != serpent.getId() && serpent.getEstEnVie()
-          && serpents.at(i).getEstEnVie()) {
-         if (serpent.combattreSerpent(serpents.at(i))) {
+   for (Snake &i: serpents) {
+      if (i.getId() != serpent.getId() && serpent.getEstEnVie()
+          && i.getEstEnVie()) {
+         if (serpent.combattreSerpent(i)) {
             if (!serpent.getEstEnVie()) {
-               cout << Combat::txtSerpent << to_string(serpents.at(i).getId()) << Combat::txtAction
-                    << to_string(serpent.getId()) << "\n"s;
+               cout << Combat::txtSerpent << to_string(i.getId()) << Combat::txtAction
+                    << to_string(serpent.getId()) << endl;
             } else {
                cout << txtSerpent << to_string(serpent.getId()) << txtAction
-                    << to_string(serpents.at(i).getId()) << "\n"s;
+                    << to_string(i.getId()) << endl;
             }
             --nbSerpent;
+
          }
       }
 
@@ -192,7 +192,7 @@ void Combat::ajouterSerpentAffichage(Affichage2d &affichage) {
 void Combat::ajouterPommeAffichage(Affichage2d &affichage) {
 
    for (Pomme &pomme: pommes) {
-      if (pomme.estIntacte()) {
+      if (pomme.getEstIntacte()) {
          affichage.ajouterElementAffichage(pomme.getCoordX(), pomme.getCoordY(),
                                            Combat::couleurPommes);
       }
@@ -210,4 +210,24 @@ void Combat::afficher(Affichage2d &affichage) {
 
    affichage.mettreAjourAffichage();
 
+}
+
+void Combat::suppressionPommes() {
+   for (vector<Pomme>::reverse_iterator iterPommes = pommes.rbegin(); iterPommes != pommes
+      .rend();
+        ++iterPommes) {
+      if (!iterPommes->getEstIntacte()) {
+         pommes.erase(iterPommes.base() - 1);
+      }
+   }
+}
+
+void Combat::suppressionSerpent() {
+   for (vector<Snake>::reverse_iterator iterSerpent = serpents.rbegin(); iterSerpent != serpents
+      .rend();
+        ++iterSerpent) {
+      if (!iterSerpent->getEstEnVie()) {
+         serpents.erase(iterSerpent.base() - 1);
+      }
+   }
 }

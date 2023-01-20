@@ -34,6 +34,15 @@ public:
 
    Snake(const Snake &s);
 
+   //------------------------ Destructeur ---------------------------------
+   // Définition pour indiquer que nous n'avons pas besoin d'un comportement
+   // particulier pour le destructeur.
+   ~Snake();
+
+   //--------------------------- Surcharge d'opérateur -----------------------
+
+   Snake &operator=(const Snake &autreSerpent);
+
    //------------------------- Déplacements --------------------------------
    /**
     * @brief Permet de se déplacer vers une coordonnées.

@@ -26,6 +26,15 @@ public:
          const unsigned id,
          bool estIntacte);
 
+   //------------------------ Destructeur ---------------------------------
+   // Définition pour indiquer que nous n'avons pas besoin d'un comportement
+   // particulier pour le destructeur.
+   ~Pomme() = default;
+
+
+   //--------------------------- Surcharge d'opérateur -----------------------
+   Pomme &operator=(const Pomme &autrePomme);
+
    //------------------------- getter et setter ----------------------------
    int getCoordX() const;
 
@@ -37,13 +46,14 @@ public:
 
    unsigned getId() const;
 
-   bool estIntacte() const;
+   bool getEstIntacte() const;
 
    void pommeEstMangee();
 
    void setCoordPomme(CoordonneesXY coord);
 
    void setValPomme();
+
 
 private:
    //------------------------- Données -------------------------------------
