@@ -21,125 +21,125 @@ using namespace std;
 //=========================== Partie public ===============================
 
 //--------------------------- Constructeur --------------------------------
-Snake::Snake(int x,
-             int y,
-             const unsigned id,
-             bool estEnVie,
-             unsigned longueur
-) : id(id), estEnVie(estEnVie) {
+Snake::Snake(CoordonneesXY coord, const unsigned id, bool estEnVie, unsigned longueur)
+   : id(id), estEnVie(estEnVie) {
 
-  coordonnees.resize(1);
+   coordonnees.resize(1);
 
-  coordonnees.at(0).x = x;
-  coordonnees.at(0).y = y;
+   coordonnees.at(0).x = coord.x;
+   coordonnees.at(0).y = coord.y;
 
-  longueurAAjouter = longueur - 1;
+   longueurAAjouter = longueur - 1;
 
 }
 
 //------------------------- Déplacements --------------------------------
-void Snake::deplacerVersXY(int x, int y) {
+void Snake::deplacerVersXY(CoordonneesXY coord) {
 
-  if (getCoordX() != x || getCoordY() != y) {
+   if (getCoordX() != coord.x || getCoordY() != coord.y) {
 
-    int diffX = abs(getCoordX() - x);
-    int diffY = abs(getCoordY() - y);
+      int diffX = abs(getCoordX() - coord.x);
+      int diffY = abs(getCoordY() - coord.y);
 
-    if (getCoordX() <= x && getCoordY() <= y) {
-      if (diffX < diffY) {
-        deplacerVers(Snake::bas);
-      } else {
-        deplacerVers(Snake::droite);
+      if (getCoordX() <= coord.x && getCoordY() <= coord.y) {
+         if (diffX < diffY) {
+            deplacerVers(Snake::bas);
+         } else {
+            deplacerVers(Snake::droite);
+         }
+      } else if (getCoordX() >= coord.x && getCoordY() <= coord.y) {
+         if (diffX < diffY) {
+            deplacerVers(Snake::bas);
+         } else {
+            deplacerVers(Snake::gauche);
+         }
+      } else if (getCoordX() >= coord.x && getCoordY() >= coord.y) {
+         if (diffX < diffY) {
+            deplacerVers(Snake::haut);
+         } else {
+            deplacerVers(Snake::gauche);
+         }
+      } else if (getCoordX() <= coord.x && getCoordY() >= coord.y) {
+         if (diffX < diffY) {
+            deplacerVers(Snake::haut);
+         } else {
+            deplacerVers(Snake::droite);
+         }
       }
-    } else if (getCoordX() >= x && getCoordY() <= y) {
-      if (diffX < diffY) {
-        deplacerVers(Snake::bas);
-      } else {
-        deplacerVers(Snake::gauche);
-      }
-    } else if (getCoordX() >= x && getCoordY() >= y) {
-      if (diffX < diffY) {
-        deplacerVers(Snake::haut);
-      } else {
-        deplacerVers(Snake::gauche);
-      }
-    } else if (getCoordX() <= x && getCoordY() >= y) {
-      if (diffX < diffY) {
-        deplacerVers(Snake::haut);
-      } else {
-        deplacerVers(Snake::droite);
-      }
-    }
-  }
+   }
 }
 
 void Snake::deplacerVers(Direction dir) {
 
-  CoordonneesXY tmpCoord = coordonnees.back();
+   CoordonneesXY tmpCoord = coordonnees.back();
 
-  if (coordonnees.size() > 1) {
-    for (size_t i = coordonnees.size() - 1; i >= 1; --i) {
-      coordonnees.at(i) = coordonnees.at(i - 1);
-    }
-  }
+   if (coordonnees.size() > 1) {
+      for (size_t i = coordonnees.size() - 1; i >= 1; --i) {
+         coordonnees.at(i) = coordonnees.at(i - 1);
+      }
+   }
 
-  switch (dir) {
-    case Snake::haut :--coordonnees.at(0).y;
-      break;
-    case Snake::bas :++coordonnees.at(0).y;
-      break;
-    case Snake::droite :++coordonnees.at(0).x;
-      break;
-    case Snake::gauche :--coordonnees.at(0).x;
-      break;
-  }
+   switch (dir) {
+      case Snake::haut :
+         --coordonnees.at(0).y;
+         break;
+      case Snake::bas :
+         ++coordonnees.at(0).y;
+         break;
+      case Snake::droite :
+         ++coordonnees.at(0).x;
+         break;
+      case Snake::gauche :
+         --coordonnees.at(0).x;
+         break;
+   }
 
-  if (longueurAAjouter) {
-    agrandirSerpent(tmpCoord);
-    longueurAAjouter -= 1;
-  }
+   if (longueurAAjouter) {
+      agrandirSerpent(tmpCoord);
+      longueurAAjouter -= 1;
+   }
 }
 
 //--------------------------- getter et setter ----------------------------
 int Snake::getCoordX() const {
-  return coordonnees.at(0).x;
+   return coordonnees.at(0).x;
 }
 
 int Snake::getCoordY() const {
-  return coordonnees.at(0).y;
+   return coordonnees.at(0).y;
 }
 
 unsigned Snake::getId() const {
-  return id;
+   return id;
 }
 
 bool Snake::getEstEnVie() const {
-  return estEnVie;
+   return estEnVie;
 }
 
 std::vector<CoordonneesXY> Snake::getCoord() const {
-  return coordonnees;
+   return coordonnees;
 }
 
 //------------------------- autres --------------------------------------
 void Snake::longueurAAjouterSupl(unsigned valeur) {
 
-  longueurAAjouter += valeur;
+   longueurAAjouter += valeur;
 }
 
 bool Snake::combattreSerpent(Snake &serpent) {
-  if (serpent.getCoordX() == getCoordX() && serpent.getCoordY() == getCoordY()) {
-    if (coordonnees.size() < serpent.coordonnees.size()) {
-      mourir(serpent);
-      return true;
-    } else {
-      serpent.mourir((*this));
-      return true;
-    }
-  } else {
-    serpent.couperSerpent((*this));
-  }
-  return false;
+   if (serpent.getCoordX() == getCoordX() && serpent.getCoordY() == getCoordY()) {
+      if (coordonnees.size() < serpent.coordonnees.size()) {
+         mourir(serpent);
+         return true;
+      } else {
+         serpent.mourir((*this));
+         return true;
+      }
+   } else {
+      serpent.couperSerpent((*this));
+   }
+   return false;
 }
 
 //=========================== Partie privée ===============================
@@ -148,31 +148,29 @@ bool Snake::combattreSerpent(Snake &serpent) {
 
 //------------------------- Agrandissement ------------------------------
 unsigned calculAjoutLongueur(std::size_t longu, unsigned pourcentage) {
-
-  unsigned i = ((unsigned) ((double) longu / 100.) * pourcentage);
-  return i;
+   return ((unsigned) ((double) longu / 100.) * pourcentage);
 }
 
 void Snake::agrandirSerpent(CoordonneesXY &coord) {
-  coordonnees.push_back(coord);
+   coordonnees.push_back(coord);
 }
 
 //------------------------- Méthodes de combat --------------------------
 void Snake::couperSerpent(Snake &serpent) {
-  unsigned i = 1;
-  for (const CoordonneesXY &coordo : serpent.coordonnees) {
-    if (coordo.x == (*this).getCoordX() && coordo.y == (*this).getCoordY()) {
-      longueurAAjouterSupl(calculAjoutLongueur(serpent.coordonnees.size() - i, 40));
-      serpent.longueurAAjouter = 0;
-      serpent.coordonnees.resize(i);
-      break;
-    }
-    ++i;
-  }
+   unsigned i = 1;
+   for (const CoordonneesXY &coordo: serpent.coordonnees) {
+      if (coordo.x == (*this).getCoordX() && coordo.y == (*this).getCoordY()) {
+         longueurAAjouterSupl(calculAjoutLongueur(serpent.coordonnees.size() - i, 40));
+         serpent.longueurAAjouter = 0;
+         serpent.coordonnees.resize(i);
+         break;
+      }
+      ++i;
+   }
 }
 
 void Snake::mourir(Snake &serpent) {
 
-  estEnVie = false;
-  serpent.longueurAAjouterSupl(calculAjoutLongueur(coordonnees.size(), 60));
+   estEnVie = false;
+   serpent.longueurAAjouterSupl(calculAjoutLongueur(coordonnees.size(), 60));
 }

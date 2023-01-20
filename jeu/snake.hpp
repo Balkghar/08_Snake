@@ -21,70 +21,77 @@
 #include "../outils/struct_coordonnees.hpp"
 
 class Snake {
- public:
-  //------------------------- Constructeur --------------------------------
-  Snake(int x,
-        int y,
-        const unsigned id,
-        bool estEnVie,
-        unsigned longueur
-  );
+public:
+   //------------------------- Constructeur --------------------------------
+   Snake(CoordonneesXY coord,
+         const unsigned id,
+         bool estEnVie,
+         unsigned longueur
+   );
 
-  //------------------------- Déplacements --------------------------------
-  /**
-   * @brief Permet de se déplacer vers une coordonnées.
-   * @param x
-   * @param y
-   */
-  void deplacerVersXY(int x, int y);
+   //------------------------- Déplacements --------------------------------
+   /**
+    * @brief Permet de se déplacer vers une coordonnées.
+    * @param coord
+    * @param y
+    */
+   void deplacerVersXY(CoordonneesXY coord);
 
-  //------------------------- getter et setter ----------------------------
-  int getCoordX() const;
-  int getCoordY() const;
-  unsigned getId() const;
-  bool getEstEnVie() const;
-  std::vector<CoordonneesXY> getCoord() const;
+   //------------------------- getter et setter ----------------------------
+   int getCoordX() const;
 
-  //------------------------- autres --------------------------------------
-  void longueurAAjouterSupl(unsigned valeur);
-  bool combattreSerpent(Snake &serpent);
-  
+   int getCoordY() const;
 
- private:
+   unsigned getId() const;
 
-  enum class Direction { haut, bas, droite, gauche };
+   bool getEstEnVie() const;
 
-  static const Direction haut = Direction::haut;
-  static const Direction bas = Direction::bas;
-  static const Direction droite = Direction::droite;
-  static const Direction gauche = Direction::gauche;
+   std::vector<CoordonneesXY> getCoord() const;
 
-  /**
-   * @brief Permet de se déplacer dans une certaine direction (Haut, bas droite, gauche)
-   * @param dir
-   */
-  void deplacerVers(Direction dir);
+   //------------------------- autres --------------------------------------
+   void longueurAAjouterSupl(unsigned valeur);
+
+   bool combattreSerpent(Snake &serpent);
 
 
-  //------------------------- Agrandissement ------------------------------
-  void agrandirSerpent(CoordonneesXY &coord);
-  //------------------------- ami ------------------------------
-  friend unsigned calculAjoutLongueur(std::size_t longu, unsigned pourcentage);
+private:
 
-  //------------------------- Méthodes de combat --------------------------
-  void couperSerpent(Snake &serpent);
+   enum class Direction {
+      haut, bas, droite, gauche
+   };
 
-  /**
-   * @brief fait mourir le serpent envoyé en paramètre.
-   * @param serpent
-   */
-  void mourir(Snake &serpent);
+   static const Direction haut = Direction::haut;
+   static const Direction bas = Direction::bas;
+   static const Direction droite = Direction::droite;
+   static const Direction gauche = Direction::gauche;
 
-  //------------------------- Données -------------------------------------
-  const unsigned id;
-  unsigned longueurAAjouter;
-  bool estEnVie;
-  std::vector<CoordonneesXY> coordonnees;
+   /**
+    * @brief Permet de se déplacer dans une certaine direction (Haut, bas droite, gauche)
+    * @param dir
+    */
+   void deplacerVers(Direction dir);
+
+
+   //------------------------- Agrandissement ------------------------------
+   void agrandirSerpent(CoordonneesXY &coord);
+
+   //------------------------- ami ------------------------------
+   friend unsigned calculAjoutLongueur(std::size_t longu, unsigned pourcentage);
+
+   //------------------------- Méthodes de combat --------------------------
+   void couperSerpent(Snake &serpent);
+
+   /**
+    * @brief fait mourir le serpent envoyé en paramètre.
+    * @param serpent
+    */
+   void mourir(Snake &serpent);
+
+   //------------------------- Données -------------------------------------
+   const unsigned id;
+   unsigned longueurAAjouter;
+   bool estEnVie;
+   std::vector<CoordonneesXY> coordonnees;
 
 };
 

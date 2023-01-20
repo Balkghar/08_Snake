@@ -6,7 +6,8 @@ Auteur(s)   : Delétraz Alexandre - Germano Hugo
 Date        : 10.01.2023
 But         : Définition des fonctions membres de la classe pomme.
 
-Remarque(s) :
+Remarque(s) : La valeur des pommes est volontairement de 1 au départ pour toutes les
+              pommes.
 
 Compilateur : gcc version 11.2.0
 ---------------------------------------------------------------------------
@@ -18,44 +19,43 @@ Compilateur : gcc version 11.2.0
 //=========================== Partie public ===============================
 
 //--------------------------- Constructeur --------------------------------
-Pomme::Pomme(int x,
-             int y,
-             const unsigned id,
-             bool estMangee
-) : id(id), estMangee(estMangee) {
-  coordonnees.x = x;
-  coordonnees.y = y;
-  valeur = 1;
+Pomme::Pomme(CoordonneesXY coord, bool estMangee) : estMangee(estMangee) {
+   coordonnees = coord;
+   valeur = 1;
 
 }
 
 //--------------------------- getter et setter ----------------------------
 int Pomme::getCoordX() const {
-  return coordonnees.x;
+   return coordonnees.x;
 }
 
 int Pomme::getCoordY() const {
-  return coordonnees.y;
+   return coordonnees.y;
 }
 
 unsigned Pomme::getValeur() const {
-  return valeur;
+   return valeur;
 }
 
 bool Pomme::estIntacte() const {
-  return estMangee;
+   return estMangee;
 }
 
 void Pomme::pommeEstMangee() {
-  estMangee = false;
+   estMangee = false;
 }
 
-void Pomme::setCoordPomme(int x, int y) {
+void Pomme::setCoordPomme(CoordonneesXY coord) {
 
-  coordonnees.x = x;
-  coordonnees.y = y;
+   coordonnees.x = coord.x;
+   coordonnees.y = coord.y;
 }
 
 void Pomme::setValPomme() {
-  valeur = (unsigned) aleatoireEntreDeuxValeurs(1, 10);
+   valeur = (unsigned) aleatoireEntreDeuxValeurs(1, 10);
+}
+
+CoordonneesXY Pomme::getCoord() const {
+   return coordonnees;
 }
