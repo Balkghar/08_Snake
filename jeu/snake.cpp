@@ -14,14 +14,27 @@
 #include "snake.hpp"
 #include <vector>
 #include <cstdlib>
+#include <iostream>
 
 using namespace std;
 
+//--------------------------- Fonction amie -------------------------------
+
+//fonction utile pour le shuffle
+void swap(Snake &s1, Snake &s2) {
+   std::swap((unsigned &) s1.id, (unsigned &) s2.id);
+   std::swap(s1.estEnVie, s2.estEnVie);
+   std::swap(s1.coordonnees, s2.coordonnees);
+   std::swap(s1.longueurAAjouter, s2.longueurAAjouter);
+}
 
 //=========================== Partie public ===============================
 
 //--------------------------- Constructeur --------------------------------
-Snake::Snake(CoordonneesXY coord, const unsigned id, bool estEnVie, unsigned longueur)
+Snake::Snake(CoordonneesXY coord,
+             const unsigned id,
+             bool estEnVie,
+             unsigned longueur)
    : id(id), estEnVie(estEnVie) {
 
    coordonnees.resize(1);
@@ -32,6 +45,12 @@ Snake::Snake(CoordonneesXY coord, const unsigned id, bool estEnVie, unsigned lon
    longueurAAjouter = longueur - 1;
 
 }
+
+Snake::Snake(const Snake &s
+) : id(s.id), estEnVie(s.estEnVie), coordonnees(s.coordonnees) {
+   longueurAAjouter = 0;
+}
+
 
 //------------------------- Déplacements --------------------------------
 void Snake::deplacerVersXY(CoordonneesXY coord) {
@@ -141,6 +160,7 @@ bool Snake::combattreSerpent(Snake &serpent) {
    }
    return false;
 }
+
 
 //=========================== Partie privée ===============================
 

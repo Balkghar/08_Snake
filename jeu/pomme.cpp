@@ -19,10 +19,12 @@ Compilateur : gcc version 11.2.0
 //=========================== Partie public ===============================
 
 //--------------------------- Constructeur --------------------------------
-Pomme::Pomme(CoordonneesXY coord, bool estMangee) : estMangee(estMangee) {
+Pomme::Pomme(CoordonneesXY coord,
+             const unsigned id,
+             bool estIntacte
+) : id(id), entiere(estIntacte) {
    coordonnees = coord;
    valeur = 1;
-
 }
 
 //--------------------------- getter et setter ----------------------------
@@ -39,11 +41,11 @@ unsigned Pomme::getValeur() const {
 }
 
 bool Pomme::estIntacte() const {
-   return estMangee;
+   return entiere;
 }
 
 void Pomme::pommeEstMangee() {
-   estMangee = false;
+   entiere = false;
 }
 
 void Pomme::setCoordPomme(CoordonneesXY coord) {
@@ -58,4 +60,8 @@ void Pomme::setValPomme() {
 
 CoordonneesXY Pomme::getCoord() const {
    return coordonnees;
+}
+
+unsigned Pomme::getId() const {
+   return id;
 }

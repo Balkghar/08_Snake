@@ -21,6 +21,9 @@
 #include "../outils/struct_coordonnees.hpp"
 
 class Snake {
+
+   friend void swap(Snake &s1, Snake &s2);
+
 public:
    //------------------------- Constructeur --------------------------------
    Snake(CoordonneesXY coord,
@@ -28,6 +31,8 @@ public:
          bool estEnVie,
          unsigned longueur
    );
+
+   Snake(const Snake &s);
 
    //------------------------- Déplacements --------------------------------
    /**
@@ -53,7 +58,6 @@ public:
 
    bool combattreSerpent(Snake &serpent);
 
-
 private:
 
    enum class Direction {
@@ -70,7 +74,6 @@ private:
     * @param dir
     */
    void deplacerVers(Direction dir);
-
 
    //------------------------- Agrandissement ------------------------------
    void agrandirSerpent(CoordonneesXY &coord);

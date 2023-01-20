@@ -29,7 +29,7 @@ using namespace std;
 int main(int argv, char **args) {
 
    // Les paramètres argv et args sont indispensables pour SDL2 sur Windows
-   (void) argv;       // On utilise ces aruments pour
+   (void) argv;       // On utilise ces arguments pour
    (void) args;       // éviter un warning
 
    //=========================== Constantes ===================================
@@ -78,7 +78,7 @@ int main(int argv, char **args) {
    const string MSG_FIN = "La Green Katze Korporation vous remercie "s
                              "d'avoir utilise Snake battle simulator.\n"s
                                 "Grace a votre simulation, nous avons pu "s
-                                   "recolter de précieuses informations pour "s
+                                   "recolter de precieuses informations pour "s
                                       "l'avenir de l'humanite.\n"s +
                           "Veuillez appuyer sur ENTER pour quitter."s;
 

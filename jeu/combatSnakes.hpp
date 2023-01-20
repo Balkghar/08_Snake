@@ -20,11 +20,13 @@ Compilateur : gcc version 11.2.0
 #include <string>
 #include "snake.hpp"
 #include "pomme.hpp"
+#include "../outils/struct_coordonnees.hpp"
 #include "../outils/affichage2d.hpp"
+
 
 class Combat {
 public:
-   //------------------------- Constructeur --------------------------------
+   //------------------------- Constructeurs -------------------------------
    Combat() : Combat(100, 100, 10) {}
 
    Combat(unsigned largeur,

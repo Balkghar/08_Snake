@@ -22,7 +22,9 @@ Compilateur : gcc version 11.2.0
 class Pomme {
 public:
    //------------------------- constructeur --------------------------------
-   Pomme(CoordonneesXY coord, bool estMangee);
+   Pomme(CoordonneesXY coord,
+         const unsigned id,
+         bool estIntacte);
 
    //------------------------- getter et setter ----------------------------
    int getCoordX() const;
@@ -32,6 +34,8 @@ public:
    CoordonneesXY getCoord() const;
 
    unsigned getValeur() const;
+
+   unsigned getId() const;
 
    bool estIntacte() const;
 
@@ -43,8 +47,9 @@ public:
 
 private:
    //------------------------- Données -------------------------------------
+   const unsigned id;
    unsigned valeur;
-   bool estMangee;
+   bool entiere;
    CoordonneesXY coordonnees;
 
 };

@@ -17,7 +17,6 @@ Compilateur : gcc version 11.2.0
 
 // SDL library
 
-
 //=========================== Partie public ===============================
 
 //--------------------------- constructeur --------------------------------
@@ -29,53 +28,53 @@ Affichage2d::Affichage2d(const unsigned int larg,
 
 //------------------------- méthode d'affichage -------------------------
 void Affichage2d::initalisationAffichage() {
-  //--------------------------------------------------------------------------
-  //    SDL settings
-  //--------------------------------------------------------------------------
-  const unsigned SCREEN_WIDTH = largeur;
-  const unsigned SCREEN_HEIGTH = hauteur;
+   //--------------------------------------------------------------------------
+   //    SDL settings
+   //--------------------------------------------------------------------------
+   const unsigned SCREEN_WIDTH = largeur;
+   const unsigned SCREEN_HEIGTH = hauteur;
 
-  SDL_Init(SDL_INIT_VIDEO);
-  SDL_CreateWindowAndRenderer(int(SCREEN_WIDTH * nbre_values),
-                              int(SCREEN_HEIGTH * nbre_values),
-                              SDL_WINDOW_SHOWN,
-                              &window,
-                              &renderer
-  );
+   SDL_Init(SDL_INIT_VIDEO);
+   SDL_CreateWindowAndRenderer(int(SCREEN_WIDTH * nbre_values),
+                               int(SCREEN_HEIGTH * nbre_values),
+                               SDL_WINDOW_SHOWN,
+                               &window,
+                               &renderer
+   );
 
-  SDL_RenderSetScale(renderer, (float) nbre_values, (float) nbre_values);
+   SDL_RenderSetScale(renderer, (float) nbre_values, (float) nbre_values);
 }
 
 void Affichage2d::ajouterElementAffichage(int x, int y, Couleur couleur) {
 
-  configCouleur(couleur);
+   configCouleur(couleur);
 
-  SDL_RenderDrawPoint(renderer, x, y);
+   SDL_RenderDrawPoint(renderer, x, y);
 
 }
 
 void Affichage2d::nettoyerAffichage(Couleur couleur) {
 
-  SDL_PollEvent(&event);
+   SDL_PollEvent(&event);
 
-  configCouleur(couleur);
+   configCouleur(couleur);
 
-  SDL_RenderClear(renderer);
+   SDL_RenderClear(renderer);
 }
 
 void Affichage2d::fermerAffichage() {
 
-  // clear SDL ressources
-  SDL_DestroyWindow(window);
-  SDL_DestroyRenderer(renderer);
-  SDL_Quit();
+   // clear SDL ressources
+   SDL_DestroyWindow(window);
+   SDL_DestroyRenderer(renderer);
+   SDL_Quit();
 }
 
 void Affichage2d::mettreAjourAffichage() {
 
-  // SDL display the window
-  SDL_RenderPresent(renderer);
-  SDL_Delay(sdl_delay);
+   // SDL display the window
+   SDL_RenderPresent(renderer);
+   SDL_Delay(sdl_delay);
 }
 
 
@@ -84,12 +83,15 @@ void Affichage2d::mettreAjourAffichage() {
 //--------------------------- gestion couleur -----------------------------
 void Affichage2d::configCouleur(Couleur couleur) {
 
-  switch (couleur) {
-    case Couleur::rouge:SDL_SetRenderDrawColor(renderer, 255, 0, 0, SDL_ALPHA_OPAQUE);
-      break;
-    case Couleur::blanc:SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-      break;
-    case Couleur::noir:SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
-      break;
-  }
+   switch (couleur) {
+      case Couleur::rouge:
+         SDL_SetRenderDrawColor(renderer, 255, 0, 0, SDL_ALPHA_OPAQUE);
+         break;
+      case Couleur::blanc:
+         SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+         break;
+      case Couleur::noir:
+         SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+         break;
+   }
 }

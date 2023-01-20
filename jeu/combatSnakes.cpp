@@ -16,6 +16,7 @@ Compilateur : gcc version 11.2.0
 #include "combatSnakes.hpp"
 #include "../outils/aleatoire.hpp"
 #include <iostream>
+#include <random>
 
 using namespace std;
 //=========================== Partie public ===============================
@@ -58,7 +59,7 @@ void Combat::initialiserPomme() {
    for (unsigned i = 1; i <= Combat::nbSerpent; ++i) {
       CoordonneesXY nouvelleCoord = generateurDeCoord();
 
-      pommes.emplace_back(nouvelleCoord, true);
+      pommes.emplace_back(nouvelleCoord, i, true);
 
    }
 }
@@ -127,43 +128,52 @@ void Combat::mangerPomme(Snake &serpent, Pomme &pomme) {
 }
 
 void Combat::faireCombattreSerpents(Affichage2d &affichage) {
+   // nous ne faisons qu'une seule fois un shuffle juste pour que l'ordre de base du
+   // vecteur ne soit pas prédictible.
+   shuffle(serpents.begin(), serpents.end(), mt19937(random_device()()));
 
    do {
-
+      shuffle(serpents.begin(), serpents.end(), mt19937(random_device()()));
       afficher(affichage);
 
-      for (size_t d = 0; d < serpents.size(); ++d) {
-         if (serpents.at(d).getEstEnVie()) {
-            serpents.at(d).deplacerVersXY(pommes.at(d).getCoord());
-            mangerPomme(serpents.at(d), pommes.at(d));
-            combatSerpent(serpents.at(d));
-         } else {
-            if (pommes.at(d).estIntacte()) {
-               pommes.at(d).pommeEstMangee();
+      for (Snake &serpent: serpents) {
+         for (Pomme &pomme: pommes) {
+            if (serpent.getEstEnVie() && serpent.getId() == pomme.getId()) {
+               serpent.deplacerVersXY(pomme.getCoord());
+               mangerPomme(serpent, pomme);
+               combatSerpent(serpent);
+            } else {
+               if (pomme.estIntacte()) {
+                  pomme.pommeEstMangee();
+               }
             }
+
          }
       }
+
    } while (nbSerpent > 1);
 }
 
 void Combat::combatSerpent(Snake &serpent) {
+
 
    for (size_t i = 0; i < serpents.size(); ++i) {
       if (serpents.at(i).getId() != serpent.getId() && serpent.getEstEnVie()
           && serpents.at(i).getEstEnVie()) {
          if (serpent.combattreSerpent(serpents.at(i))) {
             if (!serpent.getEstEnVie()) {
-               cout << Combat::txtSerpent + to_string(serpents.at(i).getId()) + Combat::txtAction
-                       + to_string(serpent.getId()) + "\n"s;
+               cout << Combat::txtSerpent << to_string(serpents.at(i).getId()) << Combat::txtAction
+                    << to_string(serpent.getId()) << "\n"s;
             } else {
-               cout << txtSerpent + to_string(serpent.getId()) + txtAction
-                       + to_string(serpents.at(i).getId()) + "\n"s;
+               cout << txtSerpent << to_string(serpent.getId()) << txtAction
+                    << to_string(serpents.at(i).getId()) << "\n"s;
             }
             --nbSerpent;
          }
       }
 
    }
+
 }
 
 //------------------------- méthodes d'affichage ------------------------
