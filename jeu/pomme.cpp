@@ -6,7 +6,8 @@ Auteur(s)   : Delétraz Alexandre - Germano Hugo
 Date        : 10.01.2023
 But         : Définition des fonctions membres de la classe pomme.
 
-Remarque(s) :
+Remarque(s) : La valeur des pommes est volontairement de 1 au départ pour toutes les
+              pommes.
 
 Compilateur : gcc version 11.2.0
 ---------------------------------------------------------------------------

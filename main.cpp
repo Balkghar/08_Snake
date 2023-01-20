@@ -4,7 +4,12 @@
   Nom du labo : Labo8 - Snake
   Auteur(s)   : Delétraz Alexandre - Germano Hugo
   Date        : 10.01.2023
-  But         : Le but de se programme est
+  But         : Le but de ce programme est de simuler des serpents qui se déplacent
+                vers une pomme. Lors de leurs déplacements, s'ils croisent un de
+                leur congénère, ils vont se battre et le plus grand l'emportera.
+                À chaque fois qu'un serpent mange la pomme qu'il cherche, une autre
+                pomme apparaît ailleurs et le serpent se met en chemin pour aller la
+                manger.
 
   Remarque(s) : Le style de format de code est importé de Google.
 
