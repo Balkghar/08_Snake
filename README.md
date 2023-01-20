@@ -37,34 +37,6 @@ Schéma de compilation séparée
      affichage2d.cpp --> combatSnakes.cpp
      aleatoire.cpp --> combatSnakes.cpp
      pomme.cpp --> combatSnakes.cpp
+	  struct_coordonnees.hpp --> snake.cpp
+	  struct_coordonnees.hpp --> pomme.cpp
  ```
-
-```mermaid
-classDiagram
-    snake ..> combatSnake : Dependency
-    affichage2d ..> combatSnake : Dependency
-    pomme ..> combatSnake : Dependency
-    
-    class combatSnake{
-    	-largeur : int
-    	-hauteur : int
-    	-nbrSerpent : int
-	}
-	class snake{
-		-id : const int
-		-positions : vector<.vector<.int>>
-		-etat : bool
-		-longueur : int
-		-longueurAAjouter : int
-	}
-	class affichage2d{
-		-largeur  : const int
-		-hauteur : const int
-	}
-	class pomme{
-		-id : const int
-		-position : array<.int>
-		-couleur : array<.short>
-		-estMangee : bool
-	}
-```
