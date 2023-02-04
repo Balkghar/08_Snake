@@ -187,7 +187,7 @@ bool Snake::combattreSerpent(Snake &serpent) {
 
 //------------------------- Agrandissement ------------------------------
 unsigned calculAjoutLongueur(std::size_t longu, unsigned pourcentage) {
-   return ((unsigned) ((double) longu / 100.) * pourcentage);
+   return longu * pourcentage / 100;
 }
 
 void Snake::agrandirSerpent(CoordonneesXY &coord) {
