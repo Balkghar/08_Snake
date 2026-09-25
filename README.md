@@ -263,8 +263,28 @@ groupe de threads permanents (`PoolThreads`) :
   terrain, donc des serpents voisins ont des numéros voisins : leurs données
   sont proches en mémoire et chaque thread travaille surtout dans sa région.
 - **Peu de serpents** : en dessous de 512 serpents, un seul thread joue les
-  mêmes phases (se synchroniser coûterait plus que le calcul). Les threads
-  inactifs attendent un instant en boucle puis s'endorment.
+  mêmes phases (se synchroniser coûterait plus que le calcul).
+- **Attente adaptative** : un thread qui attend (la barrière, une tâche, les
+  autres) tourne d'abord en boucle active, puis cède le processeur, puis
+  s'endort. Les durées sont mesurées en temps et non en tours de boucle
+  (l'instruction de pause dure de ~10 à ~140 cycles selon le processeur).
+  S'il y a plus de threads que de cœurs, la boucle active est presque
+  supprimée : un thread qui tourne pour rien priverait de cœur celui qu'il
+  attend.
+- **Cœurs réellement disponibles** : sous Linux, le nombre de threads par
+  défaut tient compte des cœurs autorisés (conteneur, `taskset`), que
+  `std::thread::hardware_concurrency()` ignore.
+- **Architecture** : instruction d'attente adaptée (`pause` sur x86, `isb`
+  sur ARM64), données partagées alignées sur la ligne de cache (64 octets,
+  128 sur les puces Apple) et compteurs en ordre mémoire séquentiellement
+  cohérent pour que l'endormissement soit sûr aussi sur ARM.
+
+Plus de threads que de cœurs (`-j`) est possible mais toujours plus lent ;
+le programme prévient. Mesures sur 4 cœurs, 30 000 serpents :
+
+| `-j` | 1 | 4 | 8 | 16 | 64 |
+|------|---|---|---|----|----|
+| Durée | 2,0 s | 1,2 s | 2,2 s | 2,5 s | 8,7 s |
 - Le redessin des cases modifiées est lui aussi réparti par région.
 
 Sur 4 cœurs, une partie `--turbo` complète (100 000 serpents) coûte environ

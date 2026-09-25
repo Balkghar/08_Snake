@@ -84,7 +84,7 @@ class Combat {
   // Le terrain est découpé en bandes horizontales, une par thread, alignées
   // sur les bandes d'envoi de l'affichage : chaque bande n'est modifiée que
   // par son thread, sans verrou ni opération atomique.
-  struct alignas(64) Region {
+  struct alignas(TAILLE_LIGNE_CACHE) Region {
     std::vector<std::uint32_t> casesModifiees;  // à redessiner
     std::int64_t nbOccupees = 0;                 // cases non vides
   };
@@ -119,7 +119,7 @@ class Combat {
   };
   // Tout ce qu'un thread produit pendant un tour, rangé par région
   // destinataire ; chaque thread écrit uniquement dans sa propre boîte
-  struct alignas(64) Boite {
+  struct alignas(TAILLE_LIGNE_CACHE) Boite {
     std::vector<std::vector<Mouvement>> mouvements;      // [région]
     std::vector<std::vector<ArriveeTete>> tetes;         // [région]
     std::vector<std::vector<Effacement>> effacements;    // [région]
@@ -203,6 +203,7 @@ class Combat {
   // Calcul parallèle
   PoolThreads pool;
   std::vector<Boite> boites;  // une par thread
+  unsigned boitesActives = 1; // boîtes remplies pendant ce tour
   std::uint64_t graine;       // suites aléatoires des serpents
   bool continuer = false;     // décidé par le thread 0 à chaque tour
 

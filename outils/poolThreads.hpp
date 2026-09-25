@@ -9,9 +9,11 @@ But         : Groupe de threads permanents qui exécutent tous la même tâche,
 
 Remarque(s) : Conçu pour des tâches très courtes et très fréquentes (un tour
               de jeu dure quelques microsecondes) : les threads sont créés une
-              seule fois, attendent en boucle active un court instant puis
-              s'endorment, et la barrière est une simple boucle active sur un
-              compteur atomique, bien plus rapide qu'un mutex.
+              seule fois. Pour attendre (une tâche, la barrière, la fin des
+              autres), un thread tourne d'abord en boucle active un temps
+              limité, puis s'endort. S'il y a plus de threads que de cœurs,
+              la boucle active est quasi supprimée : un thread qui tourne
+              occuperait le cœur dont un autre a besoin pour avancer.
 
 Compilateur : gcc version 11.2.0
 ---------------------------------------------------------------------------
@@ -22,17 +24,28 @@ Compilateur : gcc version 11.2.0
 
 #include <atomic>
 #include <condition_variable>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <mutex>
 #include <thread>
 #include <vector>
 
+// Taille d'une ligne de cache : deux données écrites par des threads
+// différents doivent être sur des lignes différentes (sinon la ligne fait
+// des allers-retours entre les cœurs). 64 octets sur x86 et la plupart des
+// ARM, 128 sur les puces Apple (M1 et suivantes).
+#if defined(__aarch64__) && defined(__APPLE__)
+constexpr std::size_t TAILLE_LIGNE_CACHE = 128;
+#else
+constexpr std::size_t TAILLE_LIGNE_CACHE = 64;
+#endif
+
 class PoolThreads {
  public:
   /**
    * @param nbThreads nombre total de threads, appelant compris (0 = autant
-   *                  que de cœurs)
+   *                  que de cœurs disponibles)
    */
   explicit PoolThreads(unsigned nbThreads);
   ~PoolThreads();
@@ -41,6 +54,13 @@ class PoolThreads {
   PoolThreads &operator=(const PoolThreads &) = delete;
 
   unsigned taille() const { return nbThreads; }
+  bool estSurcharge() const { return surcharge; }
+
+  /**
+   * @brief Cœurs réellement utilisables par ce programme (sous Linux, tient
+   *        compte des cœurs autorisés : conteneur, taskset...).
+   */
+  static unsigned coeursDisponibles();
 
   /**
    * @brief Exécute tache(i) sur chaque thread i (le thread appelant est le
@@ -54,26 +74,40 @@ class PoolThreads {
    */
   void barriere();
 
- private:
-  void boucleOuvrier(unsigned numero);
+  /**
+   * @brief Indication au processeur qu'on attend en boucle active (libère
+   *        des ressources pour l'autre thread du cœur, économise l'énergie).
+   */
   static void pause();
 
+ private:
+  void boucleOuvrier(unsigned numero);
+
+  // Attend que condition() devienne vraie : boucle active limitée dans le
+  // temps, puis sommeil. Celui qui rend une condition vraie appelle
+  // reveiller() ensuite.
+  template<typename Condition>
+  void attendre(Condition condition);
+  void reveiller();
+
   unsigned nbThreads;
+  bool surcharge;  // plus de threads que de cœurs
   std::vector<std::thread> ouvriers;
   const std::function<void(unsigned)> *tache = nullptr;
+  std::atomic<bool> arret{false};
 
-  // Distribution des tâches : les ouvriers attendent un changement de
-  // generationTache, d'abord en boucle active puis endormis
-  std::mutex mutex;
+  // Chaque compteur sur sa propre ligne de cache : ils sont lus en boucle
+  // par tous les threads
+  alignas(TAILLE_LIGNE_CACHE) std::atomic<std::uint64_t> generationTache{0};
+  alignas(TAILLE_LIGNE_CACHE) std::atomic<unsigned> finis{0};
+  alignas(TAILLE_LIGNE_CACHE) std::atomic<unsigned> arrivees{0};
+  alignas(TAILLE_LIGNE_CACHE) std::atomic<unsigned> generationBarriere{0};
+
+  // Sommeil : les dormeurs attendent sur une variable de condition ; le
+  // compteur évite de toucher au verrou quand personne ne dort
+  alignas(TAILLE_LIGNE_CACHE) std::atomic<unsigned> dormeurs{0};
+  std::mutex verrou;
   std::condition_variable reveil;
-  std::atomic<std::uint64_t> generationTache{0};
-  std::atomic<unsigned> finis{0};
-  bool arret = false;
-
-  // Barrière : compteur d'arrivées et numéro de passage, chacun sur sa
-  // propre ligne de cache pour que les threads ne se gênent pas
-  alignas(64) std::atomic<unsigned> arrivees{0};
-  alignas(64) std::atomic<unsigned> generationBarriere{0};
 };
 
 #endif

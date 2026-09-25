@@ -22,6 +22,7 @@
 
 #include "outils/saisie.hpp"
 #include "jeu/combatSnakes.hpp"
+#include "outils/poolThreads.hpp"
 
 using namespace std;
 
@@ -231,6 +232,13 @@ int main(int argc, char **argv) {
                                   MSG_ERR);
       modeInteractif = true;
     }
+  }
+
+  const unsigned coeurs = PoolThreads::coeursDisponibles();
+  if (unsigned(params[THREADS].valeur) > coeurs) {
+    cout << "Attention : " << params[THREADS].valeur << " threads pour "
+         << coeurs << " coeurs, les threads en trop attendront endormis "
+            "(plus lent qu'avec -j " << coeurs << ")." << endl;
   }
 
   Combat combat(unsigned(params[LARGEUR].valeur),

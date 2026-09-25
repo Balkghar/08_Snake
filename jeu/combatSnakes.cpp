@@ -296,6 +296,7 @@ unsigned long Combat::jouerTours(unsigned long nbMax, Uint32 finAuPlusTard) {
 
   do {
     if (pool.taille() > 1 and vivants.size() - mortsDansVivants >= SEUIL_PARALLELE) {
+      boitesActives = pool.taille();
       // Tous les threads enchaînent les tours sans rendre la main, séparés
       // par des barrières ; le thread 0 décide de continuer ou non
       pool.executer([&](unsigned thread) {
@@ -309,6 +310,8 @@ unsigned long Combat::jouerTours(unsigned long nbMax, Uint32 finAuPlusTard) {
         } while (continuer);
       });
     } else {
+      // (seule la boîte du thread 0 sert : inutile de parcourir les autres)
+      boitesActives = 1;
       jouerTourSerie();
     }
   } while (encore());
@@ -412,7 +415,8 @@ void Combat::phaseGrille(unsigned r) {
   Region &region = regions[r];
 
   // D'abord toutes les arrivées et départs de segments...
-  for (Boite &boite : boites) {
+  for (unsigned b = 0; b < boitesActives; ++b) {
+    Boite &boite = boites[b];
     vector<Mouvement> &liste = boite.mouvements[r];
     for (size_t k = 0; k < liste.size(); ++k) {
       if (k + AVANCE_MESSAGES < liste.size()) {
@@ -429,7 +433,8 @@ void Combat::phaseGrille(unsigned r) {
 
   // ... puis les anciennes têtes trouvées à l'arrivée, avant que les
   // nouvelles ne les remplacent (toutes les arrivées doivent les voir)...
-  for (const Boite &boite : boites) {
+  for (unsigned b = 0; b < boitesActives; ++b) {
+    const Boite &boite = boites[b];
     for (const ArriveeTete &a : boite.tetes[r]) {
       const Case &c = cases[a.cellule];
       const bool ancienne = c.teteId != AUCUNE_TETE and c.teteId != a.id
@@ -439,7 +444,8 @@ void Combat::phaseGrille(unsigned r) {
   }
 
   // ... puis les nouvelles têtes
-  for (Boite &boite : boites) {
+  for (unsigned b = 0; b < boitesActives; ++b) {
+    Boite &boite = boites[b];
     vector<ArriveeTete> &liste = boite.tetes[r];
     for (size_t k = 0; k < liste.size(); ++k) {
       if (k + AVANCE_MESSAGES < liste.size()) {
@@ -598,7 +604,8 @@ void Combat::phaseConsequences(unsigned thread, unsigned nbThreadsActifs) {
 void Combat::phaseRetraits(unsigned r) {
 
   Region &region = regions[r];
-  for (Boite &boite : boites) {
+  for (unsigned b = 0; b < boitesActives; ++b) {
+    Boite &boite = boites[b];
     vector<Mouvement> &liste = boite.mouvements[r];
     for (size_t k = 0; k < liste.size(); ++k) {
       if (k + AVANCE_MESSAGES < liste.size()) {
@@ -626,7 +633,7 @@ void Combat::phaseResolution() {
   vector<Mort> &morts = boites[0].morts;
   vector<Morsure> &morsures = boites[0].morsures;
   vector<uint32_t> &repas = boites[0].repas;
-  for (size_t t = 1; t < boites.size(); ++t) {
+  for (size_t t = 1; t < boitesActives; ++t) {
     morts.insert(morts.end(), boites[t].morts.begin(), boites[t].morts.end());
     morsures.insert(morsures.end(), boites[t].morsures.begin(), boites[t].morsures.end());
     repas.insert(repas.end(), boites[t].repas.begin(), boites[t].repas.end());
