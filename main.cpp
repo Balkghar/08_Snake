@@ -4,9 +4,12 @@
   Nom du labo : Labo8 - Snake
   Auteur(s)   : Delétraz Alexandre - Germano Hugo
   Date        : 10.01.2023
-  But         : 
+  But         : Point d'entrée du simulateur. Les paramètres peuvent être
+                donnés en options de lancement ; ceux qui manquent sont
+                demandés dans la console.
 
   Remarque(s) : Le style de format de code est importé de Google.
+                Lancer avec --aide pour la liste des options.
 
   Compilateur : gcc version 11.2.0
   ---------------------------------------------------------------------------
@@ -14,6 +17,8 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <string>
+#include <vector>
 
 #include "outils/saisie.hpp"
 #include "jeu/combatSnakes.hpp"
@@ -21,49 +26,121 @@
 using namespace std;
 
 //-----------------------------------------------------------------------------
-int main(int argv, char **args) {
+// Un paramètre du simulateur : ses noms d'option, ses bornes et, s'il n'a pas
+// été donné au lancement, la question posée dans la console (vide si le
+// paramètre a une valeur par défaut et n'est donc jamais demandé).
+struct Parametre {
+  string nomCourt;
+  string nomLong;
+  string description;
+  int min;
+  int max;
+  int valeur;           // valeur par défaut, ou -1 si à demander
+  string question;
+  bool donne = false;   // fourni en option de lancement
+};
 
-  // Les paramètres argv et args sont indispensables pour SDL2 sur Windows
-  (void) argv;       // On utilise ces aruments pour
-  (void) args;       // éviter un warning
+void afficherAide(const string &programme, const vector<Parametre> &params) {
+  cout << "Utilisation : " << programme << " [options]\n\n"
+       << "Options (les valeurs manquantes sont demandees dans la console) :\n";
+  for (const Parametre &p : params) {
+    string noms = "  " + p.nomCourt + ", " + p.nomLong + " N";
+    noms.resize(max<size_t>(noms.size() + 1, 26), ' ');
+    cout << noms << p.description << " [" << p.min << "-" << p.max << "]";
+    if (p.valeur >= 0) {
+      cout << " (defaut : " << p.valeur << ")";
+    }
+    cout << '\n';
+  }
+  cout << "  -h, --aide              Affiche cette aide\n\n"
+       << "Exemple : " << programme << " -l 200 -H 150 -s 20\n";
+}
 
-  //=========================== Constantes ===================================
+// Lit un entier compris dans [min, max] ; renvoie false si invalide.
+bool lireEntier(const string &texte, int min, int max, int &resultat) {
+  size_t fin = 0;
+  try {
+    resultat = stoi(texte, &fin);
+  } catch (const exception &) {
+    return false;
+  }
+  return fin == texte.size() and resultat >= min and resultat <= max;
+}
 
-  //--------------------------- Numériques -----------------------------------
-  const unsigned MIN_SERPENT = 2;
-  const unsigned MAX_SERPENT = 1'000;
-  const unsigned MIN_LONGUEUR = 50;
-  const unsigned MAX_LONGUEUR = 800;
-  const unsigned MIN_LARGEUR = 50;
-  const unsigned MAX_LARGEUR = 1200;
+// Remplit params depuis argv. Renvoie false (après un message) si la ligne de
+// commande est invalide.
+bool lireArguments(int argc, char **argv, vector<Parametre> &params,
+                   bool &aideDemandee) {
+  for (int i = 1; i < argc; ++i) {
+    string arg = argv[i];
+
+    if (arg == "-h" or arg == "--aide" or arg == "--help") {
+      aideDemandee = true;
+      return true;
+    }
+
+    // Accepte "--largeur 200" comme "--largeur=200"
+    string valeur;
+    const size_t egal = arg.find('=');
+    if (egal != string::npos) {
+      valeur = arg.substr(egal + 1);
+      arg = arg.substr(0, egal);
+    }
+
+    Parametre *param = nullptr;
+    for (Parametre &p : params) {
+      if (arg == p.nomCourt or arg == p.nomLong) {
+        param = &p;
+      }
+    }
+    if (param == nullptr) {
+      cerr << "Option inconnue : " << arg << " (voir --aide)\n";
+      return false;
+    }
+
+    if (egal == string::npos) {
+      if (i + 1 >= argc) {
+        cerr << "Valeur manquante pour " << arg << '\n';
+        return false;
+      }
+      valeur = argv[++i];
+    }
+
+    if (not lireEntier(valeur, param->min, param->max, param->valeur)) {
+      cerr << "Valeur invalide pour " << arg << " : \"" << valeur
+           << "\" (attendu un entier entre " << param->min << " et "
+           << param->max << ")\n";
+      return false;
+    }
+    param->donne = true;
+  }
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+int main(int argc, char **argv) {
+
+  //=========================== Paramètres ===================================
+  const string MSG_TERRAIN = "Veuillez choisir la "s;
+  const string MSG_INTERVALLE = "Elle doit etre comprise entre "s;
+
+  vector<Parametre> params = {
+      {"-l", "--largeur", "Largeur du terrain (cases)", 50, 1200, -1,
+       MSG_TERRAIN + "largeur du terrain de combat.\n" + MSG_INTERVALLE},
+      {"-H", "--hauteur", "Hauteur du terrain (cases)", 50, 800, -1,
+       MSG_TERRAIN + "hauteur du terrain de combat.\n" + MSG_INTERVALLE},
+      {"-s", "--serpents", "Nombre de serpents", 2, 1000, -1,
+       "Choisisez combien de serpents devront combattre.\n"
+       "Ce nombre doit etre compris entre "s},
+      {"-d", "--delai", "Delai entre deux images (ms)", 0, 1000,
+       int(Combat::DELAI_DEFAUT), ""},
+      {"-z", "--zoom", "Taille d'une case (pixels)", 1, 16,
+       int(Combat::ZOOM_DEFAUT), ""},
+  };
+  enum { LARGEUR, HAUTEUR, SERPENTS, DELAI, ZOOM };
 
   //------------------------------ Textes -----------------------------------------
-  const string MSG_LARG_TERRAIN = "Veuillez choisir la largeur du terrain de "s
-      "combat.\n"s +
-      "Elle doit etre comprise entre "s +
-      to_string(MIN_LARGEUR) +
-      " et "s +
-      to_string(MAX_LARGEUR) +
-      " : "s;
-  const string MSG_HAUT_TERRAIN = "Veuillez choisir la hauteur du terrain de "s
-      "combat"s
-          ".\n"s +
-      "Elle doit etre comprise entre "s +
-      to_string(MIN_LONGUEUR) +
-      " et "s +
-      to_string(MAX_LONGUEUR) +
-      " : "s;
-  const string MSG_ERR_TAILLE = "Taille invalide, veuillez recommencer"s;
-
-  const string MSG_SAISIE_SERPENT = "Choisisez combien de serpents devront "s
-      "combattre.\n"s +
-      "Ce nombre doit etre compris entre "s +
-      to_string(MIN_SERPENT) +
-      " et "s +
-      to_string(MAX_SERPENT) +
-      " : "s;
-
-  const string MSG_ERR_SERPENT = "Valeur invalide, veuillez recommencer"s;
+  const string MSG_ERR = "Valeur invalide, veuillez recommencer"s;
 
   const string MSG_DEBUT = "Bienvenue dans Snake battle simulator de la "s
       "Green Katze Korporation !\n"s
@@ -74,27 +151,48 @@ int main(int argv, char **args) {
       "d'avoir utilise Snake battle simulator.\n"s
           "Grace a votre simulation, nous avons pu "s
               "recolter de précieuses informations pour "s
-                  "l'avenir de l'humanite.\n"s +
-      "Veuillez appuyer sur ENTER pour quitter."s;
+                  "l'avenir de l'humanite.\n"s;
+  const string MSG_QUITTER = "Veuillez appuyer sur ENTER pour quitter."s;
 
   //======================== Début du programme ===================================
 
-  cout << MSG_DEBUT << endl;
-  // Saisies séparées : l'ordre d'évaluation des arguments d'une fonction
-  // n'est pas garanti en C++ (GCC posait les questions à l'envers)
-  const unsigned largeur = (unsigned) saisirIntervalle(MIN_LARGEUR, MAX_LARGEUR,
-                                                       MSG_LARG_TERRAIN,
-                                                       MSG_ERR_TAILLE);
-  const unsigned hauteur = (unsigned) saisirIntervalle(MIN_LONGUEUR, MAX_LONGUEUR,
-                                                       MSG_HAUT_TERRAIN,
-                                                       MSG_ERR_TAILLE);
-  const unsigned nbSerpents = (unsigned) saisirIntervalle(MIN_SERPENT, MAX_SERPENT,
-                                                          MSG_SAISIE_SERPENT,
-                                                          MSG_ERR_SERPENT);
-  Combat combat(largeur, hauteur, nbSerpents);
+  bool aideDemandee = false;
+  if (not lireArguments(argc, argv, params, aideDemandee)) {
+    return EXIT_FAILURE;
+  }
+  if (aideDemandee) {
+    afficherAide(argv[0], params);
+    return EXIT_SUCCESS;
+  }
 
-  combat.commencerCombat();
-  cout << MSG_FIN << endl;
-  viderBuffer();
+  cout << MSG_DEBUT << endl;
+
+  // Les paramètres sans valeur (ni option, ni défaut) sont demandés, dans
+  // l'ordre de la liste
+  bool modeInteractif = false;
+  for (Parametre &p : params) {
+    if (p.valeur < 0) {
+      p.valeur = saisirIntervalle(p.min, p.max,
+                                  p.question + to_string(p.min) + " et "s
+                                      + to_string(p.max) + " : "s,
+                                  MSG_ERR);
+      modeInteractif = true;
+    }
+  }
+
+  Combat combat(unsigned(params[LARGEUR].valeur),
+                unsigned(params[HAUTEUR].valeur),
+                unsigned(params[SERPENTS].valeur));
+
+  combat.commencerCombat(unsigned(params[DELAI].valeur),
+                         unsigned(params[ZOOM].valeur));
+  cout << MSG_FIN;
+
+  // Garde la console ouverte seulement si l'utilisateur est devant (lancement
+  // par double-clic) ; en ligne de commande complète, on rend la main direct
+  if (modeInteractif) {
+    cout << MSG_QUITTER << endl;
+    viderBuffer();
+  }
   return EXIT_SUCCESS;
 }

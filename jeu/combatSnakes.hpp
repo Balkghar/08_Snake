@@ -32,7 +32,11 @@ class Combat {
   );
 
   //------------------------- lancement du combat -------------------------
-  void commencerCombat();
+  static const unsigned DELAI_DEFAUT = 50;  // ms entre deux images
+  static const unsigned ZOOM_DEFAUT = 4;    // pixels écran par case
+
+  void commencerCombat(unsigned delai = DELAI_DEFAUT,
+                       unsigned zoom = ZOOM_DEFAUT);
 
  private:
 
@@ -64,8 +68,6 @@ class Combat {
   unsigned longueurAffichage;
   unsigned nbSerpent;
 
-  static const unsigned SDL_DELAY = 50;
-  static const unsigned AUGMENT_PIXEL = 4;
   static const unsigned MIN = 0;
 
   std::string serpentTueur;

@@ -13,6 +13,7 @@
   ---------------------------------------------------------------------------
 */
 
+#include <cstdlib>
 #include <iostream>
 #include <limits>
 #include "saisie.hpp"
@@ -38,6 +39,12 @@ int saisirIntervalle(int minInt,
     // message et saisie
     cout << message;
     cin >> saisie;
+
+    // Fin de l'entrée (Ctrl+D, fichier vide...) : inutile de redemander
+    if (cin.eof()) {
+      cout << endl;
+      exit(EXIT_FAILURE);
+    }
 
     erreur = cin.fail() or saisie < minInt or saisie > maxInt;
 

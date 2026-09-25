@@ -38,9 +38,9 @@ Combat::Combat(unsigned int largeur,
   initialiserPomme();
 }
 //------------------------- lancement du combat -------------------------
-void Combat::commencerCombat() {
+void Combat::commencerCombat(unsigned delai, unsigned zoom) {
 
-  Affichage2d affichage(largeur, longueur, SDL_DELAY, AUGMENT_PIXEL);
+  Affichage2d affichage(largeur, longueur, delai, zoom);
 
   if (not affichage.initalisationAffichage()) {
     affichage.nettoyerAffichage(Couleur::blanc);
