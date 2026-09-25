@@ -17,12 +17,22 @@
 
 using namespace std;
 
-int aleatoireEntreDeuxValeurs(int min, int max) {
+namespace {
 
+mt19937 &generateur() {
   // Générateur initialisé une seule fois : random_device est lent (appel
   // système) et n'est pas fait pour être tiré à chaque nombre
   static mt19937 generator(random_device{}());
-  uniform_int_distribution<int> distr(min, max);
+  return generator;
+}
 
-  return distr(generator);
+}  // namespace
+
+int aleatoireEntreDeuxValeurs(int min, int max) {
+  uniform_int_distribution<int> distr(min, max);
+  return distr(generateur());
+}
+
+uint64_t graineAleatoire() {
+  return (uint64_t(generateur()()) << 32) | generateur()();
 }

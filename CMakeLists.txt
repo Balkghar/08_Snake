@@ -12,6 +12,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 find_package(SDL2 REQUIRED)
+find_package(Threads REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS})
 
 add_executable(08_snake main.cpp
@@ -21,9 +22,10 @@ add_executable(08_snake main.cpp
                         outils/affichage2d.cpp
                         outils/aleatoire.cpp
                         outils/police.cpp
+                        outils/poolThreads.cpp
                         outils/saisie.cpp)
 
-target_link_libraries(08_snake ${SDL2_LIBRARIES})
+target_link_libraries(08_snake ${SDL2_LIBRARIES} Threads::Threads)
 
 # Optimisation à l'édition de liens (LTO) : permet d'intégrer (inline) les
 # petits accesseurs définis dans d'autres fichiers .cpp, appelés des millions

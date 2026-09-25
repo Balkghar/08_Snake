@@ -15,6 +15,8 @@ Compilateur : gcc version 11.2.0
 #ifndef LABO8_SNAKES_OUTILS_ALEATOIRE_HPP
 #define LABO8_SNAKES_OUTILS_ALEATOIRE_HPP
 
+#include <cstdint>
+
 /**
  * @name aleatoireEntreDeuxValeurs
  * @brief Génerer un nombre aléatoire dans l'intervalle entre deux entiers positif
@@ -26,5 +28,11 @@ Compilateur : gcc version 11.2.0
 
 
 int aleatoireEntreDeuxValeurs(int min, int max);
+
+/**
+ * @brief Nombre aléatoire de 64 bits, tiré du même générateur, pour
+ *        initialiser d'autres suites aléatoires.
+ */
+std::uint64_t graineAleatoire();
 
 #endif

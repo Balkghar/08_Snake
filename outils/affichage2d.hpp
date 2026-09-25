@@ -49,7 +49,13 @@ class Affichage2d {
 
   //------------------------- méthode d'affichage -------------------------
   bool initalisationAffichage();
+  /**
+   * @brief Colorie une case. Peut être appelée en même temps par plusieurs
+   *        threads, à condition que chacun travaille sur ses propres bandes
+   *        de HAUTEUR_BANDE lignes.
+   */
   bool ajouterElementAffichage(int x, int y, Couleur couleur);
+  static constexpr unsigned HAUTEUR_BANDE = 16;
   void prechargerElement(int x, int y) const;  // voir precharger.hpp
   bool nettoyerAffichage(Couleur couleur);
   /**
@@ -102,7 +108,6 @@ class Affichage2d {
   // l'écran est découpé en bandes horizontales, chacune retenant l'intervalle
   // de colonnes touché. Deux petits serpents aux deux coins ne font plus
   // renvoyer tout l'écran.
-  static constexpr unsigned HAUTEUR_BANDE = 16;
   struct Bande {
     bool modifiee = false;
     unsigned minX = 0, maxX = 0;

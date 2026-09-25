@@ -52,6 +52,7 @@ programme par un simple double-clic.
 | `-z`, `--zoom N`      | Taille d'une case à l'écran, en pixels   | 1–16     | 4         |
 | `-v`, `--vitesse N`   | Tours de jeu par image, 0 = automatique  | 0–1000   | 1         |
 | `-t`, `--turbo`       | Terrain et serpents au maximum, vitesse auto, zoom 1 |  |      |
+| `-j`, `--threads N`   | Threads de calcul, 0 = tous les cœurs    | 0–256    | 0         |
 | `-h`, `--aide`        | Affiche l'aide                           |          |           |
 
 Les formes `--option N` et `--option=N` sont acceptées. Une option inconnue
@@ -107,10 +108,17 @@ il cache le moins le vainqueur.
   ligne droite vers sa pomme.
 - Quand il la mange, il grandit de la valeur de la pomme et une nouvelle
   pomme est créée pour lui.
+- Tous les serpents avancent **en même temps**, puis les conflits sont
+  réglés.
 - **Tête sur corps** : le serpent mordu est coupé à cet endroit et
   l'attaquant gagne 40 % de la longueur coupée.
 - **Tête contre tête** : le plus court meurt et le vainqueur gagne 60 % de
-  sa longueur.
+  sa longueur (à longueur égale, un tirage). Il y a combat quand plusieurs
+  têtes arrivent sur la même case, ou quand une tête arrive sur la case que
+  la tête d'un autre vient de quitter. Sans ce second cas, deux têtes ne
+  pourraient se rencontrer que si leurs positions avaient la même parité
+  (comme les cases d'un damier) : deux serpents de parités différentes ne se
+  tueraient jamais et la partie pourrait ne pas finir.
 - Un serpent raccourci l'est immédiatement à l'écran, un serpent qui grandit
   s'allonge au fil de ses déplacements.
 - Seules les pommes des serpents encore en vie sont affichées.
@@ -131,6 +139,7 @@ outils/
   aleatoire.*            Tirage aléatoire
   fileCirculaire.hpp     File circulaire (corps des serpents)
   precharger.hpp         Préchargement mémoire (GCC / Clang)
+  poolThreads.*          Threads permanents et barrière (calcul parallèle)
   struct_coordonnees.hpp Coordonnées (x, y)
 ```
 
@@ -139,16 +148,17 @@ classDiagram
     Combat *-- Snake
     Combat *-- Pomme
     Combat ..> Affichage2d : dessine avec
+    Combat *-- PoolThreads
 
     class Combat{
         -largeur, longueur : unsigned
         -serpents : vector~Snake~
         -pommes : vector~Pomme~
         -cases : vector~Case~
-        -tetesBits : vector~uint64~
-        -morsuresEnAttente : vector~unsigned~
-        -vivants : vector~unsigned~
-        -casesModifiees : vector~CoordonneesXY~
+        -regions : vector~Region~
+        -boites : vector~Boite~
+        -vivants : vector~uint32~
+        -pool : PoolThreads
         +commencerCombat(delai, zoom, vitesse)
     }
     class Snake{
@@ -159,13 +169,19 @@ classDiagram
         -casesAjoutees, casesRetirees : vector~CoordonneesXY~
         -stats : StatsSerpent
         +deplacerVersXY(x, y)
-        +combattreTete(Snake) Snake
-        +etreMordu(position, Snake)
+        +mourir() longueur
+        +etreMordu(position) longueurCoupee
+        +recompenserVictoire(longueur)
+        +recompenserMorsure(longueur)
     }
     class Pomme{
         -id : const unsigned
         -valeur : unsigned
         -coordonnees : CoordonneesXY
+    }
+    class PoolThreads{
+        +executer(tache)
+        +barriere()
     }
     class Affichage2d{
         -pixels : vector~Uint32~
@@ -205,6 +221,7 @@ Le simulateur est pensé pour tenir des dizaines de milliers de serpents :
   regroupées dans une seule structure, les petits corps sont rangés dans
   l'objet serpent lui-même, et les cases des prochains serpents à jouer (ou
   à redessiner) sont préchargées à l'avance.
+- **Calcul parallèle** : voir ci-dessous.
 - **Compilation** : `Release` par défaut et optimisation à l'édition de liens
   (LTO), qui permet d'intégrer les petits accesseurs appelés des millions de
   fois ; la console n'écrit plus ligne par ligne.
@@ -220,9 +237,39 @@ Mesures indicatives (terrain 1200×800, affichage désactivé, sans délai) :
 Les premiers tours d'une grosse partie sont les plus lourds (hécatombe
 initiale), puis tout s'accélère à mesure que les serpents meurent.
 
-Une partie `--turbo` complète (100 000 serpents, ~660 000 tours) prend
-environ 4,7 s de calcul et d'affichage, contre 7 s avant les optimisations
-de mémoire ci-dessus.
+### Calcul parallèle
+
+Un tour est découpé en phases, séparées par des barrières, exécutées par un
+groupe de threads permanents (`PoolThreads`) :
+
+| Phase | Réparti par | Travail |
+|-------|-------------|---------|
+| 1. Déplacement  | serpents | chaque serpent avance ; les changements de cases sont rangés par région de destination |
+| 2. Grille       | régions  | chaque région applique les changements qui la concernent, départage les têtes arrivées ensemble, prévient les victimes de morsures possibles |
+| 3. Combats      | serpents | chaque serpent sait s'il a perdu un combat |
+| 4. Conséquences | serpents | les morts disparaissent, les mordus sont coupés, les repas notés |
+| 5. Retraits     | régions  | les cases libérées sont appliquées |
+| 6. Résolution   | 1 thread | annonces, récompenses, nouvelles pommes |
+
+- **Aucun verrou** : le terrain est découpé en bandes horizontales, une par
+  thread ; une case n'est jamais écrite que par le thread de sa bande, et un
+  serpent que par le thread qui le traite. Les messages entre phases sont
+  rangés dans une boîte par thread et par région.
+- **Déterministe** : chaque serpent tire ses nombres aléatoires dans sa
+  propre suite (numéro du serpent, numéro du tour) et la résolution suit
+  l'ordre des numéros. Une partie donne exactement le même résultat avec 1,
+  2, 3 ou 4 threads, ce qui sert de test.
+- **Localité** : les places de départ sont numérotées dans l'ordre du
+  terrain, donc des serpents voisins ont des numéros voisins : leurs données
+  sont proches en mémoire et chaque thread travaille surtout dans sa région.
+- **Peu de serpents** : en dessous de 512 serpents, un seul thread joue les
+  mêmes phases (se synchroniser coûterait plus que le calcul). Les threads
+  inactifs attendent un instant en boucle puis s'endorment.
+- Le redessin des cases modifiées est lui aussi réparti par région.
+
+Sur 4 cœurs, une partie `--turbo` complète (100 000 serpents) coûte environ
+150 ns de calcul par déplacement de serpent, contre ~285 ns sur un seul
+thread et ~275 ns pour la version séquentielle précédente.
 
 ## Contexte du labo
 

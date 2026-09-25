@@ -12,7 +12,6 @@
   ---------------------------------------------------------------------------
 */
 #include "snake.hpp"
-#include "../outils/aleatoire.hpp"
 #include <vector>
 #include <cstdlib>
 
@@ -37,7 +36,7 @@ Snake::Snake(int x,
 }
 
 //------------------------- Déplacements --------------------------------
-void Snake::deplacerVersXY(int x, int y) {
+void Snake::deplacerVersXY(int x, int y, std::uint64_t hasard) {
 
   const int diffX = abs(x - getCoordX());
   const int diffY = abs(y - getCoordY());
@@ -50,7 +49,10 @@ void Snake::deplacerVersXY(int x, int y) {
   // chaque pas le rapproche (chemin toujours le plus court). Prendre
   // systématiquement l'axe le plus long faisait partir tous les serpents à
   // l'horizontale en même temps : deux grandes vagues en début de partie.
-  if (aleatoireEntreDeuxValeurs(1, diffX + diffY) <= diffX) {
+  // (tirage dans [0, diffX + diffY[ par multiplication, sans division)
+  const std::uint64_t tirage =
+      ((hasard & 0xFFFFFFFFu) * std::uint64_t(diffX + diffY)) >> 32;
+  if (tirage < std::uint64_t(diffX)) {
     deplacerVers(x > getCoordX() ? Direction::droite : Direction::gauche);
   } else {
     deplacerVers(y > getCoordY() ? Direction::bas : Direction::haut);
@@ -110,6 +112,10 @@ const FileCirculaire<CoordonneesXY> &Snake::getCoord() const {
   return coordonnees;
 }
 
+std::size_t Snake::getTaille() const {
+  return coordonnees.size();
+}
+
 const StatsSerpent &Snake::getStats() const {
   return stats;
 }
@@ -145,29 +151,29 @@ void Snake::mangerPomme(unsigned valeur) {
 }
 
 //------------------------- Combat --------------------------------------
-Snake &Snake::combattreTete(Snake &autre) {
-  if (coordonnees.size() < autre.coordonnees.size()) {
-    mourir(autre);
-    return *this;
-  }
-  autre.mourir(*this);
-  return autre;
-}
-
-void Snake::etreMordu(std::size_t position, Snake &attaquant) {
+std::size_t Snake::etreMordu(std::size_t position) {
   const size_t garde = position + 1;  // le segment mordu reste
   if (garde >= coordonnees.size()) {
-    return;
+    return 0;
   }
-  attaquant.longueurAAjouterSupl(
-      calculAjoutLongueur(coordonnees.size() - garde, 40));
-  ++attaquant.stats.morsuresInfligees;
+  const size_t coupes = coordonnees.size() - garde;
   ++stats.morsuresSubies;
   longueurAAjouter = 0;
   for (size_t k = garde; k < coordonnees.size(); ++k) {
     casesRetirees.push_back(coordonnees[k]);
   }
   coordonnees.tronquer(garde);
+  return coupes;
+}
+
+void Snake::recompenserMorsure(std::size_t longueurCoupee) {
+  longueurAAjouterSupl(calculAjoutLongueur(longueurCoupee, 40));
+  ++stats.morsuresInfligees;
+}
+
+void Snake::recompenserVictoire(std::size_t longueurVaincu) {
+  longueurAAjouterSupl(calculAjoutLongueur(longueurVaincu, 60));
+  ++stats.victimes;
 }
 
 //=========================== Partie privée ===============================
@@ -180,19 +186,19 @@ unsigned Snake::calculAjoutLongueur(std::size_t longu, unsigned pourcentage) {
 }
 
 //------------------------- Méthodes de combat --------------------------
-void Snake::mourir(Snake &vainqueur) {
+std::size_t Snake::mourir() {
 
   estEnVie = false;
+  const size_t longueur = coordonnees.size();
   // un serpent mort n'est plus affiché : tout son corps est libéré
   for (size_t k = 0; k < coordonnees.size(); ++k) {
     casesRetirees.push_back(coordonnees[k]);
   }
-  vainqueur.longueurAAjouterSupl(calculAjoutLongueur(coordonnees.size(), 60));
-  ++vainqueur.stats.victimes;
 
   // Seule la position de la tête reste utile (getCoordX/Y) : le reste du
   // corps est rendu à la mémoire
   const CoordonneesXY tete = coordonnees.front();
   coordonnees.liberer();
   coordonnees.push_front(tete);
+  return longueur;
 }

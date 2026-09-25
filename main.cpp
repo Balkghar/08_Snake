@@ -152,8 +152,10 @@ int main(int argc, char **argv) {
        int(Combat::ZOOM_DEFAUT), ""},
       {"-v", "--vitesse", "Tours par image (0 = auto)", 0, 1000,
        int(Combat::VITESSE_DEFAUT), ""},
+      {"-j", "--threads", "Threads de calcul (0 = tous les coeurs)", 0, 256,
+       0, ""},
   };
-  enum { LARGEUR, HAUTEUR, SERPENTS, DELAI, ZOOM, VITESSE };
+  enum { LARGEUR, HAUTEUR, SERPENTS, DELAI, ZOOM, VITESSE, THREADS };
 
   // Chaque serpent et sa pomme doivent trouver leur place au départ : au plus
   // un serpent pour 4 cases
@@ -233,7 +235,8 @@ int main(int argc, char **argv) {
 
   Combat combat(unsigned(params[LARGEUR].valeur),
                 unsigned(params[HAUTEUR].valeur),
-                unsigned(params[SERPENTS].valeur));
+                unsigned(params[SERPENTS].valeur),
+                unsigned(params[THREADS].valeur));
 
   combat.commencerCombat(unsigned(params[DELAI].valeur),
                          unsigned(params[ZOOM].valeur),

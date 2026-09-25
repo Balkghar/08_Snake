@@ -16,6 +16,7 @@
 #ifndef LABO8_SNAKES_JEU_SNAKE_HPP
 #define LABO8_SNAKES_JEU_SNAKE_HPP
 
+#include <cstdint>
 #include <vector>
 #include <string>
 #include "../outils/struct_coordonnees.hpp"
@@ -44,11 +45,14 @@ class Snake {
 
   //------------------------- Déplacements --------------------------------
   /**
-   * @brief Permet de se déplacer vers une coordonnées.
-   * @param x
-   * @param y
+   * @brief Avance d'une case vers (x, y) par un plus court chemin. L'axe du
+   *        pas est choisi au hasard, pondéré par la distance restante sur
+   *        chaque axe.
+   * @param hasard nombre aléatoire fourni par l'appelant (chaque serpent a
+   *        sa propre suite de nombres : le résultat ne dépend ni de l'ordre
+   *        des serpents ni du nombre de threads)
    */
-  void deplacerVersXY(int x, int y);
+  void deplacerVersXY(int x, int y, std::uint64_t hasard);
   /**
    * @brief Permet de se déplacer dans une certaine direction (Haut, bas droite, gauche)
    * @param dir
@@ -64,6 +68,7 @@ class Snake {
    * @brief Corps du serpent, la tête en premier.
    */
   const FileCirculaire<CoordonneesXY> &getCoord() const;
+  std::size_t getTaille() const;
 
   //------------------------- suivi des modifications ---------------------
   /**
@@ -82,29 +87,36 @@ class Snake {
   void mangerPomme(unsigned valeur);
 
   //------------------------- Combat --------------------------------------
-  /**
-   * @brief Tête contre tête : le plus court meurt, le vainqueur gagne 60 % de
-   *        sa longueur.
-   * @return le serpent tué
-   */
-  Snake &combattreTete(Snake &autre);
+  // Chaque événement est découpé en deux : ce qui arrive au serpent lui-même
+  // et la récompense de l'autre, appliquée plus tard. Plusieurs threads
+  // peuvent ainsi traiter des serpents différents sans jamais écrire dans
+  // le même objet.
 
   /**
-   * @brief La tête d'attaquant est sur le segment `position` du corps : le
-   *        serpent est coupé après ce segment et l'attaquant gagne 40 % de
-   *        la longueur coupée.
+   * @brief Fait mourir ce serpent (perdant d'un tête contre tête).
+   * @return sa longueur au moment de la mort
    */
-  void etreMordu(std::size_t position, Snake &attaquant);
+  std::size_t mourir();
+  /**
+   * @brief Le vainqueur gagne 60 % de la longueur du vaincu.
+   */
+  void recompenserVictoire(std::size_t longueurVaincu);
+
+  /**
+   * @brief Une tête est sur le segment `position` du corps : le serpent est
+   *        coupé après ce segment (le segment mordu reste).
+   * @return le nombre de segments coupés (0 si rien à couper)
+   */
+  std::size_t etreMordu(std::size_t position);
+  /**
+   * @brief L'attaquant gagne 40 % de la longueur coupée.
+   */
+  void recompenserMorsure(std::size_t longueurCoupee);
 
  private:
 
   //------------------------- Agrandissement ------------------------------
   unsigned calculAjoutLongueur(std::size_t longu, unsigned pourcentage);
-
-  /**
-   * @brief Fait mourir ce serpent ; le vainqueur gagne 60 % de sa longueur.
-   */
-  void mourir(Snake &vainqueur);
 
   //------------------------- Données -------------------------------------
   const unsigned id;

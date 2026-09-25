@@ -7,7 +7,17 @@ Date        : 10.01.2023
 But         : Définition des fonctions membres de la classe
               combat.
 
-Remarque(s) :
+Remarque(s) : Déroulement d'un tour (voir jouerTours) :
+                1. déplacement : chaque serpent avance ; les changements de
+                   cases sont rangés par région de destination
+                2. grille : chaque région applique les changements qui la
+                   concernent et départage les têtes arrivées ensemble
+                3. décisions : chaque serpent regarde s'il a perdu un
+                   tête contre tête, s'il est mordu, s'il a mangé
+                4. résolution (un seul thread, dans l'ordre des numéros) :
+                   morts, coupures, pommes
+              Les phases 1 à 3 tournent sur tous les threads ; aucune case
+              n'est écrite par deux threads à la fois, sans verrou.
 
 Compilateur : gcc version 11.2.0
 ---------------------------------------------------------------------------
@@ -17,33 +27,89 @@ Compilateur : gcc version 11.2.0
 #include "../outils/aleatoire.hpp"
 #include "../outils/precharger.hpp"
 #include <algorithm>
+#include <climits>
 #include <iostream>
 
 using namespace std;
+
+namespace {
+
+// En dessous, un seul thread : se synchroniser coûterait plus que le calcul
+const size_t SEUIL_PARALLELE = 512;
+// Redessin parallèle au-delà de ce nombre de cases modifiées
+const size_t SEUIL_DESSIN_PARALLELE = 16384;
+// Préchargement : nombre d'éléments d'avance
+const size_t AVANCE = 4;
+const size_t AVANCE_MESSAGES = 8;
+
+// Mélangeur de splitmix64 : transforme un compteur en nombre aléatoire de
+// bonne qualité, sans état partagé entre threads
+inline uint64_t melanger(uint64_t z) {
+  z += 0x9E3779B97F4A7C15ull;
+  z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ull;
+  z = (z ^ (z >> 27)) * 0x94D049BB133111EBull;
+  return z ^ (z >> 31);
+}
+
+// Tête contre tête : la plus longue gagne. À égalité, un tirage fixé par
+// les numéros (et non le plus petit numéro : les numéros suivent la position
+// de départ, cela avantagerait le haut du terrain).
+inline bool gagneContre(uint32_t taille, uint32_t id,
+                        uint32_t tailleAutre, uint32_t idAutre) {
+  if (taille != tailleAutre) {
+    return taille > tailleAutre;
+  }
+  const uint64_t a = melanger(id), b = melanger(idAutre);
+  return a != b ? a < b : id < idAutre;
+}
+
+}  // namespace
+
 //=========================== Partie public ===============================
 
 //------------------------- Constructeur --------------------------------
 Combat::Combat(unsigned int largeur,
                unsigned int longueur,
-               unsigned int nbSerpent
+               unsigned int nbSerpent,
+               unsigned int nbThreads
 ) : largeur(largeur), longueur(longueur), nbSerpent(nbSerpent),
-    nbSerpentsDepart(nbSerpent) {
+    nbSerpentsDepart(nbSerpent), pool(nbThreads) {
 
   // L'affichage SDL partant de 0, pour que l'affichage soit correct à l'écran,
   // il faut faire moins 1 à la valeur entrée par l'utilisateur.
   longueurAffichage = longueur - 1;
   largeurAffichage = largeur - 1;
 
-  const size_t nbCases = size_t(largeur) * longueur;
-  cases.assign(nbCases, Case());
-  tetesBits.assign((nbCases + 63) / 64, 0);
-  morsuresEnAttente.assign(nbSerpent, 0);
-  arrivee.assign(nbSerpent, AUCUNE_TETE);
-  caseMarquee.assign(nbCases, false);
+  cases.assign(size_t(largeur) * longueur, Case());
+
+  // Une région (bande de lignes) par thread, de hauteur multiple de celle
+  // des bandes de l'affichage pour que le redessin parallèle ne se croise
+  // jamais
+  const unsigned nbRegions = pool.taille();
+  const unsigned bande = Affichage2d::HAUTEUR_BANDE;
+  unsigned hauteurRegion = (longueur + nbRegions - 1) / nbRegions;
+  hauteurRegion = (hauteurRegion + bande - 1) / bande * bande;
+  regions.resize(nbRegions);
+  regionParLigne.resize(longueur);
+  for (unsigned y = 0; y < longueur; ++y) {
+    regionParLigne[y] = uint16_t(min(y / hauteurRegion, nbRegions - 1));
+  }
+
+  boites.resize(pool.taille());
+  for (Boite &boite : boites) {
+    boite.mouvements.resize(nbRegions);
+    boite.tetes.resize(nbRegions);
+    boite.effacements.resize(nbRegions);
+  }
+  menace = make_unique<atomic<uint8_t>[]>(nbSerpent);
+  rencontre.assign(nbSerpent, AUCUNE_TETE);
+  mortPar.assign(nbSerpent, AUCUNE_TETE);
+  graine = graineAleatoire();
 
   initialiserSerpent();
   initialiserPomme();
 }
+
 //------------------------- lancement du combat -------------------------
 void Combat::commencerCombat(unsigned delai, unsigned zoom, unsigned vitesse) {
 
@@ -89,28 +155,53 @@ void Combat::initialiserSerpent() {
 
   serpents.reserve(nbSerpent);
   vivants.reserve(nbSerpent);
+  ancienneTete.reserve(nbSerpent);
+
+  // Places tirées au hasard, puis numérotées dans l'ordre du terrain : les
+  // serpents voisins ont des numéros proches, donc leurs données sont
+  // voisines en mémoire, et chaque thread (qui traite une tranche de
+  // numéros) travaille surtout dans sa propre région. Les places sont
+  // réservées pendant le tirage pour ne pas tomber deux fois au même endroit.
+  vector<CoordonneesXY> places;
+  places.reserve(nbSerpent);
+  for (unsigned i = 1; i <= Combat::nbSerpent; ++i) {
+    places.push_back(generateurDeCoord());
+    modifierCase(places.back().x, places.back().y, +1, 0);
+  }
+  for (const CoordonneesXY &place : places) {
+    modifierCase(place.x, place.y, -1, 0);
+  }
+  sort(places.begin(), places.end(),
+       [](const CoordonneesXY &a, const CoordonneesXY &b) {
+         return a.y != b.y ? a.y < b.y : a.x < b.x;
+       });
 
   for (unsigned i = 1; i <= Combat::nbSerpent; ++i) {
-    CoordonneesXY nouvelleCoord = generateurDeCoord();
+    const CoordonneesXY nouvelleCoord = places[i - 1];
 
     serpents.emplace_back(nouvelleCoord.x, nouvelleCoord.y, i, true, 10);
     appliquerModifications(serpents.back());
-    poserTete(indexCase(nouvelleCoord.x, nouvelleCoord.y), i);
+    const size_t cellule = indexCase(nouvelleCoord.x, nouvelleCoord.y);
+    Case &c = cases[cellule];
+    c.teteId = i;
+    c.teteTaille = 1;
+    c.teteParite = 1;  // comme arrivée au tour « -1 »
     vivants.push_back(i - 1);
+    ancienneTete.push_back(uint32_t(cellule));
   }
 
 }
 
 CoordonneesXY Combat::generateurDeCoord() {
-  const size_t nbCases = size_t(largeur) * longueur;
+  const int64_t nbCases = int64_t(cases.size());
+  const bool plein = nbCasesOccupees() >= nbCases;
   CoordonneesXY nouvelleCoord = {0, 0};
 
   // Tirages aléatoires tant que le terrain est peu rempli...
-  for (unsigned essai = 0; essai < 64 or nbCasesOccupees >= nbCases; ++essai) {
+  for (unsigned essai = 0; essai < 64 or plein; ++essai) {
     nouvelleCoord.x = aleatoireEntreDeuxValeurs(MIN, (int) largeurAffichage);
     nouvelleCoord.y = aleatoireEntreDeuxValeurs(MIN, (int) longueurAffichage);
-    if (nbCasesOccupees >= nbCases
-        or not placeEstOccupee(indexCase(nouvelleCoord.x, nouvelleCoord.y))) {
+    if (plein or not estOccupee(cases[indexCase(nouvelleCoord.x, nouvelleCoord.y)])) {
       // (terrain plein : on accepte une case occupée plutôt que de boucler)
       return nouvelleCoord;
     }
@@ -118,9 +209,9 @@ CoordonneesXY Combat::generateurDeCoord() {
 
   // ... sinon on parcourt le terrain depuis une case aléatoire
   const size_t depart = size_t(aleatoireEntreDeuxValeurs(0, int(nbCases - 1)));
-  for (size_t k = 0; k < nbCases; ++k) {
-    const size_t i = (depart + k) % nbCases;
-    if (not placeEstOccupee(i)) {
+  for (size_t k = 0; k < size_t(nbCases); ++k) {
+    const size_t i = (depart + k) % size_t(nbCases);
+    if (not estOccupee(cases[i])) {
       nouvelleCoord.x = int(i % largeur);
       nouvelleCoord.y = int(i / largeur);
       break;
@@ -129,83 +220,51 @@ CoordonneesXY Combat::generateurDeCoord() {
   return nouvelleCoord;
 }
 
-//------------------------- grille d'occupation -------------------------
-bool Combat::placeEstOccupee(size_t i) const {
-  return cases[i].serpents > 0 or cases[i].pommes > 0;
-}
-
+//------------------------- grille ---------------------------------------
 size_t Combat::indexCase(int x, int y) const {
   return size_t(y) * largeur + size_t(x);
 }
 
-void Combat::modifierCase(int x, int y, int deltaSerpent, int deltaPomme,
-                          unsigned serpent) {
-  if (x < 0 or y < 0 or unsigned(x) >= largeur or unsigned(y) >= longueur) {
-    return;
-  }
-  const size_t i = indexCase(x, y);
-  const bool etaitOccupee = placeEstOccupee(i);
-  cases[i].serpents += deltaSerpent;
-  cases[i].pommes += deltaPomme;
-  cases[i].xorSerpents ^= serpent;
-  const bool estOccupee = placeEstOccupee(i);
+unsigned Combat::regionDe(int y) const {
+  return regionParLigne[size_t(y)];
+}
 
-  if (estOccupee != etaitOccupee) {
-    estOccupee ? ++nbCasesOccupees : --nbCasesOccupees;
+bool Combat::estOccupee(const Case &c) {
+  return c.serpents > 0 or c.pommes > 0;
+}
+
+void Combat::modifierCase(size_t i, Region &region, int deltaSerpent,
+                          int deltaPomme, uint32_t serpent) {
+  Case &c = cases[i];
+  const bool etaitOccupee = estOccupee(c);
+  c.serpents += deltaSerpent;
+  c.pommes = uint32_t(int(c.pommes) + deltaPomme);
+  c.xorSerpents ^= serpent;
+  const bool estOccupeeMaintenant = estOccupee(c);
+
+  if (estOccupeeMaintenant != etaitOccupee) {
+    region.nbOccupees += estOccupeeMaintenant ? 1 : -1;
   }
 
   // Une case modifiée plusieurs fois entre deux images n'est redessinée
   // qu'une fois
-  if (not caseMarquee[i]) {
-    caseMarquee[i] = true;
-    casesModifiees.push_back({x, y});
+  if (not c.marquee) {
+    c.marquee = 1;
+    region.casesModifiees.push_back(uint32_t(i));
   }
 }
 
-void Combat::poserTete(size_t i, unsigned serpent) {
-  cases[i].tete = serpent;
-  if (serpent == AUCUNE_TETE) {
-    tetesBits[i / 64] &= ~(std::uint64_t(1) << (i % 64));
-  } else {
-    tetesBits[i / 64] |= std::uint64_t(1) << (i % 64);
-  }
-}
-
-bool Combat::tetePresente(size_t i) const {
-  return (tetesBits[i / 64] >> (i % 64)) & 1;
-}
-
-void Combat::enregistrerArrivee(size_t indice) {
-  const Snake &serpent = serpents[indice];
-  const size_t c = indexCase(serpent.getCoordX(), serpent.getCoordY());
-  const int autres = cases[c].serpents - 1;  // sans la tête elle-même
-  if (autres <= 0) {
+void Combat::modifierCase(int x, int y, int deltaSerpent, int deltaPomme,
+                          uint32_t serpent) {
+  if (x < 0 or y < 0 or unsigned(x) >= largeur or unsigned(y) >= longueur) {
     return;
   }
-  if (autres == 1) {
-    const unsigned victime = cases[c].xorSerpents ^ unsigned(indice + 1);
-    if (victime != indice + 1) {  // (son propre corps : pas une morsure)
-      arrivee[indice] = victime;
-      ++morsuresEnAttente[victime - 1];
-    }
-  } else {
-    arrivee[indice] = VICTIME_INCONNUE;
-    ++morsuresInconnues;
-  }
-}
-
-void Combat::oublierArrivee(size_t indice) {
-  const unsigned victime = arrivee[indice];
-  if (victime == VICTIME_INCONNUE) {
-    --morsuresInconnues;
-  } else if (victime != AUCUNE_TETE) {
-    --morsuresEnAttente[victime - 1];
-  }
-  arrivee[indice] = AUCUNE_TETE;
+  modifierCase(indexCase(x, y), regions[regionDe(y)], deltaSerpent, deltaPomme,
+               serpent);
 }
 
 void Combat::appliquerModifications(Snake &serpent) {
-  const unsigned id = unsigned(&serpent - serpents.data()) + 1;
+  const uint32_t id = uint32_t(&serpent - serpents.data()) + 1;
   for (const CoordonneesXY &coord : serpent.getCasesAjoutees()) {
     modifierCase(coord.x, coord.y, +1, 0, id);
   }
@@ -215,124 +274,427 @@ void Combat::appliquerModifications(Snake &serpent) {
   serpent.oublierModifications();
 }
 
-//------------------------- méthodes du jeu -----------------------------
+int64_t Combat::nbCasesOccupees() const {
+  int64_t total = 0;
+  for (const Region &region : regions) {
+    total += region.nbOccupees;
+  }
+  return total;
+}
 
-void Combat::mangerPomme(Snake &serpent, Pomme &pomme) {
+//------------------------- tour de jeu ---------------------------------
 
-  if (serpent.getCoordX() == pomme.getCoordX() && serpent.getCoordY() == pomme.getCoordY()) {
+unsigned long Combat::jouerTours(unsigned long nbMax, Uint32 finAuPlusTard) {
+
+  // finAuPlusTard : instant (SDL_GetTicks) après lequel on s'arrête, 0 si
+  // seul le nombre de tours compte. Au moins un tour est toujours joué.
+  const unsigned long depart = nbTours;
+  auto encore = [&]() {
+    return nbSerpent > 1 and nbTours - depart < nbMax
+        and (finAuPlusTard == 0 or SDL_GetTicks() < finAuPlusTard);
+  };
+
+  do {
+    if (pool.taille() > 1 and vivants.size() - mortsDansVivants >= SEUIL_PARALLELE) {
+      // Tous les threads enchaînent les tours sans rendre la main, séparés
+      // par des barrières ; le thread 0 décide de continuer ou non
+      pool.executer([&](unsigned thread) {
+        do {
+          jouerTourParallele(thread);
+          if (thread == 0) {
+            continuer = encore()
+                and vivants.size() - mortsDansVivants >= SEUIL_PARALLELE;
+          }
+          pool.barriere();
+        } while (continuer);
+      });
+    } else {
+      jouerTourSerie();
+    }
+  } while (encore());
+
+  return nbTours - depart;
+}
+
+void Combat::jouerTourParallele(unsigned thread) {
+  const unsigned nbThreads = pool.taille();
+  phaseDeplacement(thread, nbThreads);
+  pool.barriere();
+  phaseGrille(thread);
+  pool.barriere();
+  phaseCombats(thread, nbThreads);
+  pool.barriere();
+  phaseConsequences(thread, nbThreads);
+  pool.barriere();
+  phaseRetraits(thread);
+  pool.barriere();
+  if (thread == 0) {
+    phaseResolution();
+  }
+}
+
+void Combat::jouerTourSerie() {
+  // Peu de serpents : mêmes phases, sur un seul thread (même résultat)
+  phaseDeplacement(0, 1);
+  for (unsigned r = 0; r < regions.size(); ++r) {
+    phaseGrille(r);
+  }
+  phaseCombats(0, 1);
+  phaseConsequences(0, 1);
+  for (unsigned r = 0; r < regions.size(); ++r) {
+    phaseRetraits(r);
+  }
+  phaseResolution();
+}
+
+uint32_t Combat::parite() const {
+  return uint32_t(nbTours & 1);
+}
+
+uint64_t Combat::hasard(uint32_t serpent) const {
+  // Chaque serpent a sa propre suite (numéro, tour) : le résultat ne dépend
+  // ni de l'ordre de traitement ni du nombre de threads
+  return melanger(graine + (uint64_t(serpent) << 32) + (nbTours & 0xFFFFFFFFu));
+}
+
+//--- 1. Déplacement (par serpent) ---------------------------------------
+void Combat::phaseDeplacement(unsigned thread, unsigned nbThreadsActifs) {
+
+  const size_t debut = vivants.size() * thread / nbThreadsActifs;
+  const size_t fin = vivants.size() * (thread + 1) / nbThreadsActifs;
+  Boite &boite = boites[thread];
+
+  for (size_t v = debut; v < fin; ++v) {
+    // Préchargement de la case (ancienne tête) qu'un serpent à venir va
+    // modifier
+    if (v + AVANCE < fin) {
+      precharger(&cases[ancienneTete[vivants[v + AVANCE]]]);
+    }
+
+    const uint32_t d = vivants[v];
+    Snake &serpent = serpents[d];
+    if (not serpent.getEstEnVie()) {
+      continue;
+    }
+    const uint32_t id = d + 1;
+    const Pomme &pomme = pommes[d];
+
+    // La position de tête d'il y a deux tours est oubliée ; celle du tour
+    // précédent reste visible pendant ce tour (« ancienne tête »). Aucun
+    // autre thread ne touche à ces cases pendant cette phase.
+    Case &avant = cases[ancienneTete[d]];
+    if (avant.teteId == id and avant.teteParite == parite()) {
+      avant.teteId = AUCUNE_TETE;
+    }
+    ancienneTete[d] = uint32_t(indexCase(serpent.getCoordX(), serpent.getCoordY()));
+
+    serpent.deplacerVersXY(pomme.getCoordX(), pomme.getCoordY(), hasard(d));
+
+    for (const CoordonneesXY &c : serpent.getCasesAjoutees()) {
+      boite.mouvements[regionDe(c.y)].push_back({uint32_t(indexCase(c.x, c.y)), id});
+    }
+    for (const CoordonneesXY &c : serpent.getCasesRetirees()) {
+      boite.mouvements[regionDe(c.y)].push_back(
+          {uint32_t(indexCase(c.x, c.y)), id | RETRAIT});
+    }
+    serpent.oublierModifications();
+
+    const CoordonneesXY &tete = serpent.getCoord().front();
+    boite.tetes[regionDe(tete.y)].push_back(
+        {uint32_t(indexCase(tete.x, tete.y)), id,
+         uint32_t(min<size_t>(serpent.getTaille(), TAILLE_MAX_TETE))});
+  }
+}
+
+//--- 2. Grille (par région) ---------------------------------------------
+void Combat::phaseGrille(unsigned r) {
+
+  Region &region = regions[r];
+
+  // D'abord toutes les arrivées et départs de segments...
+  for (Boite &boite : boites) {
+    vector<Mouvement> &liste = boite.mouvements[r];
+    for (size_t k = 0; k < liste.size(); ++k) {
+      if (k + AVANCE_MESSAGES < liste.size()) {
+        precharger(&cases[liste[k + AVANCE_MESSAGES].cellule]);
+      }
+      const Mouvement &m = liste[k];
+      const bool retrait = (m.idEtSens & RETRAIT) != 0;
+      modifierCase(m.cellule, region, retrait ? -1 : +1, 0, m.idEtSens & ~RETRAIT);
+    }
+    liste.clear();
+  }
+
+  const uint32_t tour = parite();
+
+  // ... puis les anciennes têtes trouvées à l'arrivée, avant que les
+  // nouvelles ne les remplacent (toutes les arrivées doivent les voir)...
+  for (const Boite &boite : boites) {
+    for (const ArriveeTete &a : boite.tetes[r]) {
+      const Case &c = cases[a.cellule];
+      const bool ancienne = c.teteId != AUCUNE_TETE and c.teteId != a.id
+          and c.teteParite != tour;
+      rencontre[a.id - 1] = ancienne ? c.teteId : AUCUNE_TETE;
+    }
+  }
+
+  // ... puis les nouvelles têtes
+  for (Boite &boite : boites) {
+    vector<ArriveeTete> &liste = boite.tetes[r];
+    for (size_t k = 0; k < liste.size(); ++k) {
+      if (k + AVANCE_MESSAGES < liste.size()) {
+        precharger(&cases[liste[k + AVANCE_MESSAGES].cellule]);
+      }
+      const ArriveeTete &a = liste[k];
+      Case &c = cases[a.cellule];
+
+      // Plusieurs têtes sur la même case : la plus longue la garde
+      if (c.teteId == AUCUNE_TETE or c.teteParite != tour
+          or gagneContre(a.taille, a.id, c.teteTaille, c.teteId)) {
+        c.teteId = a.id;
+        c.teteTaille = a.taille;
+        c.teteParite = tour;
+      }
+
+      // Tête arrivée sur un corps : prévenir la victime possible
+      const int32_t autres = c.serpents - 1;
+      if (autres == 1) {
+        const uint32_t proprietaire = c.xorSerpents ^ a.id;
+        if (proprietaire != a.id and proprietaire - 1 < nbSerpentsDepart) {
+          menace[proprietaire - 1].store(1, memory_order_relaxed);
+        }
+      } else if (autres >= 2) {
+        victimeInconnue.store(true, memory_order_relaxed);
+      }
+    }
+    liste.clear();
+  }
+}
+
+//--- 3. Combats (par serpent) : qui meurt ? -------------------------------
+void Combat::phaseCombats(unsigned thread, unsigned nbThreadsActifs) {
+
+  // Règles, évaluées pour tous en même temps (l'ordre ne compte pas) :
+  //  - plusieurs têtes sur la même case : seule la plus longue survit
+  //  - une tête arrive sur la case que la tête d'un autre vient de quitter :
+  //    les deux se battent et le plus court meurt. Sans cette règle, deux
+  //    têtes ne se rencontreraient que si leurs positions avaient la même
+  //    parité (comme les cases d'un damier) et des serpents de parités
+  //    différentes ne pourraient jamais se tuer.
+  // Un serpent qui perd l'un de ses combats meurt.
+  const size_t debut = vivants.size() * thread / nbThreadsActifs;
+  const size_t fin = vivants.size() * (thread + 1) / nbThreadsActifs;
+  const uint32_t tour = parite();
+
+  for (size_t v = debut; v < fin; ++v) {
+    if (v + AVANCE < fin) {
+      const CoordonneesXY &tete = serpents[vivants[v + AVANCE]].getCoord().front();
+      precharger(&cases[indexCase(tete.x, tete.y)]);
+    }
+
+    const uint32_t d = vivants[v];
+    const Snake &serpent = serpents[d];
+    if (not serpent.getEstEnVie()) {
+      continue;
+    }
+    const uint32_t id = d + 1;
+    const uint32_t taille = uint32_t(serpent.getTaille());
+    const CoordonneesXY &tete = serpent.getCoord().front();
+
+    uint32_t tueur = AUCUNE_TETE;
+    const uint32_t occupant = cases[indexCase(tete.x, tete.y)].teteId;
+    if (occupant != id) {
+      tueur = occupant;  // perdu sur la case d'arrivée
+    } else {
+      // Arrivé sur l'ancienne tête d'un autre
+      const uint32_t ancien = rencontre[d];
+      if (ancien != AUCUNE_TETE
+          and not gagneContre(taille, id, uint32_t(serpents[ancien - 1].getTaille()), ancien)) {
+        tueur = ancien;
+      }
+      // Un autre est arrivé sur mon ancienne tête
+      const Case &quittee = cases[ancienneTete[d]];
+      const uint32_t arrivant = quittee.teteId;
+      if (tueur == AUCUNE_TETE and arrivant != AUCUNE_TETE and arrivant != id
+          and quittee.teteParite == tour
+          and not gagneContre(taille, id, uint32_t(serpents[arrivant - 1].getTaille()), arrivant)) {
+        tueur = arrivant;
+      }
+    }
+    mortPar[d] = tueur;
+  }
+}
+
+//--- 4. Conséquences (par serpent) : morts, morsures, repas --------------
+void Combat::emettreRetraits(Snake &serpent, uint32_t id, Boite &boite) {
+  for (const CoordonneesXY &c : serpent.getCasesRetirees()) {
+    boite.mouvements[regionDe(c.y)].push_back(
+        {uint32_t(indexCase(c.x, c.y)), id | RETRAIT});
+  }
+  serpent.oublierModifications();
+}
+
+void Combat::phaseConsequences(unsigned thread, unsigned nbThreadsActifs) {
+
+  const size_t debut = vivants.size() * thread / nbThreadsActifs;
+  const size_t fin = vivants.size() * (thread + 1) / nbThreadsActifs;
+  Boite &boite = boites[thread];
+  const bool tousVerifient = victimeInconnue.load(memory_order_relaxed);
+  const uint32_t tour = parite();
+
+  for (size_t v = debut; v < fin; ++v) {
+    const uint32_t d = vivants[v];
+    Snake &serpent = serpents[d];
+    if (not serpent.getEstEnVie()) {
+      continue;
+    }
+    const uint32_t id = d + 1;
+
+    // Mort : le corps disparaît, ses têtes (actuelle et précédente) aussi ;
+    // la récompense du vainqueur est distribuée à la résolution
+    if (mortPar[d] != AUCUNE_TETE) {
+      const CoordonneesXY &tete = serpent.getCoord().front();
+      const uint32_t cellule = uint32_t(indexCase(tete.x, tete.y));
+      boite.effacements[regionDe(tete.y)].push_back({cellule, id});
+      boite.effacements[regionDe(int(ancienneTete[d] / largeur))].push_back(
+          {ancienneTete[d], id});
+      const size_t longueur = serpent.mourir();
+      boite.morts.push_back({d, mortPar[d] - 1, uint32_t(longueur)});
+      emettreRetraits(serpent, id, boite);
+      menace[d].store(0, memory_order_relaxed);
+      continue;
+    }
+
+    // Tête sur corps : coupé au premier segment (depuis la tête) sur lequel
+    // se trouve la tête d'un autre serpent encore en vie. Seuls les
+    // serpents menacés parcourent leur corps.
+    if (tousVerifient or menace[d].load(memory_order_relaxed)) {
+      menace[d].store(0, memory_order_relaxed);
+      const FileCirculaire<CoordonneesXY> &corps = serpent.getCoord();
+      for (size_t k = 1; k < corps.size(); ++k) {
+        const Case &c = cases[indexCase(corps[k].x, corps[k].y)];
+        const uint32_t autre = c.teteId;
+        if (autre != AUCUNE_TETE and autre != id and c.teteParite == tour
+            and mortPar[autre - 1] == AUCUNE_TETE) {
+          const size_t coupes = serpent.etreMordu(k);
+          if (coupes > 0) {
+            boite.morsures.push_back({autre - 1, uint32_t(coupes)});
+            emettreRetraits(serpent, id, boite);
+          }
+          break;
+        }
+      }
+    }
+
+    const CoordonneesXY &tete = serpent.getCoord().front();
+    const Pomme &pomme = pommes[d];
+    if (tete.x == pomme.getCoordX() and tete.y == pomme.getCoordY()) {
+      boite.repas.push_back(d);
+    }
+  }
+}
+
+//--- 5. Retraits (par région) --------------------------------------------
+void Combat::phaseRetraits(unsigned r) {
+
+  Region &region = regions[r];
+  for (Boite &boite : boites) {
+    vector<Mouvement> &liste = boite.mouvements[r];
+    for (size_t k = 0; k < liste.size(); ++k) {
+      if (k + AVANCE_MESSAGES < liste.size()) {
+        precharger(&cases[liste[k + AVANCE_MESSAGES].cellule]);
+      }
+      const Mouvement &m = liste[k];
+      modifierCase(m.cellule, region, -1, 0, m.idEtSens & ~RETRAIT);
+    }
+    liste.clear();
+
+    for (const Effacement &e : boite.effacements[r]) {
+      if (cases[e.cellule].teteId == e.id) {
+        cases[e.cellule].teteId = AUCUNE_TETE;
+      }
+    }
+    boite.effacements[r].clear();
+  }
+}
+
+//--- 6. Résolution (un seul thread) --------------------------------------
+void Combat::phaseResolution() {
+
+  // Dans l'ordre des numéros de serpent : le résultat ne dépend pas de la
+  // façon dont les serpents étaient répartis entre threads
+  vector<Mort> &morts = boites[0].morts;
+  vector<Morsure> &morsures = boites[0].morsures;
+  vector<uint32_t> &repas = boites[0].repas;
+  for (size_t t = 1; t < boites.size(); ++t) {
+    morts.insert(morts.end(), boites[t].morts.begin(), boites[t].morts.end());
+    morsures.insert(morsures.end(), boites[t].morsures.begin(), boites[t].morsures.end());
+    repas.insert(repas.end(), boites[t].repas.begin(), boites[t].repas.end());
+    boites[t].morts.clear();
+    boites[t].morsures.clear();
+    boites[t].repas.clear();
+  }
+
+  // Morts : annonce, récompense du vainqueur, pomme retirée
+  sort(morts.begin(), morts.end(),
+       [](const Mort &a, const Mort &b) { return a.victime < b.victime; });
+  string annonces;
+  for (const Mort &m : morts) {
+    annonces += "Le serpent ";
+    annonces += to_string(m.tueur + 1);
+    annonces += " a tuer le serpent ";
+    annonces += to_string(m.victime + 1);
+    annonces += '\n';
+    serpents[m.tueur].recompenserVictoire(m.longueur);
+    Pomme &pomme = pommes[m.victime];
+    if (pomme.estIntacte()) {
+      pomme.pommeEstMangee();
+      modifierCase(pomme.getCoordX(), pomme.getCoordY(), 0, -1);
+    }
+    --nbSerpent;
+    ++mortsDansVivants;
+  }
+  cout << annonces;
+
+  // Morsures (additions : l'ordre ne compte pas)
+  for (const Morsure &m : morsures) {
+    serpents[m.attaquant].recompenserMorsure(m.longueurCoupee);
+  }
+
+  // Pommes mangées (dans l'ordre : les nouvelles places sont tirées au sort)
+  sort(repas.begin(), repas.end());
+  for (uint32_t d : repas) {
+    Snake &serpent = serpents[d];
+    Pomme &pomme = pommes[d];
     modifierCase(pomme.getCoordX(), pomme.getCoordY(), 0, -1);
-    CoordonneesXY nouvelleCoord = generateurDeCoord();
-
+    const CoordonneesXY nouvelleCoord = generateurDeCoord();
     serpent.mangerPomme(pomme.getValeur());
     pomme.setCoordPomme(nouvelleCoord.x, nouvelleCoord.y);
     modifierCase(nouvelleCoord.x, nouvelleCoord.y, 0, +1);
     pomme.setValPomme();
   }
+
+  morts.clear();
+  morsures.clear();
+  repas.clear();
+  victimeInconnue.store(false, memory_order_relaxed);
+
+  ++nbTours;
+  // Les morts restent dans vivants (et sont sautés) jusqu'à ce qu'ils soient
+  // nombreux
+  if (mortsDansVivants * 8 > vivants.size() or nbSerpent <= 1) {
+    retirerMorts();
+  }
 }
 
-void Combat::jouerTour() {
-
-  // Seuls les serpents en vie sont parcourus : avec beaucoup de serpents,
-  // la plupart meurent vite et les reparcourir à chaque tour coûte cher
-  const size_t AVANCE = 4;
-  for (size_t v = 0; v < vivants.size() and nbSerpent > 1; ++v) {
-    // Préchargement des cases de la tête et de la queue d'un serpent qui
-    // jouera un peu plus tard (serpents éparpillés : défauts de cache)
-    if (v + AVANCE < vivants.size()) {
-      const Snake &prochain = serpents[vivants[v + AVANCE]];
-      const CoordonneesXY &tete = prochain.getCoord().front();
-      const CoordonneesXY &queue = prochain.getCoord().back();
-      precharger(&cases[indexCase(tete.x, tete.y)]);
-      precharger(&cases[indexCase(queue.x, queue.y)]);
-    }
-
-    const size_t d = vivants[v];
-    Snake &serpent = serpents[d];
-    Pomme &pomme = pommes[d];
-
-    if (not serpent.getEstEnVie()) {
-      continue;  // tué plus tôt dans ce tour
-    }
-
-    // La tête quitte sa case
-    oublierArrivee(d);
-    const size_t tete = indexCase(serpent.getCoordX(), serpent.getCoordY());
-    if (cases[tete].tete == d + 1) {
-      poserTete(tete, AUCUNE_TETE);
-    }
-
-    serpent.deplacerVersXY(pomme.getCoordX(), pomme.getCoordY());
-    // grille à jour avant de chercher une case libre pour la pomme
-    appliquerModifications(serpent);
-    mangerPomme(serpent, pomme);
-    combatSerpent(d);
-  }
-
+void Combat::retirerMorts() {
+  // (l'ordre des numéros est gardé : il suit la position de départ)
   vivants.erase(remove_if(vivants.begin(), vivants.end(),
-                          [this](unsigned d) {
+                          [this](uint32_t d) {
                             return not serpents[d].getEstEnVie();
                           }),
                 vivants.end());
-}
-
-void Combat::combatSerpent(size_t indice) {
-
-  Snake &serpent = serpents[indice];
-  const unsigned moi = unsigned(indice) + 1;
-  const size_t tete = indexCase(serpent.getCoordX(), serpent.getCoordY());
-
-  // Tête contre tête : une seule tête vivante possible sur la case
-  const unsigned autre = cases[tete].tete;
-  if (autre != AUCUNE_TETE and autre != moi) {
-    Snake &adversaire = serpents[autre - 1];
-    Snake &mort = serpent.combattreTete(adversaire);
-    Snake &tueur = (&mort == &serpent) ? adversaire : serpent;
-
-    tuer(mort, tueur);
-    poserTete(tete, unsigned(&tueur - serpents.data()) + 1);
-
-    if (&mort == &serpent) {
-      return;
-    }
-  } else {
-    poserTete(tete, moi);
-  }
-  enregistrerArrivee(indice);
-
-  // Tête sur corps : le serpent est coupé au premier segment (depuis sa
-  // tête) sur lequel se trouve la tête d'un autre serpent. Inutile de
-  // parcourir le corps si aucune tête n'a pu arriver dessus.
-  if (morsuresEnAttente[indice] == 0 and morsuresInconnues == 0) {
-    return;
-  }
-  const auto &corps = serpent.getCoord();
-  for (size_t k = 1; k < corps.size(); ++k) {
-    const size_t c = indexCase(corps[k].x, corps[k].y);
-    if (not tetePresente(c)) {
-      continue;  // cas de loin le plus courant, sans lire la case
-    }
-    const unsigned attaquant = cases[c].tete;
-    if (attaquant != moi) {
-      serpent.etreMordu(k, serpents[attaquant - 1]);
-      appliquerModifications(serpent);
-      break;
-    }
-  }
-}
-
-void Combat::tuer(Snake &victime, const Snake &tueur) {
-  cout << "Le serpent "s + to_string(tueur.getId()) + " a tuer le serpent "s
-      + to_string(victime.getId()) + "\n"s;
-
-  // Le corps et la pomme du mort disparaissent de l'écran
-  oublierArrivee(size_t(&victime - serpents.data()));
-  appliquerModifications(victime);
-  Pomme &pomme = pommes[size_t(&victime - serpents.data())];
-  if (pomme.estIntacte()) {
-    pomme.pommeEstMangee();
-    modifierCase(pomme.getCoordX(), pomme.getCoordY(), 0, -1);
-  }
-  --nbSerpent;
+  mortsDansVivants = 0;
 }
 
 //------------------------- méthodes d'affichage ------------------------
@@ -352,23 +714,14 @@ bool Combat::faireCombattreSerpents(Affichage2d &affichage) {
       dernierTitre = 0;  // titre mis à jour tout de suite
     }
 
-    const Uint32 debut = SDL_GetTicks();
-    const unsigned long toursAvant = nbTours;
     if (vitesse == VITESSE_AUTO) {
       // Autant de tours que possible pendant la durée d'une image (au moins
       // ~60 images/s pour que la fenêtre reste fluide)
       const Uint32 budget = delai > 0 ? delai : 16;
-      do {
-        jouerTour();
-        ++nbTours;
-      } while (nbSerpent > 1 and SDL_GetTicks() - debut < budget);
+      toursDerniereImage = jouerTours(ULONG_MAX, SDL_GetTicks() + budget);
     } else {
-      for (unsigned t = 0; t < vitesse and nbSerpent > 1; ++t) {
-        jouerTour();
-        ++nbTours;
-      }
+      toursDerniereImage = jouerTours(vitesse, 0);
     }
-    toursDerniereImage = nbTours - toursAvant;
 
     if (SDL_GetTicks() - dernierTitre >= 250) {
       mettreAJourTitre(affichage);
@@ -409,33 +762,51 @@ void Combat::mettreAJourTitre(Affichage2d &affichage) const {
 
 bool Combat::afficher(Affichage2d &affichage, int &accelerer) {
 
-  // Seules les cases modifiées depuis la dernière image sont redessinées
-  // (une pomme reste dessinée par-dessus un serpent). Elles sont éparpillées
-  // sur le terrain : on précharge quelques cases à l'avance pour que les
-  // accès mémoire se recouvrent au lieu de s'attendre les uns les autres.
-  const size_t AVANCE = 8;
-  for (size_t k = 0; k < casesModifiees.size(); ++k) {
-    if (k + AVANCE < casesModifiees.size()) {
-      const CoordonneesXY &suivante = casesModifiees[k + AVANCE];
-      precharger(&cases[indexCase(suivante.x, suivante.y)]);
-      affichage.prechargerElement(suivante.x, suivante.y);
-    }
-    const CoordonneesXY &coord = casesModifiees[k];
-    const size_t i = indexCase(coord.x, coord.y);
-    Couleur couleur = Couleur::blanc;
-    if (cases[i].pommes > 0) {
-      couleur = Couleur::rouge;
-    } else if (cases[i].serpents > 0) {
-      couleur = Couleur::noir;
-    }
-    affichage.ajouterElementAffichage(coord.x, coord.y, couleur);
-    caseMarquee[i] = false;
+  // Seules les cases modifiées depuis la dernière image sont redessinées,
+  // chaque région par son thread quand il y en a beaucoup
+  size_t total = 0;
+  for (const Region &region : regions) {
+    total += region.casesModifiees.size();
   }
-  casesModifiees.clear();
+  if (pool.taille() > 1 and total >= SEUIL_DESSIN_PARALLELE) {
+    pool.executer([&](unsigned thread) {
+      dessinerRegion(affichage, regions[thread]);
+    });
+  } else {
+    for (Region &region : regions) {
+      dessinerRegion(affichage, region);
+    }
+  }
 
   affichage.mettreAjourAffichage();
 
   return affichage.fermetureDemandee(accelerer);
+}
+
+void Combat::dessinerRegion(Affichage2d &affichage, Region &region) {
+
+  // Une pomme reste dessinée par-dessus un serpent. Les cases sont
+  // éparpillées : on précharge quelques cases à l'avance pour que les accès
+  // mémoire se recouvrent au lieu de s'attendre.
+  vector<uint32_t> &liste = region.casesModifiees;
+  for (size_t k = 0; k < liste.size(); ++k) {
+    if (k + AVANCE_MESSAGES < liste.size()) {
+      const uint32_t suivante = liste[k + AVANCE_MESSAGES];
+      precharger(&cases[suivante]);
+      affichage.prechargerElement(int(suivante % largeur), int(suivante / largeur));
+    }
+    const uint32_t i = liste[k];
+    Case &c = cases[i];
+    Couleur couleur = Couleur::blanc;
+    if (c.pommes > 0) {
+      couleur = Couleur::rouge;
+    } else if (c.serpents > 0) {
+      couleur = Couleur::noir;
+    }
+    affichage.ajouterElementAffichage(int(i % largeur), int(i / largeur), couleur);
+    c.marquee = 0;
+  }
+  liste.clear();
 }
 
 //------------------------- fin de partie -------------------------------
