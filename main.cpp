@@ -61,6 +61,8 @@ void afficherAide(const string &programme, const vector<Parametre> &params) {
        << "                          dans la console seulement)\n"
        << "      --vsync             Images au rythme de l'ecran, sans\n"
        << "                          dechirure (ne ralentit pas le calcul)\n"
+       << "      --profil            En fin de partie, temps passe dans le\n"
+       << "                          calcul, les images, l'envoi a l'ecran\n"
        << "  -h, --aide              Affiche cette aide\n\n"
        << "En jeu : + / - pour accelerer / ralentir, ECHAP pour quitter.\n\n"
        << "Exemples : " << programme << " -l 200 -H 150 -s 20\n"
@@ -74,6 +76,7 @@ struct Drapeaux {
   bool silencieux = false;
   bool finAuto = false;
   bool vsync = false;
+  bool profil = false;
 };
 
 // Lit un entier compris dans [min, max] ; renvoie false si invalide.
@@ -112,6 +115,10 @@ bool lireArguments(int argc, char **argv, vector<Parametre> &params,
     }
     if (arg == "--vsync") {
       drapeaux.vsync = true;
+      continue;
+    }
+    if (arg == "--profil") {
+      drapeaux.profil = true;
       continue;
     }
 
@@ -275,6 +282,7 @@ int main(int argc, char **argv) {
   // simulation elle-même : le mode turbo est silencieux
   combat.choisirSorties(drapeaux.silencieux or drapeaux.turbo, drapeaux.finAuto);
   combat.activerVsync(drapeaux.vsync);
+  combat.activerProfil(drapeaux.profil);
   combat.commencerCombat(unsigned(params[DELAI].valeur),
                          unsigned(params[ZOOM].valeur),
                          unsigned(params[VITESSE].valeur));

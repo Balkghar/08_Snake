@@ -69,6 +69,7 @@ programme par un simple double-clic.
 | `-q`, `--silencieux`  | N'annonce pas chaque mort                |          |           |
 | `-f`, `--fin-auto`    | Statistiques dans la console, pas d'écran de fin à fermer | | |
 | `--vsync`             | Images au rythme de l'écran, sans déchirure |        |           |
+| `--profil`            | En fin de partie, où le temps a été passé |          |           |
 | `-h`, `--aide`        | Affiche l'aide                           |          |           |
 
 Les formes `--option N` et `--option=N` sont acceptées. Une option inconnue
@@ -314,9 +315,21 @@ le programme prévient. Mesures sur 4 cœurs, 30 000 serpents :
   ne ralentit donc plus le calcul. En vitesse fixe (`-v N`), l'affichage
   donne la cadence. Par défaut, un cœur est laissé à l'affichage (`-j` vaut
   cœurs − 1).
-- **Vitesse automatique calée sur l'écran** : un lot dure une image de
-  l'écran (1/60 s à 60 Hz, 1/144 s à 144 Hz). `--vsync` montre les images
-  au rythme de l'écran, sans déchirure, sans ralentir le calcul.
+- **Lots d'au moins 16 ms** en vitesse automatique (une image de l'écran
+  sur un écran lent) : des lots plus courts sur un écran à 144 Hz ou plus
+  multipliaient les images à préparer et à envoyer sans rien montrer de
+  plus utile. `--vsync` montre les images au rythme de l'écran, sans
+  déchirure, sans ralentir le calcul.
+- **Envoi à la carte graphique calibré au démarrage** : aucune méthode n'est
+  la plus rapide partout (cela dépend de la carte et du pilote). Trois
+  méthodes sont mesurées sur l'image entière, en forçant la carte à finir
+  (lecture d'un pixel), et la plus rapide est gardée : bandes verrouillées
+  (`SDL_LockTexture`), bandes par `SDL_UpdateTexture`, ou une seule zone.
+- **`--profil`** : en fin de partie, temps passé dans le calcul, la
+  préparation des images, le coloriage, l'envoi et la présentation, les
+  attentes de part et d'autre, et la méthode d'envoi retenue. C'est la
+  seule façon fiable de savoir ce qui limite la vitesse sur une machine
+  donnée.
 - **Pages de 2 Mo** pour la grille du terrain (Linux) : moins de défauts de
   traduction d'adresse pour un tableau de 15 Mo lu au hasard.
 - **Console** : annoncer 100 000 morts dans un terminal peut coûter plus

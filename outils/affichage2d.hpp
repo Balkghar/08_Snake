@@ -59,6 +59,12 @@ class Affichage2d {
    *        (60 si inconnue).
    */
   unsigned frequenceEcran() const;
+
+  /**
+   * @brief Temps passés dans l'envoi à la carte graphique et la
+   *        présentation, et méthode d'envoi retenue (option --profil).
+   */
+  std::string rapportProfil() const;
   /**
    * @brief Colorie une case. Peut être appelée en même temps par plusieurs
    *        threads, à condition que chacun travaille sur ses propres bandes
@@ -94,6 +100,12 @@ class Affichage2d {
                         const std::vector<std::string> &lignes,
                         const std::vector<SDL_Point> &enValeur);
  private:
+  // Façons d'envoyer les pixels modifiés à la texture. Aucune n'est la plus
+  // rapide partout (cela dépend de la carte graphique et du pilote) : la
+  // meilleure est mesurée au démarrage (calibrerEnvoi).
+  enum class MethodeEnvoi { bandesVerrou, bandesMiseAJour, zoneUnique };
+  void calibrerEnvoi();
+  void marquerToutModifie();
   void envoyerZoneModifiee();
   void dessinerTexte(int x, int y, const std::string &texte, int echelle,
                      SDL_Color couleur);
@@ -124,6 +136,14 @@ class Affichage2d {
     unsigned minX = 0, maxX = 0;
   };
   std::vector<Bande> bandes;
+  MethodeEnvoi methode = MethodeEnvoi::bandesVerrou;
+  double calibrage[3] = {0, 0, 0};  // ms par envoi complet, par méthode
+
+  // Profil (--profil)
+  double tempsEnvoi = 0;
+  double tempsPresentation = 0;
+  double tempsPause = 0;
+  unsigned long nbImages = 0;
 };
 
 #endif

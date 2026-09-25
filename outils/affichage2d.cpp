@@ -23,6 +23,13 @@ Compilateur : gcc version 11.2.0
 
 using namespace std;
 
+namespace {
+double maintenantMs() {
+  return double(SDL_GetPerformanceCounter()) * 1000.0
+      / double(SDL_GetPerformanceFrequency());
+}
+}  // namespace
+
 
 // SDL library
 
@@ -106,6 +113,7 @@ bool Affichage2d::initalisationAffichage() {
 
   pixels.assign(size_t(largeur) * hauteur, 0);
   bandes.assign((hauteur + HAUTEUR_BANDE - 1) / HAUTEUR_BANDE, Bande());
+  calibrerEnvoi();
   debutImage = SDL_GetTicks();
   return false;
 }
@@ -201,18 +209,26 @@ bool Affichage2d::fermerAffichage() {
 
 bool Affichage2d::mettreAjourAffichage() {
 
+  const double t0 = maintenantMs();
   envoyerZoneModifiee();
+  const double t1 = maintenantMs();
 
   // Le back buffer est indéfini après un Present : on recopie la texture
   // entière, ce qui ne coûte qu'une opération côté GPU
   SDL_RenderCopy(renderer, texture, nullptr, nullptr);
   SDL_RenderPresent(renderer);
+  const double t2 = maintenantMs();
+  tempsEnvoi += t1 - t0;
+  tempsPresentation += t2 - t1;
+  ++nbImages;
 
   // Cadence fixe : on n'attend que le temps restant de l'image, le temps
   // de calcul et de rendu est donc déjà compté dans le délai
   const Uint32 ecoule = SDL_GetTicks() - debutImage;
   if (ecoule < sdl_delay) {
+    const double t3 = maintenantMs();
     SDL_Delay(sdl_delay - ecoule);
+    tempsPause += maintenantMs() - t3;
   }
   debutImage = SDL_GetTicks();
 
@@ -379,13 +395,79 @@ void Affichage2d::afficherEcranFin(const MotifPixel &logo,
 //=========================== partie privée ===============================
 
 //--------------------------- envoi au GPU --------------------------------
+void Affichage2d::marquerToutModifie() {
+  for (Bande &bande : bandes) {
+    bande = {true, 0, largeur - 1};
+  }
+}
+
+void Affichage2d::calibrerEnvoi() {
+
+  // Chaque méthode envoie plusieurs fois l'image entière. La lecture d'un
+  // pixel de l'écran oblige la carte graphique à avoir vraiment fini (sans
+  // elle, on mesurerait seulement la mise en file d'attente des commandes).
+  const MethodeEnvoi methodes[] = {MethodeEnvoi::bandesVerrou,
+                                   MethodeEnvoi::bandesMiseAJour,
+                                   MethodeEnvoi::zoneUnique};
+  const int ECHAUFFEMENT = 2, MESURES = 6;
+  double meilleur = 1e300;
+  for (int m = 0; m < 3; ++m) {
+    methode = methodes[m];
+    double total = 0;
+    for (int essai = 0; essai < ECHAUFFEMENT + MESURES; ++essai) {
+      marquerToutModifie();
+      const double debut = maintenantMs();
+      envoyerZoneModifiee();
+      SDL_RenderCopy(renderer, texture, nullptr, nullptr);
+      const SDL_Rect unPixel = {0, 0, 1, 1};
+      Uint32 lu = 0;
+      SDL_RenderReadPixels(renderer, &unPixel, SDL_PIXELFORMAT_ARGB8888, &lu, 4);
+      if (essai >= ECHAUFFEMENT) {
+        total += maintenantMs() - debut;
+      }
+    }
+    calibrage[m] = total / MESURES;
+    if (calibrage[m] < meilleur) {
+      meilleur = calibrage[m];
+    }
+  }
+  for (int m = 0; m < 3; ++m) {
+    if (calibrage[m] == meilleur) {
+      methode = methodes[m];
+      break;
+    }
+  }
+  marquerToutModifie();
+}
+
 void Affichage2d::envoyerZoneModifiee() {
 
   // Le tampon est conservé d'une image à l'autre : seules les parties
-  // modifiées sont recopiées dans la texture. Le verrouillage (LockTexture)
-  // est la méthode prévue par SDL pour les textures qui changent souvent ;
-  // SDL_UpdateTexture est documentée comme lente et destinée aux textures
-  // statiques.
+  // modifiées sont recopiées dans la texture, par la méthode retenue au
+  // démarrage
+  if (methode == MethodeEnvoi::zoneUnique) {
+    // Un seul envoi couvrant toutes les bandes modifiées
+    size_t premiere = bandes.size(), derniere = 0;
+    unsigned minX = largeur, maxX = 0;
+    for (size_t b = 0; b < bandes.size(); ++b) {
+      if (bandes[b].modifiee) {
+        premiere = std::min(premiere, b);
+        derniere = b;
+        minX = std::min(minX, bandes[b].minX);
+        maxX = std::max(maxX, bandes[b].maxX);
+        bandes[b].modifiee = false;
+      }
+    }
+    if (premiere < bandes.size()) {
+      const unsigned y0 = unsigned(premiere) * HAUTEUR_BANDE;
+      const unsigned y1 = std::min(hauteur, unsigned(derniere + 1) * HAUTEUR_BANDE);
+      const SDL_Rect zone = {int(minX), int(y0), int(maxX - minX + 1), int(y1 - y0)};
+      SDL_UpdateTexture(texture, &zone, &pixels[size_t(y0) * largeur + minX],
+                        int(largeur * sizeof(Uint32)));
+    }
+    return;
+  }
+
   for (size_t b = 0; b < bandes.size(); ++b) {
     Bande &bande = bandes[b];
     if (not bande.modifiee) {
@@ -395,19 +477,40 @@ void Affichage2d::envoyerZoneModifiee() {
     const unsigned lignes = std::min(HAUTEUR_BANDE, hauteur - y0);
     const unsigned colonnes = bande.maxX - bande.minX + 1;
     const SDL_Rect zone = {int(bande.minX), int(y0), int(colonnes), int(lignes)};
+    const Uint32 *source = &pixels[size_t(y0) * largeur + bande.minX];
 
-    void *destination = nullptr;
-    int pas = 0;
-    if (SDL_LockTexture(texture, &zone, &destination, &pas) == 0) {
-      for (unsigned l = 0; l < lignes; ++l) {
-        std::memcpy(static_cast<Uint8 *>(destination) + size_t(l) * size_t(pas),
-                    &pixels[size_t(y0 + l) * largeur + bande.minX],
-                    colonnes * sizeof(Uint32));
+    if (methode == MethodeEnvoi::bandesMiseAJour) {
+      SDL_UpdateTexture(texture, &zone, source, int(largeur * sizeof(Uint32)));
+    } else {
+      void *destination = nullptr;
+      int pas = 0;
+      if (SDL_LockTexture(texture, &zone, &destination, &pas) == 0) {
+        for (unsigned l = 0; l < lignes; ++l) {
+          std::memcpy(static_cast<Uint8 *>(destination) + size_t(l) * size_t(pas),
+                      source + size_t(l) * largeur, colonnes * sizeof(Uint32));
+        }
+        SDL_UnlockTexture(texture);
       }
-      SDL_UnlockTexture(texture);
     }
     bande.modifiee = false;
   }
+}
+
+std::string Affichage2d::rapportProfil() const {
+  const char *noms[3] = {"bandes verrouillees", "bandes SDL_UpdateTexture",
+                         "zone unique SDL_UpdateTexture"};
+  const int choisie = int(methode);
+  std::string r = "  envoi : " + std::string(noms[choisie]) + " (calibrage ";
+  for (int m = 0; m < 3; ++m) {
+    r += std::to_string(calibrage[m]).substr(0, 5) + (m < 2 ? " / " : " ms)\n");
+  }
+  const double n = nbImages > 0 ? double(nbImages) : 1.0;
+  r += "  " + std::to_string(nbImages) + " images : envoi "
+      + std::to_string(int(tempsEnvoi)) + " ms (" + std::to_string(tempsEnvoi / n).substr(0, 5)
+      + " ms/image), presentation " + std::to_string(int(tempsPresentation)) + " ms ("
+      + std::to_string(tempsPresentation / n).substr(0, 5) + " ms/image), pause "
+      + std::to_string(int(tempsPause)) + " ms\n";
+  return r;
 }
 
 //--------------------------- texte ---------------------------------------

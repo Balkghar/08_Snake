@@ -65,6 +65,12 @@ class Combat {
    */
   void activerVsync(bool actif);
 
+  /**
+   * @brief En fin de partie, affiche où le temps a été passé (calcul,
+   *        préparation des images, envoi à la carte graphique, attentes).
+   */
+  void activerProfil(bool actif);
+
   void commencerCombat(unsigned delai = DELAI_DEFAUT,
                        unsigned zoom = ZOOM_DEFAUT,
                        unsigned vitesse = VITESSE_DEFAUT);
@@ -215,6 +221,7 @@ class Combat {
   unsigned delai = DELAI_DEFAUT;
   unsigned frequenceEcran = 60;  // images par seconde de l'écran
   bool vsync = false;
+  bool profil = false;
 
   std::vector<Snake> serpents;
   std::vector<Pomme> pommes;

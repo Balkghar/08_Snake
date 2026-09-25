@@ -133,6 +133,10 @@ void Combat::activerVsync(bool actif) {
   vsync = actif;
 }
 
+void Combat::activerProfil(bool actif) {
+  profil = actif;
+}
+
 void Combat::commencerCombat(unsigned delai, unsigned zoom, unsigned vitesse) {
 
   this->delai = delai;
@@ -753,15 +757,26 @@ bool Combat::faireCombattreSerpents(Affichage2d &affichage) {
   bool deposee = false, termine = false, arreter = false;
   Image enPreparation, prete, affichee;
 
+  // Profil : chaque compteur n'est écrit que par un thread et lu après join
+  auto maintenantMs = [] {
+    return double(SDL_GetPerformanceCounter()) * 1000.0
+        / double(SDL_GetPerformanceFrequency());
+  };
+  double moteurCalcul = 0, moteurPreparation = 0, moteurAttente = 0;
+  unsigned long nbDepots = 0, nbLotsSansDepot = 0;
+  double principalPixels = 0, principalAttente = 0, principalPresentation = 0;
+
   thread moteur([&] {
     unsigned long faits = 0;  // tours depuis la dernière liste déposée
     for (;;) {
       const unsigned v = vitesse;
+      const double t0 = maintenantMs();
       if (nbSerpent > 1) {
         faits += v == VITESSE_AUTO
             ? jouerTours(ULONG_MAX, SDL_GetTicks() + dureeLotAuto())
             : jouerTours(v, 0);
       }
+      moteurCalcul += maintenantMs() - t0;
       const bool fin = nbSerpent <= 1;
 
       {
@@ -770,19 +785,25 @@ bool Combat::faireCombattreSerpents(Affichage2d &affichage) {
           return;
         }
         if (deposee and v == VITESSE_AUTO and not fin) {
+          ++nbLotsSansDepot;
           continue;  // boîte pleine : on joue encore, on déposera plus tard
         }
       }
 
       // Seul le moteur remplit la boîte : si elle était libre, elle le reste
+      const double t1 = maintenantMs();
       preparerImage(enPreparation);
+      moteurPreparation += maintenantMs() - t1;
+      ++nbDepots;
       enPreparation.tours = nbTours;
       enPreparation.serpents = nbSerpent;
       enPreparation.toursLot = faits;
       faits = 0;
       {
         unique_lock<mutex> garde(verrou);
+        const double t2 = maintenantMs();
         signal.wait(garde, [&] { return not deposee or arreter; });
+        moteurAttente += maintenantMs() - t2;
         if (arreter) {
           return;
         }
@@ -803,16 +824,22 @@ bool Combat::faireCombattreSerpents(Affichage2d &affichage) {
   while (not fini) {
     {
       unique_lock<mutex> garde(verrou);
+      const double t0 = maintenantMs();
       signal.wait(garde, [&] { return deposee; });
+      principalAttente += maintenantMs() - t0;
       swap(prete, affichee);
       deposee = false;
       fini = termine;
     }
     signal.notify_all();  // le moteur peut déposer la suivante
 
+    const double t1 = maintenantMs();
     appliquerImage(affichage, affichee);
+    const double t2 = maintenantMs();
     int accelerer = 0;
     quitter = presenter(affichage, accelerer);
+    principalPixels += t2 - t1;
+    principalPresentation += maintenantMs() - t2;
     if (quitter) {
       break;  // fenêtre fermée ou ÉCHAP
     }
@@ -833,15 +860,32 @@ bool Combat::faireCombattreSerpents(Affichage2d &affichage) {
   signal.notify_all();
   moteur.join();
 
+  if (profil) {
+    auto ms = [](double v) { return to_string(long(v)) + " ms"; };
+    cout << "\n--- Profil (" << pool.taille() << " threads de calcul, ecran "
+         << frequenceEcran << " Hz, lots de " << dureeLotAuto() << " ms en vitesse auto)\n"
+         << "Moteur : calcul " << ms(moteurCalcul) << ", preparation des images "
+         << ms(moteurPreparation) << ", attente de l'affichage " << ms(moteurAttente)
+         << "\n  " << nbDepots << " images deposees, " << nbLotsSansDepot
+         << " lots sans depot (affichage occupe)\n"
+         << "Affichage : attente du moteur " << ms(principalAttente)
+         << ", pixels " << ms(principalPixels) << ", envoi + presentation + clavier "
+         << ms(principalPresentation) << "\n"
+         << affichage.rapportProfil() << endl;
+  }
+
   return not quitter;
 }
 
 Uint32 Combat::dureeLotAuto() const {
-  // Vitesse automatique : un lot dure une image de l'écran (au moins 1 ms)
+  // Vitesse automatique : un lot dure une image de l'écran, mais au moins
+  // 16 ms. Sur un écran à 144 Hz ou plus, des lots plus courts multiplient
+  // les images (préparation, coloriage, envoi à la carte graphique) sans
+  // rien montrer de plus utile : le calcul ralentissait au début de partie.
   if (delai > 0) {
     return delai;
   }
-  return max(1u, 1000u / max(1u, frequenceEcran));
+  return max(16u, 1000u / max(1u, frequenceEcran));
 }
 
 void Combat::changerVitesse(int pas) {
