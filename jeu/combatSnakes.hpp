@@ -171,10 +171,10 @@ class Combat {
   unsigned long jouerTours(unsigned long nbMax, Uint32 finAuPlusTard);
   void jouerTourParallele(unsigned thread);
   void jouerTourSerie();
-  void phaseDeplacement(unsigned thread, unsigned nbThreadsActifs);
+  void phaseDeplacement(unsigned thread, size_t debut, size_t fin);
   void phaseGrille(unsigned region);
-  void phaseCombats(unsigned thread, unsigned nbThreadsActifs);
-  void phaseConsequences(unsigned thread, unsigned nbThreadsActifs);
+  void phaseCombats(size_t debut, size_t fin);
+  void phaseConsequences(unsigned thread, size_t debut, size_t fin);
   void phaseRetraits(unsigned region);
   void phaseResolution();
   void emettreRetraits(Snake &serpent, std::uint32_t id, Boite &boite);
@@ -243,8 +243,30 @@ class Combat {
   // Calcul parallèle
   PoolThreads pool;
   std::vector<Boite> boites;  // une par thread
+
+  // Répartition dynamique avec vol de travail : chaque thread commence par
+  // sa propre part (les mêmes serpents et régions à chaque phase et à chaque
+  // tour, donc déjà dans son cache), prise par tranches dans son propre
+  // compteur ; une fois sa part finie, il vole des tranches dans celles des
+  // autres. Sur un processeur hybride (cœurs rapides et lents), les cœurs
+  // rapides finissent la part des lents au lieu de les attendre à chaque
+  // barrière ; sur un processeur uniforme, presque personne ne vole et rien
+  // ne change. Un compteur par phase et par thread, chacun sur sa ligne de
+  // cache, remis à zéro par le thread 0 pendant la résolution.
+  struct alignas(TAILLE_LIGNE_CACHE) Compteur {
+    std::atomic<size_t> valeur{0};
+  };
+  enum { PHASE_DEPLACEMENT, PHASE_GRILLE, PHASE_COMBATS, PHASE_CONSEQUENCES,
+         PHASE_RETRAITS, PHASE_IMAGE, NB_COMPTEURS };
+  std::unique_ptr<Compteur[]> compteurs;  // [phase * nbThreads + thread]
+  void remettreCompteurs(unsigned phase);
+  template<typename Travail>
+  void repartir(unsigned phase, unsigned thread, size_t total, size_t tranche,
+                Travail travail);
+  size_t trancheSerpents() const;
   unsigned boitesActives = 1; // boîtes remplies pendant ce tour
   std::uint64_t graine;       // suites aléatoires des serpents
+  std::uint64_t nbMouvements = 0; // déplacements joués (pour le profil)
   bool continuer = false;     // décidé par le thread 0 à chaque tour
   bool silencieux = false;
   bool finAuto = false;

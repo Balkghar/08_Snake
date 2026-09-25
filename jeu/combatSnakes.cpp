@@ -68,13 +68,17 @@ inline bool gagneContre(uint32_t taille, uint32_t id,
 
 }  // namespace
 
-// Par défaut, un cœur reste libre pour l'affichage, qui travaille en même
-// temps que le calcul (voir faireCombattreSerpents) ; les autres calculent
+// Par défaut, un thread par cœur physique, moins un cœur laissé à
+// l'affichage, qui travaille en même temps que le calcul (voir
+// faireCombattreSerpents). Les deux threads matériels d'un même cœur (SMT)
+// se partagent ses unités de calcul et ses caches, et chaque barrière attend
+// le plus lent : deux threads de calcul sur un même cœur ralentissent plus
+// qu'ils n'aident. -j permet toujours d'essayer autre chose.
 unsigned Combat::threadsParDefaut(unsigned demandes) {
   if (demandes != 0) {
     return demandes;
   }
-  const unsigned coeurs = PoolThreads::coeursDisponibles();
+  const unsigned coeurs = PoolThreads::coeursPhysiques();
   return coeurs > 1 ? coeurs - 1 : 1;
 }
 
@@ -97,11 +101,16 @@ Combat::Combat(unsigned int largeur,
 
   // Une région (bande de lignes) par thread, de hauteur multiple de celle
   // des bandes de l'affichage pour que le redessin parallèle ne se croise
-  // jamais
-  const unsigned nbRegions = pool.taille();
+  // jamais. (Plus de régions équilibrerait mieux un processeur hybride, mais
+  // chaque région de plus coûte une boîte par thread à parcourir : mesuré
+  // plus lent. Un thread rapide peut de toute façon voler une région
+  // entière.)
   const unsigned bande = Affichage2d::HAUTEUR_BANDE;
-  unsigned hauteurRegion = (longueur + nbRegions - 1) / nbRegions;
+  const unsigned nbBandes = (longueur + bande - 1) / bande;
+  const unsigned voulues = max(1u, min(nbBandes, pool.taille()));
+  unsigned hauteurRegion = (longueur + voulues - 1) / voulues;
   hauteurRegion = (hauteurRegion + bande - 1) / bande * bande;
+  const unsigned nbRegions = (longueur + hauteurRegion - 1) / hauteurRegion;
   regions.resize(nbRegions);
   regionParLigne.resize(longueur);
   for (unsigned y = 0; y < longueur; ++y) {
@@ -109,6 +118,7 @@ Combat::Combat(unsigned int largeur,
   }
 
   boites.resize(pool.taille());
+  compteurs.reset(new Compteur[size_t(NB_COMPTEURS) * pool.taille()]);
   for (Boite &boite : boites) {
     boite.mouvements.resize(nbRegions);
     boite.tetes.resize(nbRegions);
@@ -347,17 +357,67 @@ unsigned long Combat::jouerTours(unsigned long nbMax, Uint32 finAuPlusTard) {
   return nbTours - depart;
 }
 
+void Combat::remettreCompteurs(unsigned phase) {
+  const unsigned n = pool.taille();
+  for (unsigned t = 0; t < n; ++t) {
+    compteurs[phase * n + t].valeur.store(0, memory_order_relaxed);
+  }
+}
+
+template<typename Travail>
+void Combat::repartir(unsigned phase, unsigned thread, size_t total,
+                      size_t tranche, Travail travail) {
+  const unsigned n = pool.taille();
+  // Sa propre part d'abord, puis celles des suivants (vol)
+  for (unsigned k = 0; k < n; ++k) {
+    const unsigned proprietaire = (thread + k) % n;
+    const size_t debutPart = total * proprietaire / n;
+    const size_t taillePart = total * (proprietaire + 1) / n - debutPart;
+    Compteur &compteur = compteurs[phase * n + proprietaire];
+    // (lecture simple avant de tenter un vol : une part finie ne coûte
+    // qu'une lecture partagée, pas une écriture sur la ligne de cache)
+    if (k > 0 and compteur.valeur.load(memory_order_relaxed) >= taillePart) {
+      continue;
+    }
+    for (;;) {
+      const size_t debut = compteur.valeur.fetch_add(tranche, memory_order_relaxed);
+      if (debut >= taillePart) {
+        break;
+      }
+      travail(debutPart + debut, debutPart + min(debut + tranche, taillePart));
+    }
+  }
+}
+
+size_t Combat::trancheSerpents() const {
+  // Assez de tranches pour équilibrer (~16 par thread), assez grosses pour
+  // que le compteur commun ne coûte rien
+  return max<size_t>(64, vivants.size() / (size_t(pool.taille()) * 16));
+}
+
 void Combat::jouerTourParallele(unsigned thread) {
-  const unsigned nbThreads = pool.taille();
-  phaseDeplacement(thread, nbThreads);
+  const size_t nbVivants = vivants.size();
+  const size_t tranche = trancheSerpents();
+  auto parRegion = [&](size_t debut, size_t fin, void (Combat::*phase)(unsigned)) {
+    for (size_t r = debut; r < fin; ++r) {
+      (this->*phase)(unsigned(r));
+    }
+  };
+
+  repartir(PHASE_DEPLACEMENT, thread, nbVivants, tranche,
+           [&](size_t debut, size_t fin) { phaseDeplacement(thread, debut, fin); });
   pool.barriere();
-  phaseGrille(thread);
+  repartir(PHASE_GRILLE, thread, regions.size(), 1,
+           [&](size_t debut, size_t fin) { parRegion(debut, fin, &Combat::phaseGrille); });
   pool.barriere();
-  phaseCombats(thread, nbThreads);
+  repartir(PHASE_COMBATS, thread, nbVivants, tranche,
+           [&](size_t debut, size_t fin) { phaseCombats(debut, fin); });
   pool.barriere();
-  phaseConsequences(thread, nbThreads);
+  repartir(PHASE_CONSEQUENCES, thread, nbVivants, tranche,
+           [&](size_t debut, size_t fin) { phaseConsequences(thread, debut, fin); });
   pool.barriere();
-  phaseRetraits(thread);
+  repartir(PHASE_RETRAITS, thread, regions.size(), 1,
+           [&](size_t debut, size_t fin) { parRegion(debut, fin, &Combat::phaseRetraits); });
   pool.barriere();
   if (thread == 0) {
     phaseResolution();
@@ -366,12 +426,12 @@ void Combat::jouerTourParallele(unsigned thread) {
 
 void Combat::jouerTourSerie() {
   // Peu de serpents : mêmes phases, sur un seul thread (même résultat)
-  phaseDeplacement(0, 1);
+  phaseDeplacement(0, 0, vivants.size());
   for (unsigned r = 0; r < regions.size(); ++r) {
     phaseGrille(r);
   }
-  phaseCombats(0, 1);
-  phaseConsequences(0, 1);
+  phaseCombats(0, vivants.size());
+  phaseConsequences(0, 0, vivants.size());
   for (unsigned r = 0; r < regions.size(); ++r) {
     phaseRetraits(r);
   }
@@ -389,10 +449,8 @@ uint64_t Combat::hasard(uint32_t serpent) const {
 }
 
 //--- 1. Déplacement (par serpent) ---------------------------------------
-void Combat::phaseDeplacement(unsigned thread, unsigned nbThreadsActifs) {
+void Combat::phaseDeplacement(unsigned thread, size_t debut, size_t fin) {
 
-  const size_t debut = vivants.size() * thread / nbThreadsActifs;
-  const size_t fin = vivants.size() * (thread + 1) / nbThreadsActifs;
   Boite &boite = boites[thread];
 
   for (size_t v = debut; v < fin; ++v) {
@@ -506,7 +564,7 @@ void Combat::phaseGrille(unsigned r) {
 }
 
 //--- 3. Combats (par serpent) : qui meurt ? -------------------------------
-void Combat::phaseCombats(unsigned thread, unsigned nbThreadsActifs) {
+void Combat::phaseCombats(size_t debut, size_t fin) {
 
   // Règles, évaluées pour tous en même temps (l'ordre ne compte pas) :
   //  - plusieurs têtes sur la même case : seule la plus longue survit
@@ -516,8 +574,6 @@ void Combat::phaseCombats(unsigned thread, unsigned nbThreadsActifs) {
   //    parité (comme les cases d'un damier) et des serpents de parités
   //    différentes ne pourraient jamais se tuer.
   // Un serpent qui perd l'un de ses combats meurt.
-  const size_t debut = vivants.size() * thread / nbThreadsActifs;
-  const size_t fin = vivants.size() * (thread + 1) / nbThreadsActifs;
   const uint32_t tour = parite();
 
   for (size_t v = debut; v < fin; ++v) {
@@ -568,10 +624,8 @@ void Combat::emettreRetraits(Snake &serpent, uint32_t id, Boite &boite) {
   serpent.oublierModifications();
 }
 
-void Combat::phaseConsequences(unsigned thread, unsigned nbThreadsActifs) {
+void Combat::phaseConsequences(unsigned thread, size_t debut, size_t fin) {
 
-  const size_t debut = vivants.size() * thread / nbThreadsActifs;
-  const size_t fin = vivants.size() * (thread + 1) / nbThreadsActifs;
   Boite &boite = boites[thread];
   const bool tousVerifient = victimeInconnue.load(memory_order_relaxed);
   const uint32_t tour = parite();
@@ -655,6 +709,14 @@ void Combat::phaseRetraits(unsigned r) {
 
 //--- 6. Résolution (un seul thread) --------------------------------------
 void Combat::phaseResolution() {
+
+  nbMouvements += nbSerpent;
+
+  // (tous les threads ont fini : compteurs de répartition remis à zéro pour
+  // le tour suivant)
+  for (unsigned phase = 0; phase < NB_COMPTEURS; ++phase) {
+    remettreCompteurs(phase);
+  }
 
   // Dans l'ordre des numéros de serpent : le résultat ne dépend pas de la
   // façon dont les serpents étaient répartis entre threads
@@ -864,6 +926,10 @@ bool Combat::faireCombattreSerpents(Affichage2d &affichage) {
     auto ms = [](double v) { return to_string(long(v)) + " ms"; };
     cout << "\n--- Profil (" << pool.taille() << " threads de calcul, ecran "
          << frequenceEcran << " Hz, lots de " << dureeLotAuto() << " ms en vitesse auto)\n"
+         << "Partie : graine " << graineDePartie() << ", " << nbTours << " tours, "
+         << nbMouvements << " deplacements, "
+         << (nbMouvements ? moteurCalcul * 1e6 / double(nbMouvements) : 0.0)
+         << " ns de calcul par deplacement\n"
          << "Moteur : calcul " << ms(moteurCalcul) << ", preparation des images "
          << ms(moteurPreparation) << ", attente de l'affichage " << ms(moteurAttente)
          << "\n  " << nbDepots << " images deposees, " << nbLotsSansDepot
@@ -929,8 +995,13 @@ void Combat::preparerImage(Image &image) {
     total += region.casesModifiees.size();
   }
   if (pool.taille() > 1 and total >= SEUIL_DESSIN_PARALLELE) {
+    remettreCompteurs(PHASE_IMAGE);
     pool.executer([&](unsigned thread) {
-      preparerRegion(regions[thread], image.parRegion[thread]);
+      repartir(PHASE_IMAGE, thread, regions.size(), 1, [&](size_t debut, size_t fin) {
+        for (size_t r = debut; r < fin; ++r) {
+          preparerRegion(regions[r], image.parRegion[r]);
+        }
+      });
     });
   } else {
     for (size_t r = 0; r < regions.size(); ++r) {

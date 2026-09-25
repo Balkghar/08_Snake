@@ -15,11 +15,13 @@
   ---------------------------------------------------------------------------
 */
 
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <string>
 #include <vector>
 
+#include "outils/aleatoire.hpp"
 #include "outils/saisie.hpp"
 #include "jeu/combatSnakes.hpp"
 #include "outils/poolThreads.hpp"
@@ -63,11 +65,15 @@ void afficherAide(const string &programme, const vector<Parametre> &params) {
        << "                          dechirure (ne ralentit pas le calcul)\n"
        << "      --profil            En fin de partie, temps passe dans le\n"
        << "                          calcul, les images, l'envoi a l'ecran\n"
+       << "  -g, --graine N          Rejoue exactement la meme partie (avec les\n"
+       << "                          memes -l -H -s, quel que soit -j) ; la\n"
+       << "                          graine est affichee par --profil\n"
        << "  -h, --aide              Affiche cette aide\n\n"
        << "En jeu : + / - pour accelerer / ralentir, ECHAP pour quitter.\n\n"
        << "Exemples : " << programme << " -l 200 -H 150 -s 20\n"
        << "           " << programme << " -l 1200 -H 800 -s 20000 -v 0\n"
-       << "           " << programme << " --turbo\n";
+       << "           " << programme << " --turbo\n"
+       << "           " << programme << " --turbo --graine 42 --profil -j 4\n";
 }
 
 // Options sans valeur
@@ -77,6 +83,8 @@ struct Drapeaux {
   bool finAuto = false;
   bool vsync = false;
   bool profil = false;
+  bool graineDonnee = false;
+  std::uint64_t graine = 0;
 };
 
 // Lit un entier compris dans [min, max] ; renvoie false si invalide.
@@ -128,6 +136,30 @@ bool lireArguments(int argc, char **argv, vector<Parametre> &params,
     if (egal != string::npos) {
       valeur = arg.substr(egal + 1);
       arg = arg.substr(0, egal);
+    }
+
+    // La graine est un entier 64 bits, hors du cadre des autres paramètres
+    if (arg == "-g" or arg == "--graine") {
+      if (egal == string::npos) {
+        if (i + 1 >= argc) {
+          cerr << "Valeur manquante pour " << arg << '\n';
+          return false;
+        }
+        valeur = argv[++i];
+      }
+      size_t fin = 0;
+      try {
+        drapeaux.graine = stoull(valeur, &fin);
+      } catch (const exception &) {
+        fin = 0;
+      }
+      if (valeur.empty() or valeur[0] == '-' or fin != valeur.size()) {
+        cerr << "Valeur invalide pour " << arg << " : \"" << valeur
+             << "\" (attendu un entier positif)\n";
+        return false;
+      }
+      drapeaux.graineDonnee = true;
+      continue;
     }
 
     Parametre *param = nullptr;
@@ -185,7 +217,7 @@ int main(int argc, char **argv) {
        int(Combat::ZOOM_DEFAUT), ""},
       {"-v", "--vitesse", "Tours par image (0 = auto)", 0, 1000,
        int(Combat::VITESSE_DEFAUT), ""},
-      {"-j", "--threads", "Threads de calcul (0 = coeurs - 1)", 0, 256,
+      {"-j", "--threads", "Threads de calcul (0 = coeurs physiques - 1)", 0, 256,
        0, ""},
   };
   enum { LARGEUR, HAUTEUR, SERPENTS, DELAI, ZOOM, VITESSE, THREADS };
@@ -237,6 +269,10 @@ int main(int argc, char **argv) {
     parDefaut(DELAI, 0);
     parDefaut(ZOOM, 1);
     parDefaut(VITESSE, 0);
+  }
+
+  if (drapeaux.graineDonnee) {
+    fixerGraine(drapeaux.graine);
   }
 
   cout << MSG_DEBUT << endl;

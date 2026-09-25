@@ -63,6 +63,13 @@ class PoolThreads {
   static unsigned coeursDisponibles();
 
   /**
+   * @brief Cœurs physiques parmi les cœurs disponibles : deux threads
+   *        matériels d'un même cœur (Hyper-Threading, SMT) comptent pour un.
+   *        Sans information sur la topologie, égal à coeursDisponibles().
+   */
+  static unsigned coeursPhysiques();
+
+  /**
    * @brief Exécute tache(i) sur chaque thread i (le thread appelant est le
    *        numéro 0) et attend que tous aient fini.
    */

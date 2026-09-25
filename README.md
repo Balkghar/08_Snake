@@ -65,7 +65,8 @@ programme par un simple double-clic.
 | `-z`, `--zoom N`      | Taille d'une case à l'écran, en pixels   | 1–16     | 4         |
 | `-v`, `--vitesse N`   | Tours de jeu par image, 0 = automatique  | 0–1000   | 1         |
 | `-t`, `--turbo`       | Terrain et serpents au maximum, vitesse auto, zoom 1, silencieux | | |
-| `-j`, `--threads N`   | Threads de calcul, 0 = cœurs − 1         | 0–256    | 0         |
+| `-j`, `--threads N`   | Threads de calcul, 0 = cœurs physiques − 1 | 0–256  | 0         |
+| `-g`, `--graine N`    | Rejoue exactement la même partie (mêmes `-l -H -s`, tout `-j`) | entier ≥ 0 | au hasard |
 | `-q`, `--silencieux`  | N'annonce pas chaque mort                |          |           |
 | `-f`, `--fin-auto`    | Statistiques dans la console, pas d'écran de fin à fermer | | |
 | `--vsync`             | Images au rythme de l'écran, sans déchirure |        |           |
@@ -269,8 +270,8 @@ groupe de threads permanents (`PoolThreads`) :
 | 6. Résolution   | 1 thread | annonces, récompenses, nouvelles pommes |
 
 - **Aucun verrou** : le terrain est découpé en bandes horizontales, une par
-  thread ; une case n'est jamais écrite que par le thread de sa bande, et un
-  serpent que par le thread qui le traite. Les messages entre phases sont
+  thread ; une case n'est jamais écrite que par le thread qui traite sa
+  bande, et un serpent que par le thread qui le traite. Les messages entre phases sont
   rangés dans une boîte par thread et par région.
 - **Déterministe** : chaque serpent tire ses nombres aléatoires dans sa
   propre suite (numéro du serpent, numéro du tour) et la résolution suit
@@ -279,6 +280,19 @@ groupe de threads permanents (`PoolThreads`) :
 - **Localité** : les places de départ sont numérotées dans l'ordre du
   terrain, donc des serpents voisins ont des numéros voisins : leurs données
   sont proches en mémoire et chaque thread travaille surtout dans sa région.
+- **Vol de travail** : chaque thread a sa part (serpents, régions), toujours
+  la même d'une phase et d'un tour à l'autre pour que ses données restent
+  dans son cache. Il la prend par tranches dans un compteur qui lui est
+  propre ; sa part finie, il vole des tranches dans celles des autres. Sur
+  un processeur hybride (cœurs performants et économes, Intel 12e génération
+  et suivants, ARM big.LITTLE), les cœurs rapides finissent le travail des
+  lents au lieu de les attendre à chaque barrière. Sur un processeur
+  uniforme, presque personne ne vole : aucune perte mesurée. (Distribuer
+  tout le travail depuis un compteur commun équilibre aussi, mais mélange
+  les serpents entre les cœurs à chaque phase : 25 % plus lent sur
+  4 cœurs.) Les threads ne sont pas épinglés à des cœurs : sur les
+  processeurs hybrides, le système (Thread Director d'Intel) sait mieux où
+  les placer.
 - **Peu de serpents** : en dessous de 512 serpents, un seul thread joue les
   mêmes phases (se synchroniser coûterait plus que le calcul).
 - **Attente adaptative** : un thread qui attend (la barrière, une tâche, les
@@ -290,7 +304,12 @@ groupe de threads permanents (`PoolThreads`) :
   attend.
 - **Cœurs réellement disponibles** : sous Linux, le nombre de threads par
   défaut tient compte des cœurs autorisés (conteneur, `taskset`), que
-  `std::thread::hardware_concurrency()` ignore.
+  `std::thread::hardware_concurrency()` ignore, et compte les **cœurs
+  physiques** : les deux threads matériels d'un même cœur (Hyper-Threading)
+  se partagent ses unités de calcul et ses caches, et deux threads de
+  calcul sur un même cœur ralentissent plus qu'ils n'aident. Un i7-1255U
+  (2 cœurs performants à 2 threads + 8 économes) a 12 processeurs logiques
+  mais 10 cœurs : 9 threads de calcul par défaut, au lieu de 11.
 - **Architecture** : instruction d'attente adaptée (`pause` sur x86, `isb`
   sur ARM64), données partagées alignées sur la ligne de cache (64 octets,
   128 sur les puces Apple) et compteurs en ordre mémoire séquentiellement
@@ -314,7 +333,7 @@ le programme prévient. Mesures sur 4 cœurs, 30 000 serpents :
   (synchronisation imposée par le système, envoi lent à la carte graphique)
   ne ralentit donc plus le calcul. En vitesse fixe (`-v N`), l'affichage
   donne la cadence. Par défaut, un cœur est laissé à l'affichage (`-j` vaut
-  cœurs − 1).
+  cœurs physiques − 1).
 - **Lots d'au moins 16 ms** en vitesse automatique (une image de l'écran
   sur un écran lent) : des lots plus courts sur un écran à 144 Hz ou plus
   multipliaient les images à préparer et à envoyer sans rien montrer de
@@ -327,9 +346,11 @@ le programme prévient. Mesures sur 4 cœurs, 30 000 serpents :
   (`SDL_LockTexture`), bandes par `SDL_UpdateTexture`, ou une seule zone.
 - **`--profil`** : en fin de partie, temps passé dans le calcul, la
   préparation des images, le coloriage, l'envoi et la présentation, les
-  attentes de part et d'autre, et la méthode d'envoi retenue. C'est la
-  seule façon fiable de savoir ce qui limite la vitesse sur une machine
-  donnée.
+  attentes de part et d'autre, et la méthode d'envoi retenue, ainsi que la
+  graine, le nombre de tours et de déplacements et le temps de calcul par
+  déplacement. C'est la seule façon fiable de savoir ce qui limite la
+  vitesse sur une machine donnée. Pour comparer deux réglages, rejouer la
+  même partie : `--turbo --profil --graine 42 -j 4`, puis `-j 8`, etc.
 - **Pages de 2 Mo** pour la grille du terrain (Linux) : moins de défauts de
   traduction d'adresse pour un tableau de 15 Mo lu au hasard.
 - **Console** : annoncer 100 000 morts dans un terminal peut coûter plus

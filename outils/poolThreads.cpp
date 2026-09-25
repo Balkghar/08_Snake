@@ -27,6 +27,9 @@ Compilateur : gcc version 11.2.0
 
 #include <algorithm>
 #include <chrono>
+#include <fstream>
+#include <set>
+#include <string>
 
 #if defined(_MSC_VER) && (defined(_M_ARM64) || defined(_M_ARM))
 #include <intrin.h>
@@ -69,6 +72,39 @@ unsigned PoolThreads::coeursDisponibles() {
   }
 #endif
   return std::max(1u, std::thread::hardware_concurrency());
+}
+
+unsigned PoolThreads::coeursPhysiques() {
+#if defined(__linux__)
+  // Les threads matériels d'un même cœur partagent la même liste de
+  // « frères » : on compte les listes distinctes parmi les processeurs
+  // autorisés. (Sur un processeur hybride comme les Intel de 12e génération,
+  // chaque cœur performant a deux threads, chaque cœur économe un seul.)
+  cpu_set_t ensemble;
+  if (sched_getaffinity(0, sizeof(ensemble), &ensemble) == 0) {
+    std::set<std::string> coeurs;
+    for (int cpu = 0; cpu < CPU_SETSIZE; ++cpu) {
+      if (not CPU_ISSET(cpu, &ensemble)) {
+        continue;
+      }
+      const std::string dossier =
+          "/sys/devices/system/cpu/cpu" + std::to_string(cpu) + "/topology/";
+      std::string freres;
+      std::ifstream fichier(dossier + "core_cpus_list");  // Linux >= 5.3
+      if (not std::getline(fichier, freres)) {
+        std::ifstream ancien(dossier + "thread_siblings_list");
+        if (not std::getline(ancien, freres)) {
+          return coeursDisponibles();  // topologie inconnue
+        }
+      }
+      coeurs.insert(freres);
+    }
+    if (not coeurs.empty()) {
+      return unsigned(coeurs.size());
+    }
+  }
+#endif
+  return coeursDisponibles();
 }
 
 PoolThreads::PoolThreads(unsigned nbThreads) : nbThreads(nbThreads) {

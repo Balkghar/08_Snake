@@ -35,4 +35,16 @@ int aleatoireEntreDeuxValeurs(int min, int max);
  */
 std::uint64_t graineAleatoire();
 
+/**
+ * @brief Fixe la graine de toute la partie : mêmes paramètres et même graine
+ *        donnent exactement la même partie, quel que soit le nombre de
+ *        threads. À appeler avant de créer le combat.
+ */
+void fixerGraine(std::uint64_t valeur);
+
+/**
+ * @brief Graine de la partie (donnée par fixerGraine ou tirée au hasard).
+ */
+std::uint64_t graineDePartie();
+
 #endif
