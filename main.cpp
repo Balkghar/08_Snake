@@ -53,7 +53,8 @@ void afficherAide(const string &programme, const vector<Parametre> &params) {
     cout << '\n';
   }
   cout << "  -h, --aide              Affiche cette aide\n\n"
-       << "Exemple : " << programme << " -l 200 -H 150 -s 20\n";
+       << "Exemples : " << programme << " -l 200 -H 150 -s 20\n"
+       << "           " << programme << " -l 1200 -H 800 -s 20000 -z 1 -d 16\n";
 }
 
 // Lit un entier compris dans [min, max] ; renvoie false si invalide.
@@ -129,15 +130,24 @@ int main(int argc, char **argv) {
        MSG_TERRAIN + "largeur du terrain de combat.\n" + MSG_INTERVALLE},
       {"-H", "--hauteur", "Hauteur du terrain (cases)", 50, 800, -1,
        MSG_TERRAIN + "hauteur du terrain de combat.\n" + MSG_INTERVALLE},
-      {"-s", "--serpents", "Nombre de serpents", 2, 1000, -1,
+      {"-s", "--serpents", "Nombre de serpents", 2, 100'000, -1,
        "Choisisez combien de serpents devront combattre.\n"
        "Ce nombre doit etre compris entre "s},
       {"-d", "--delai", "Delai entre deux images (ms)", 0, 1000,
        int(Combat::DELAI_DEFAUT), ""},
       {"-z", "--zoom", "Taille d'une case (pixels)", 1, 16,
        int(Combat::ZOOM_DEFAUT), ""},
+      {"-v", "--vitesse", "Tours de jeu par image", 1, 1000,
+       int(Combat::VITESSE_DEFAUT), ""},
   };
-  enum { LARGEUR, HAUTEUR, SERPENTS, DELAI, ZOOM };
+  enum { LARGEUR, HAUTEUR, SERPENTS, DELAI, ZOOM, VITESSE };
+
+  // Chaque serpent et sa pomme doivent trouver leur place au départ : au plus
+  // un serpent pour 4 cases
+  auto maxSerpents = [&params]() {
+    return int(min<long>(params[SERPENTS].max,
+                         long(params[LARGEUR].valeur) * params[HAUTEUR].valeur / 4));
+  };
 
   //------------------------------ Textes -----------------------------------------
   const string MSG_ERR = "Valeur invalide, veuillez recommencer"s;
@@ -171,6 +181,15 @@ int main(int argc, char **argv) {
   // l'ordre de la liste
   bool modeInteractif = false;
   for (Parametre &p : params) {
+    if (&p == &params[SERPENTS] and params[LARGEUR].valeur > 0
+        and params[HAUTEUR].valeur > 0) {
+      p.max = maxSerpents();
+      if (p.donne and p.valeur > p.max) {
+        cerr << "Trop de serpents pour ce terrain : " << p.max
+             << " au maximum" << endl;
+        return EXIT_FAILURE;
+      }
+    }
     if (p.valeur < 0) {
       p.valeur = saisirIntervalle(p.min, p.max,
                                   p.question + to_string(p.min) + " et "s
@@ -185,7 +204,8 @@ int main(int argc, char **argv) {
                 unsigned(params[SERPENTS].valeur));
 
   combat.commencerCombat(unsigned(params[DELAI].valeur),
-                         unsigned(params[ZOOM].valeur));
+                         unsigned(params[ZOOM].valeur),
+                         unsigned(params[VITESSE].valeur));
   cout << MSG_FIN;
 
   // Garde la console ouverte seulement si l'utilisateur est devant (lancement

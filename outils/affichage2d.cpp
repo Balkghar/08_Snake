@@ -44,6 +44,19 @@ bool Affichage2d::initalisationAffichage() {
   // Agrandissement au plus proche voisin : chaque case reste un carré net
   SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
 
+  // Réduit le zoom si la fenêtre ne tient pas à l'écran
+  SDL_Rect ecran;
+  if (SDL_GetDisplayUsableBounds(0, &ecran) == 0) {
+    const unsigned zoomDemande = nbre_values;
+    while (nbre_values > 1 and (largeur * nbre_values > unsigned(ecran.w)
+        or hauteur * nbre_values > unsigned(ecran.h))) {
+      --nbre_values;
+    }
+    if (nbre_values != zoomDemande) {
+      cout << "Zoom reduit a " << nbre_values << " pour tenir a l'ecran" << endl;
+    }
+  }
+
   SDL_CreateWindowAndRenderer(int(largeur * nbre_values),
                               int(hauteur * nbre_values),
                               SDL_WINDOW_SHOWN,
@@ -68,6 +81,10 @@ bool Affichage2d::initalisationAffichage() {
     cout << "SDL not ready ... quitting" << endl;
     return true;
   }
+
+  couleurs[Couleur::blanc] = SDL_MapRGB(format, 255, 255, 255);
+  couleurs[Couleur::noir] = SDL_MapRGB(format, 0, 0, 0);
+  couleurs[Couleur::rouge] = SDL_MapRGB(format, 255, 0, 0);
 
   pixels.assign(size_t(largeur) * hauteur, 0);
   debutImage = SDL_GetTicks();
@@ -176,11 +193,5 @@ bool Affichage2d::mettreAjourAffichage() {
 
 //--------------------------- gestion couleur -----------------------------
 Uint32 Affichage2d::valeurCouleur(Couleur couleur) const {
-
-  switch (couleur) {
-    case Couleur::rouge:return SDL_MapRGB(format, 255, 0, 0);
-    case Couleur::noir:return SDL_MapRGB(format, 0, 0, 0);
-    case Couleur::blanc:
-    default:return SDL_MapRGB(format, 255, 255, 255);
-  }
+  return couleurs[couleur];
 }

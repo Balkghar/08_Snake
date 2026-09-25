@@ -32,11 +32,13 @@ class Combat {
   );
 
   //------------------------- lancement du combat -------------------------
-  static const unsigned DELAI_DEFAUT = 50;  // ms entre deux images
-  static const unsigned ZOOM_DEFAUT = 4;    // pixels écran par case
+  static constexpr unsigned DELAI_DEFAUT = 50;  // ms entre deux images
+  static constexpr unsigned ZOOM_DEFAUT = 4;    // pixels écran par case
+  static constexpr unsigned VITESSE_DEFAUT = 1; // tours de jeu par image
 
   void commencerCombat(unsigned delai = DELAI_DEFAUT,
-                       unsigned zoom = ZOOM_DEFAUT);
+                       unsigned zoom = ZOOM_DEFAUT,
+                       unsigned vitesse = VITESSE_DEFAUT);
 
  private:
 
@@ -45,21 +47,21 @@ class Combat {
   void initialiserSerpent();
   CoordonneesXY generateurDeCoord();
 
-  //------------------------- contrôle de présence ------------------------
-  bool placeEstOccupee(int x, int y) const;
-
   //------------------------- grille d'occupation -------------------------
+  bool placeEstOccupee(size_t i) const;
   size_t indexCase(int x, int y) const;
   void modifierCase(int x, int y, int deltaSerpent, int deltaPomme);
-  void appliquerModificationsSerpents();
+  void appliquerModifications(Snake &serpent);
 
   //------------------------- méthodes du jeu -----------------------------
+  void jouerTour();
   void mangerPomme(Snake &serpent, Pomme &pomme);
-  void combatSerpent(Snake &serpent);
+  void combatSerpent(size_t indice);
+  void tuer(Snake &victime, const Snake &tueur);
 
   //------------------------- méthodes d'affichage ------------------------
   bool afficher(Affichage2d &affichage);
-  void faireCombattreSerpents(Affichage2d &affichage);
+  void faireCombattreSerpents(Affichage2d &affichage, unsigned vitesse);
 
   //------------------------- Données -------------------------------------
   const unsigned largeur;
@@ -68,18 +70,25 @@ class Combat {
   unsigned longueurAffichage;
   unsigned nbSerpent;
 
-  static const unsigned MIN = 0;
+  static constexpr unsigned MIN = 0;
+  static constexpr unsigned AUCUNE_TETE = 0;
 
-  std::string serpentTueur;
   std::vector<Snake> serpents;
   std::vector<Pomme> pommes;
+  std::vector<unsigned> vivants;  // indices des serpents en vie, dans l'ordre
 
-  // Nombre de segments de serpents vivants / de pommes sur chaque case. Tenue
-  // à jour de façon incrémentale : seules les cases listées dans
-  // casesModifiees sont redessinées à chaque image.
+  // Grilles du terrain (une case par élément, indexCase(x, y)) :
+  //  - nombre de segments de serpents vivants et de pommes par case, tenus à
+  //    jour de façon incrémentale ; seules les casesModifiees sont redessinées
+  //  - teteSurCase : indice + 1 du serpent vivant dont la tête est sur la
+  //    case (il ne peut y en avoir qu'une : deux têtes qui se rencontrent se
+  //    battent aussitôt). Évite de comparer chaque serpent à tous les autres.
   std::vector<int> occupationSerpents;
   std::vector<int> occupationPommes;
+  std::vector<unsigned> teteSurCase;
+  std::vector<bool> caseMarquee;
   std::vector<CoordonneesXY> casesModifiees;
+  size_t nbCasesOccupees = 0;
 };
 
 #endif

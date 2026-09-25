@@ -47,12 +47,13 @@ class Affichage2d {
   bool mettreAjourAffichage();
  private:
   Uint32 valeurCouleur(Couleur couleur) const;
+  Uint32 couleurs[3] = {0, 0, 0};  // indexé par Couleur, format de la texture
 
   //------------------------- Données -------------------------------------
   const unsigned largeur;
   const unsigned hauteur;
   const unsigned sdl_delay;
-  const unsigned nbre_values;
+  unsigned nbre_values;  // zoom : taille d'une case en pixels
   SDL_Window *window = nullptr;
   SDL_Renderer *renderer = nullptr;
   SDL_Texture *texture = nullptr;

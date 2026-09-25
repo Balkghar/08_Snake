@@ -39,24 +39,27 @@ programme par un simple double-clic.
 ./build/08_snake -l 200 -H 150 -s 20      # aucune question posée
 ./build/08_snake -l 300 -H 200 -s 200 -d 10 -z 3
 ./build/08_snake --serpents=50            # seules largeur et hauteur sont demandées
+./build/08_snake -l 1200 -H 800 -s 20000 -z 1 -d 16   # la grosse mêlée
 ```
 
 | Option                | Description                              | Valeurs  | Défaut    |
 |-----------------------|------------------------------------------|----------|-----------|
 | `-l`, `--largeur N`   | Largeur du terrain, en cases             | 50–1200  | demandée  |
 | `-H`, `--hauteur N`   | Hauteur du terrain, en cases             | 50–800   | demandée  |
-| `-s`, `--serpents N`  | Nombre de serpents                       | 2–1000   | demandé   |
+| `-s`, `--serpents N`  | Nombre de serpents (≤ cases / 4)         | 2–100000 | demandé   |
 | `-d`, `--delai N`     | Délai entre deux images, en ms (vitesse) | 0–1000   | 50        |
 | `-z`, `--zoom N`      | Taille d'une case à l'écran, en pixels   | 1–16     | 4         |
+| `-v`, `--vitesse N`   | Tours de jeu par image affichée          | 1–1000   | 1         |
 | `-h`, `--aide`        | Affiche l'aide                           |          |           |
 
 Les formes `--option N` et `--option=N` sont acceptées. Une option inconnue
 ou une valeur hors bornes arrête le programme avec un message d'erreur (code
 de sortie 1).
 
-La fenêtre fait `largeur × zoom` par `hauteur × zoom` pixels : avec les
-valeurs maximales et le zoom par défaut, elle dépasse n'importe quel écran,
-baissez le zoom en conséquence. Fermer la fenêtre interrompt la partie.
+La fenêtre fait `largeur × zoom` par `hauteur × zoom` pixels ; si elle ne
+tient pas à l'écran, le zoom est réduit automatiquement. Pour accélérer la
+partie : `-d 0` supprime l'attente entre les images et `-v N` joue N tours
+par image. Fermer la fenêtre interrompt la partie.
 
 ## Règles du jeu
 
@@ -87,6 +90,7 @@ outils/
   affichage2d.*          Fenêtre SDL2 et tampon de pixels
   saisie.*               Saisie sécurisée d'un entier
   aleatoire.*            Tirage aléatoire
+  fileCirculaire.hpp     File circulaire (corps des serpents)
   struct_coordonnees.hpp Coordonnées (x, y)
 ```
 
@@ -102,17 +106,20 @@ classDiagram
         -pommes : vector~Pomme~
         -occupationSerpents : vector~int~
         -occupationPommes : vector~int~
+        -teteSurCase : vector~unsigned~
+        -vivants : vector~unsigned~
         -casesModifiees : vector~CoordonneesXY~
-        +commencerCombat(delai, zoom)
+        +commencerCombat(delai, zoom, vitesse)
     }
     class Snake{
         -id : const unsigned
         -estEnVie : bool
         -longueurAAjouter : unsigned
-        -coordonnees : vector~CoordonneesXY~
+        -coordonnees : FileCirculaire~CoordonneesXY~
         -casesAjoutees, casesRetirees : vector~CoordonneesXY~
         +deplacerVersXY(x, y)
-        +combattreSerpent(Snake)
+        +combattreTete(Snake) Snake
+        +etreMordu(position, Snake)
     }
     class Pomme{
         -id : const unsigned
@@ -127,19 +134,37 @@ classDiagram
     }
 ```
 
-### Affichage
+### Performances
 
-L'écran n'est pas redessiné entièrement à chaque image :
+Le simulateur est pensé pour tenir des dizaines de milliers de serpents :
 
-1. Chaque serpent note les cases qu'il occupe ou libère (avancée de la tête,
-   queue qui suit, coupure, mort).
-2. `Combat` tient une grille du nombre de segments et de pommes par case, et
-   ne recolore que les cases qui ont changé (pomme > serpent > fond).
-3. `Affichage2d` conserve son tampon de pixels d'une image à l'autre et
-   n'envoie à la texture SDL que le rectangle modifié.
+- **Affichage incrémental** : chaque serpent note les cases qu'il occupe ou
+  libère (tête qui avance, queue qui suit, coupure, mort). `Combat` tient une
+  grille du nombre de segments et de pommes par case et ne recolore que les
+  cases modifiées. `Affichage2d` garde son tampon de pixels et n'envoie à la
+  texture SDL que le rectangle modifié.
+- **Combats en O(longueur)** : la grille `teteSurCase` indique quel serpent a
+  sa tête sur chaque case (au plus un : deux têtes qui se rencontrent se
+  battent aussitôt). Un serpent vérifie tête contre tête en une lecture, et
+  les morsures en parcourant son propre corps, au lieu d'être comparé à tous
+  les autres serpents.
+- **Déplacement en O(1)** : le corps est une file circulaire, seules la tête
+  et la queue bougent.
+- **Serpents morts ignorés** : seule la liste des vivants est parcourue, et
+  la mémoire d'un serpent mort est libérée.
+- **Cases libres** : trouvées via la grille, sans parcourir les serpents ; un
+  terrain plein ne bloque pas le programme.
 
-La même grille sert à trouver une case libre pour les nouvelles pommes, sans
-parcourir tous les serpents.
+Mesures indicatives (terrain 1200×800, affichage désactivé, sans délai) :
+
+| Serpents | Avant       | Après, 1 tour/image | Après, `-v 50` | Mémoire |
+|----------|-------------|---------------------|----------------|---------|
+| 1 000    | ~17 ms/tour | ~1,2 ms/tour        | ~0,2 ms/tour   | 33 Mo   |
+| 20 000   | —           | 2–10 ms/tour        | 1–5 ms/tour    |         |
+| 100 000  | —           | 3–26 ms/tour        | 1,5–22 ms/tour | 72 Mo   |
+
+Les premiers tours d'une grosse partie sont les plus lourds (hécatombe
+initiale), puis tout s'accélère à mesure que les serpents meurent.
 
 ## Contexte du labo
 

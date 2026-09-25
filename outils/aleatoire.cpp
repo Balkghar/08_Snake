@@ -19,8 +19,9 @@ using namespace std;
 
 int aleatoireEntreDeuxValeurs(int min, int max) {
 
-  random_device rand_dev;
-  default_random_engine generator(rand_dev());
+  // Générateur initialisé une seule fois : random_device est lent (appel
+  // système) et n'est pas fait pour être tiré à chaque nombre
+  static mt19937 generator(random_device{}());
   uniform_int_distribution<int> distr(min, max);
 
   return distr(generator);

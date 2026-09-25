@@ -19,6 +19,7 @@
 #include <vector>
 #include <string>
 #include "../outils/struct_coordonnees.hpp"
+#include "../outils/fileCirculaire.hpp"
 
 enum Direction { haut, bas, droite, gauche };
 
@@ -50,7 +51,10 @@ class Snake {
   int getCoordY() const;
   unsigned getId() const;
   bool getEstEnVie() const;
-  const std::vector<CoordonneesXY> &getCoord() const;
+  /**
+   * @brief Corps du serpent, la tête en premier.
+   */
+  const FileCirculaire<CoordonneesXY> &getCoord() const;
 
   //------------------------- suivi des modifications ---------------------
   /**
@@ -60,32 +64,41 @@ class Snake {
    */
   const std::vector<CoordonneesXY> &getCasesAjoutees() const;
   const std::vector<CoordonneesXY> &getCasesRetirees() const;
-  void oublierModifications();
+  void oublierModifications();  // vide les listes (et leur mémoire si mort)
 
   //------------------------- autres --------------------------------------
   void longueurAAjouterSupl(unsigned valeur);
-  bool combattreSerpent(Snake &serpent);
+
+  //------------------------- Combat --------------------------------------
+  /**
+   * @brief Tête contre tête : le plus court meurt, le vainqueur gagne 60 % de
+   *        sa longueur.
+   * @return le serpent tué
+   */
+  Snake &combattreTete(Snake &autre);
+
+  /**
+   * @brief La tête d'attaquant est sur le segment `position` du corps : le
+   *        serpent est coupé après ce segment et l'attaquant gagne 40 % de
+   *        la longueur coupée.
+   */
+  void etreMordu(std::size_t position, Snake &attaquant);
 
  private:
 
   //------------------------- Agrandissement ------------------------------
-  void agrandirSerpent(CoordonneesXY &coord);
   unsigned calculAjoutLongueur(std::size_t longu, unsigned pourcentage);
 
-  //------------------------- Méthodes de combat --------------------------
-  void couperSerpent(Snake &serpent);
-
   /**
-   * @brief fait mourir le serpent envoyé en paramètre.
-   * @param serpent
+   * @brief Fait mourir ce serpent ; le vainqueur gagne 60 % de sa longueur.
    */
-  void mourir(Snake &serpent);
+  void mourir(Snake &vainqueur);
 
   //------------------------- Données -------------------------------------
   const unsigned id;
   unsigned longueurAAjouter;
   bool estEnVie;
-  std::vector<CoordonneesXY> coordonnees;
+  FileCirculaire<CoordonneesXY> coordonnees;
   std::vector<CoordonneesXY> casesAjoutees;
   std::vector<CoordonneesXY> casesRetirees;
 };

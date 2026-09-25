@@ -28,11 +28,8 @@ Snake::Snake(int x,
              unsigned longueur
 ) : id(id), estEnVie(estEnVie) {
 
-  coordonnees.resize(1);
-
-  coordonnees.at(0).x = x;
-  coordonnees.at(0).y = y;
-  casesAjoutees.push_back(coordonnees.at(0));
+  coordonnees.push_front({x, y});
+  casesAjoutees.push_back(coordonnees.front());
 
   longueurAAjouter = longueur - 1;
 
@@ -76,43 +73,40 @@ void Snake::deplacerVersXY(int x, int y) {
 
 void Snake::deplacerVers(Direction dir) {
 
-  CoordonneesXY tmpCoord = coordonnees.back();
-
-  if (coordonnees.size() > 1) {
-    for (size_t i = coordonnees.size() - 1; i >= 1; --i) {
-      coordonnees.at(i) = coordonnees.at(i - 1);
-    }
-  }
+  // La tête avance d'une case ; sans agrandissement la queue suit. Avec une
+  // file circulaire, seules les deux extrémités bougent, quelle que soit la
+  // longueur.
+  CoordonneesXY tete = coordonnees.front();
 
   switch (dir) {
-    case Direction::haut :--coordonnees.at(0).y;
+    case Direction::haut :--tete.y;
       break;
-    case Direction::bas :++coordonnees.at(0).y;
+    case Direction::bas :++tete.y;
       break;
-    case Direction::droite :++coordonnees.at(0).x;
+    case Direction::droite :++tete.x;
       break;
-    case Direction::gauche :--coordonnees.at(0).x;
+    case Direction::gauche :--tete.x;
       break;
   }
 
-  casesAjoutees.push_back(coordonnees.at(0));
+  coordonnees.push_front(tete);
+  casesAjoutees.push_back(tete);
 
   if (longueurAAjouter) {
-    agrandirSerpent(tmpCoord);
     longueurAAjouter -= 1;
   } else {
-    // pas d'agrandissement : l'ancienne queue est libérée
-    casesRetirees.push_back(tmpCoord);
+    casesRetirees.push_back(coordonnees.back());
+    coordonnees.pop_back();
   }
 }
 
 //--------------------------- getter et setter ----------------------------
 int Snake::getCoordX() const {
-  return coordonnees.at(0).x;
+  return coordonnees.front().x;
 }
 
 int Snake::getCoordY() const {
-  return coordonnees.at(0).y;
+  return coordonnees.front().y;
 }
 
 unsigned Snake::getId() const {
@@ -123,7 +117,7 @@ bool Snake::getEstEnVie() const {
   return estEnVie;
 }
 
-const std::vector<CoordonneesXY> &Snake::getCoord() const {
+const FileCirculaire<CoordonneesXY> &Snake::getCoord() const {
   return coordonnees;
 }
 
@@ -137,8 +131,13 @@ const std::vector<CoordonneesXY> &Snake::getCasesRetirees() const {
 }
 
 void Snake::oublierModifications() {
-  casesAjoutees.clear();
-  casesRetirees.clear();
+  if (estEnVie) {
+    casesAjoutees.clear();  // la capacité est gardée pour le tour suivant
+    casesRetirees.clear();
+  } else {
+    std::vector<CoordonneesXY>().swap(casesAjoutees);
+    std::vector<CoordonneesXY>().swap(casesRetirees);
+  }
 }
 
 //------------------------- autres --------------------------------------
@@ -147,19 +146,28 @@ void Snake::longueurAAjouterSupl(unsigned valeur) {
   longueurAAjouter += valeur;
 }
 
-bool Snake::combattreSerpent(Snake &serpent) {
-  if (serpent.getCoordX() == getCoordX() && serpent.getCoordY() == getCoordY()) {
-    if (coordonnees.size() < serpent.coordonnees.size()) {
-      mourir(serpent);
-      return true;
-    } else {
-      serpent.mourir((*this));
-      return true;
-    }
-  } else {
-    serpent.couperSerpent((*this));
+//------------------------- Combat --------------------------------------
+Snake &Snake::combattreTete(Snake &autre) {
+  if (coordonnees.size() < autre.coordonnees.size()) {
+    mourir(autre);
+    return *this;
   }
-  return false;
+  autre.mourir(*this);
+  return autre;
+}
+
+void Snake::etreMordu(std::size_t position, Snake &attaquant) {
+  const size_t garde = position + 1;  // le segment mordu reste
+  if (garde >= coordonnees.size()) {
+    return;
+  }
+  attaquant.longueurAAjouterSupl(
+      calculAjoutLongueur(coordonnees.size() - garde, 40));
+  longueurAAjouter = 0;
+  for (size_t k = garde; k < coordonnees.size(); ++k) {
+    casesRetirees.push_back(coordonnees[k]);
+  }
+  coordonnees.tronquer(garde);
 }
 
 //=========================== Partie privée ===============================
@@ -167,35 +175,23 @@ bool Snake::combattreSerpent(Snake &serpent) {
 //------------------------- Agrandissement ------------------------------
 unsigned Snake::calculAjoutLongueur(std::size_t longu, unsigned pourcentage) {
 
-  unsigned i = ((unsigned) ((double) longu / 100.) * pourcentage);
-  return i;
-}
-
-void Snake::agrandirSerpent(CoordonneesXY &coord) {
-  coordonnees.push_back(coord);
+  // (la division entière avant la multiplication donnait 0 sous 100 cases)
+  return unsigned(longu * pourcentage / 100);
 }
 
 //------------------------- Méthodes de combat --------------------------
-void Snake::couperSerpent(Snake &serpent) {
-  unsigned i = 1;
-  for (const CoordonneesXY &coordo : serpent.coordonnees) {
-    if (coordo.x == (*this).getCoordX() && coordo.y == (*this).getCoordY()) {
-      longueurAAjouterSupl(calculAjoutLongueur(serpent.coordonnees.size() - i, 40));
-      serpent.longueurAAjouter = 0;
-      serpent.casesRetirees.insert(serpent.casesRetirees.end(),
-                                   serpent.coordonnees.begin() + i,
-                                   serpent.coordonnees.end());
-      serpent.coordonnees.resize(i);
-      break;
-    }
-    ++i;
-  }
-}
-
-void Snake::mourir(Snake &serpent) {
+void Snake::mourir(Snake &vainqueur) {
 
   estEnVie = false;
   // un serpent mort n'est plus affiché : tout son corps est libéré
-  casesRetirees.insert(casesRetirees.end(), coordonnees.begin(), coordonnees.end());
-  serpent.longueurAAjouterSupl(calculAjoutLongueur(coordonnees.size(), 60));
+  for (size_t k = 0; k < coordonnees.size(); ++k) {
+    casesRetirees.push_back(coordonnees[k]);
+  }
+  vainqueur.longueurAAjouterSupl(calculAjoutLongueur(coordonnees.size(), 60));
+
+  // Seule la position de la tête reste utile (getCoordX/Y) : le reste du
+  // corps est rendu à la mémoire
+  const CoordonneesXY tete = coordonnees.front();
+  coordonnees.liberer();
+  coordonnees.push_front(tete);
 }
