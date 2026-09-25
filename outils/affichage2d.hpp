@@ -26,9 +26,17 @@ Compilateur : gcc version 11.2.0
 #endif
 
 #include <string>
+#include <utility>
 #include <vector>
 
 enum Couleur { blanc, noir, rouge };
+
+// Image en pixel art : une chaîne par ligne, un caractère par pixel ; les
+// caractères absents de la palette sont transparents.
+struct MotifPixel {
+  std::vector<std::string> lignes;
+  std::vector<std::pair<char, SDL_Color>> palette;
+};
 
 class Affichage2d {
   //-------------------------- Constructeur --------------------------------
@@ -43,23 +51,36 @@ class Affichage2d {
   bool initalisationAffichage();
   bool ajouterElementAffichage(int x, int y, Couleur couleur);
   bool nettoyerAffichage(Couleur couleur);
-  bool fermetureDemandee();
+  /**
+   * @brief Traite les événements en attente.
+   * @param accelerer  +1 par appui sur + (ou flèche haut), -1 par appui sur -
+   *                   (ou flèche bas)
+   * @return true si l'utilisateur veut quitter (fenêtre fermée, ÉCHAP)
+   */
+  bool fermetureDemandee(int &accelerer);
+  void definirTitre(const std::string &titre);
   bool fermerAffichage();
   bool mettreAjourAffichage();
 
   /**
-   * @brief Assombrit le terrain et affiche un panneau de texte par-dessus,
-   *        jusqu'à ce que l'utilisateur appuie sur une touche ou ferme la
-   *        fenêtre. La première ligne est le titre ; les lignes commençant
-   *        par "--" sont des intertitres. Les cases enValeur (en cases du
+   * @brief Assombrit le terrain et affiche un panneau par-dessus (logo puis
+   *        texte), jusqu'à ce que l'utilisateur appuie sur ÉCHAP / ENTRÉE /
+   *        ESPACE ou ferme la fenêtre. Les cases enValeur (en cases du
    *        terrain) restent en vert vif par-dessus l'assombrissement.
+   *
+   *        Style d'une ligne selon son préfixe :
+   *          "# "  titre, double taille, centré     "^ "  centré
+   *          "-- " intertitre                        "~ "  centré, discret
+   *          sinon aligné à gauche
    */
-  void afficherEcranFin(const std::vector<std::string> &lignes,
+  void afficherEcranFin(const MotifPixel &logo,
+                        const std::vector<std::string> &lignes,
                         const std::vector<SDL_Point> &enValeur);
  private:
   void envoyerZoneModifiee();
   void dessinerTexte(int x, int y, const std::string &texte, int echelle,
                      SDL_Color couleur);
+  void dessinerMotif(int x, int y, const MotifPixel &motif, int taillePixel);
 
   Uint32 valeurCouleur(Couleur couleur) const;
   Uint32 couleurs[3] = {0, 0, 0};  // indexé par Couleur, format de la texture

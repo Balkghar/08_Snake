@@ -52,9 +52,14 @@ void afficherAide(const string &programme, const vector<Parametre> &params) {
     }
     cout << '\n';
   }
-  cout << "  -h, --aide              Affiche cette aide\n\n"
+  cout << "  -t, --turbo             Terrain maximal, un maximum de serpents,\n"
+       << "                          vitesse maximale (les autres options\n"
+       << "                          restent prioritaires)\n"
+       << "  -h, --aide              Affiche cette aide\n\n"
+       << "En jeu : + / - pour accelerer / ralentir, ECHAP pour quitter.\n\n"
        << "Exemples : " << programme << " -l 200 -H 150 -s 20\n"
-       << "           " << programme << " -l 1200 -H 800 -s 20000 -z 1 -d 16\n";
+       << "           " << programme << " -l 1200 -H 800 -s 20000 -v 0\n"
+       << "           " << programme << " --turbo\n";
 }
 
 // Lit un entier compris dans [min, max] ; renvoie false si invalide.
@@ -71,13 +76,17 @@ bool lireEntier(const string &texte, int min, int max, int &resultat) {
 // Remplit params depuis argv. Renvoie false (après un message) si la ligne de
 // commande est invalide.
 bool lireArguments(int argc, char **argv, vector<Parametre> &params,
-                   bool &aideDemandee) {
+                   bool &aideDemandee, bool &turbo) {
   for (int i = 1; i < argc; ++i) {
     string arg = argv[i];
 
     if (arg == "-h" or arg == "--aide" or arg == "--help") {
       aideDemandee = true;
       return true;
+    }
+    if (arg == "-t" or arg == "--turbo") {
+      turbo = true;
+      continue;
     }
 
     // Accepte "--largeur 200" comme "--largeur=200"
@@ -137,7 +146,7 @@ int main(int argc, char **argv) {
        int(Combat::DELAI_DEFAUT), ""},
       {"-z", "--zoom", "Taille d'une case (pixels)", 1, 16,
        int(Combat::ZOOM_DEFAUT), ""},
-      {"-v", "--vitesse", "Tours de jeu par image", 1, 1000,
+      {"-v", "--vitesse", "Tours par image (0 = auto)", 0, 1000,
        int(Combat::VITESSE_DEFAUT), ""},
   };
   enum { LARGEUR, HAUTEUR, SERPENTS, DELAI, ZOOM, VITESSE };
@@ -167,12 +176,28 @@ int main(int argc, char **argv) {
   //======================== Début du programme ===================================
 
   bool aideDemandee = false;
-  if (not lireArguments(argc, argv, params, aideDemandee)) {
+  bool turbo = false;
+  if (not lireArguments(argc, argv, params, aideDemandee, turbo)) {
     return EXIT_FAILURE;
   }
   if (aideDemandee) {
     afficherAide(argv[0], params);
     return EXIT_SUCCESS;
+  }
+
+  // Mode turbo : tout au maximum, sauf ce qui a été donné explicitement (le
+  // nombre de serpents est fixé plus bas, une fois le terrain connu)
+  if (turbo) {
+    auto parDefaut = [&params](int indice, int valeur) {
+      if (not params[size_t(indice)].donne) {
+        params[size_t(indice)].valeur = valeur;
+      }
+    };
+    parDefaut(LARGEUR, params[LARGEUR].max);
+    parDefaut(HAUTEUR, params[HAUTEUR].max);
+    parDefaut(DELAI, 0);
+    parDefaut(ZOOM, 1);
+    parDefaut(VITESSE, 0);
   }
 
   cout << MSG_DEBUT << endl;
@@ -184,6 +209,9 @@ int main(int argc, char **argv) {
     if (&p == &params[SERPENTS] and params[LARGEUR].valeur > 0
         and params[HAUTEUR].valeur > 0) {
       p.max = maxSerpents();
+      if (turbo and not p.donne) {
+        p.valeur = p.max;
+      }
       if (p.donne and p.valeur > p.max) {
         cerr << "Trop de serpents pour ce terrain : " << p.max
              << " au maximum" << endl;

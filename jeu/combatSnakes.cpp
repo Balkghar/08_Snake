@@ -45,13 +45,15 @@ Combat::Combat(unsigned int largeur,
 //------------------------- lancement du combat -------------------------
 void Combat::commencerCombat(unsigned delai, unsigned zoom, unsigned vitesse) {
 
+  this->delai = delai;
+  this->vitesse = vitesse;
   Affichage2d affichage(largeur, longueur, delai, zoom);
 
   if (not affichage.initalisationAffichage()) {
     affichage.nettoyerAffichage(Couleur::blanc);
 
     const Uint32 debut = SDL_GetTicks();
-    const bool termine = faireCombattreSerpents(affichage, vitesse);
+    const bool termine = faireCombattreSerpents(affichage);
     dureeMs = SDL_GetTicks() - debut;
 
     if (termine) {
@@ -266,24 +268,77 @@ void Combat::tuer(Snake &victime, const Snake &tueur) {
 
 //------------------------- méthodes d'affichage ------------------------
 
-bool Combat::faireCombattreSerpents(Affichage2d &affichage, unsigned vitesse) {
+bool Combat::faireCombattreSerpents(Affichage2d &affichage) {
+
+  Uint32 dernierTitre = 0;
 
   while (nbSerpent > 1) {
 
-    if (afficher(affichage)) {
-      return false;  // fenêtre fermée par l'utilisateur
+    int accelerer = 0;
+    if (afficher(affichage, accelerer)) {
+      return false;  // fenêtre fermée ou ÉCHAP
+    }
+    if (accelerer != 0) {
+      changerVitesse(accelerer);
+      dernierTitre = 0;  // titre mis à jour tout de suite
     }
 
-    for (unsigned t = 0; t < vitesse and nbSerpent > 1; ++t) {
-      jouerTour();
-      ++nbTours;
+    const Uint32 debut = SDL_GetTicks();
+    const unsigned long toursAvant = nbTours;
+    if (vitesse == VITESSE_AUTO) {
+      // Autant de tours que possible pendant la durée d'une image (au moins
+      // ~60 images/s pour que la fenêtre reste fluide)
+      const Uint32 budget = delai > 0 ? delai : 16;
+      do {
+        jouerTour();
+        ++nbTours;
+      } while (nbSerpent > 1 and SDL_GetTicks() - debut < budget);
+    } else {
+      for (unsigned t = 0; t < vitesse and nbSerpent > 1; ++t) {
+        jouerTour();
+        ++nbTours;
+      }
+    }
+    toursDerniereImage = nbTours - toursAvant;
+
+    if (SDL_GetTicks() - dernierTitre >= 250) {
+      mettreAJourTitre(affichage);
+      dernierTitre = SDL_GetTicks();
     }
   }
 
-  return not afficher(affichage);  // état final
+  int ignore = 0;
+  return not afficher(affichage, ignore);  // état final
 }
 
-bool Combat::afficher(Affichage2d &affichage) {
+void Combat::changerVitesse(int pas) {
+
+  // Paliers parcourus avec + / - ; le dernier est la vitesse automatique
+  static const unsigned PALIERS[] = {1, 2, 5, 10, 20, 50, 100, 200, 500,
+                                     1000, VITESSE_AUTO};
+  const int nbPaliers = int(sizeof(PALIERS) / sizeof(PALIERS[0]));
+
+  int palier = nbPaliers - 1;
+  if (vitesse != VITESSE_AUTO) {
+    palier = 0;
+    while (palier < nbPaliers - 2 and PALIERS[palier] < vitesse) {
+      ++palier;
+    }
+  }
+  palier = std::max(0, std::min(nbPaliers - 1, palier + pas));
+  vitesse = PALIERS[palier];
+}
+
+void Combat::mettreAJourTitre(Affichage2d &affichage) const {
+  string titre = "Snake battle simulator - "s + to_string(nbSerpent)
+      + " serpents - tour "s + to_string(nbTours) + " - vitesse "s;
+  titre += vitesse == VITESSE_AUTO
+      ? "auto (x"s + to_string(toursDerniereImage) + ")"s
+      : "x"s + to_string(vitesse);
+  affichage.definirTitre(titre + "  [+/-]"s);
+}
+
+bool Combat::afficher(Affichage2d &affichage, int &accelerer) {
 
   // Seules les cases modifiées depuis la dernière image sont redessinées
   // (une pomme reste dessinée par-dessus un serpent)
@@ -302,7 +357,7 @@ bool Combat::afficher(Affichage2d &affichage) {
 
   affichage.mettreAjourAffichage();
 
-  return affichage.fermetureDemandee();
+  return affichage.fermetureDemandee(accelerer);
 }
 
 //------------------------- fin de partie -------------------------------
@@ -310,21 +365,71 @@ bool Combat::afficher(Affichage2d &affichage) {
 void Combat::afficherVictoire(Affichage2d &affichage) {
 
   // Le vainqueur reste en évidence sur le terrain assombri
-  const auto &corps = serpents[vivants.front()].getCoord();
-  vector<SDL_Point> gagnant;
-  gagnant.reserve(corps.size());
+  const Snake &gagnant = serpents[vivants.front()];
+  const auto &corps = gagnant.getCoord();
+  vector<SDL_Point> cases;
+  cases.reserve(corps.size());
   for (size_t k = 0; k < corps.size(); ++k) {
-    gagnant.push_back({corps[k].x, corps[k].y});
+    cases.push_back({corps[k].x, corps[k].y});
   }
 
-  const vector<string> lignes = statistiques();
-  cout << '\n';
-  for (size_t i = 0; i + 1 < lignes.size(); ++i) {
-    cout << lignes[i] << '\n';
+  const vector<string> stats = statistiques();
+  cout << "\nVICTOIRE DU SERPENT #" << gagnant.getId() << " !\n\n";
+  for (const string &ligne : stats) {
+    cout << ligne << '\n';
   }
   cout << endl;
 
-  affichage.afficherEcranFin(lignes, gagnant);
+  // Rapport officiel de la Green Katze Korporation
+  vector<string> panneau = {
+      "^ GREEN KATZE KORPORATION",
+      "~ RAPPORT DE SIMULATION",
+      "",
+      "# VICTOIRE !",
+      "^ LE SERPENT #" + to_string(gagnant.getId()) + " A GAGNE",
+      "",
+  };
+  panneau.insert(panneau.end(), stats.begin(), stats.end());
+  panneau.insert(panneau.end(), {
+      "",
+      "^ LA GREEN KATZE KORPORATION",
+      "^ VOUS REMERCIE D'AVOIR UTILISE",
+      "^ SNAKE BATTLE SIMULATOR.",
+      "~ VOS PRECIEUSES DONNEES SERVIRONT",
+      "~ L'AVENIR DE L'HUMANITE.",
+      "",
+      "~ ECHAP / ENTREE : QUITTER",
+  });
+
+  affichage.afficherEcranFin(logoGreenKatze(), panneau, cases);
+}
+
+MotifPixel Combat::logoGreenKatze() {
+  // Le chat vert de la Korporation, 15 x 13 pixels
+  return {
+      {
+          "g.............g",
+          "gg...........gg",
+          "gpg.........gpg",
+          "gppgggggggggppg",
+          "ggggggggggggggg",
+          "ggyyygggggyyygg",
+          "ggykygggggykygg",
+          "ggyyygggggyyygg",
+          "gggggggpggggggg",
+          "wwgggggkgggggww",
+          ".gggggkgkggggg.",
+          "..ggggggggggg..",
+          "....ggggggg....",
+      },
+      {
+          {'g', {60, 200, 90, 255}},    // pelage
+          {'p', {240, 140, 170, 255}},  // oreilles et truffe
+          {'y', {250, 220, 60, 255}},   // yeux
+          {'k', {15, 15, 15, 255}},     // pupilles et bouche
+          {'w', {235, 235, 235, 255}},  // moustaches
+      },
+  };
 }
 
 vector<string> Combat::statistiques() const {
@@ -360,9 +465,6 @@ vector<string> Combat::statistiques() const {
   auto id = [](const Snake &s) { return "#" + to_string(s.getId()); };
 
   return {
-      "VICTOIRE !",
-      "LE SERPENT " + id(gagnant) + " A GAGNE",
-      "",
       "-- LE VAINQUEUR",
       ligne("LONGUEUR FINALE", to_string(gagnant.getCoord().size())),
       ligne("LONGUEUR MAX", to_string(sg.longueurMax)),
@@ -382,7 +484,5 @@ vector<string> Combat::statistiques() const {
           + " (" + id(*plusLong) + ")"),
       ligne("PLUS DE VICTIMES", to_string(plusMeurtrier->getStats().victimes)
           + " (" + id(*plusMeurtrier) + ")"),
-      "",
-      "ECHAP / ENTREE : QUITTER",
   };
 }

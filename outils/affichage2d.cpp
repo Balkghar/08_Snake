@@ -127,7 +127,7 @@ bool Affichage2d::nettoyerAffichage(Couleur couleur) {
   return false;
 }
 
-bool Affichage2d::fermetureDemandee() {
+bool Affichage2d::fermetureDemandee(int &accelerer) {
 
   // Vide toute la file d'événements, sinon elle s'accumule et la fenêtre
   // ne répond plus
@@ -136,10 +136,29 @@ bool Affichage2d::fermetureDemandee() {
   while (SDL_PollEvent(&event)) {
     if (event.type == SDL_QUIT) {
       quitter = true;
+    } else if (event.type == SDL_KEYDOWN) {
+      switch (event.key.keysym.sym) {
+        case SDLK_ESCAPE:quitter = true;
+          break;
+        case SDLK_PLUS:
+        case SDLK_KP_PLUS:
+        case SDLK_EQUALS:  // touche du + sans majuscule
+        case SDLK_UP:++accelerer;
+          break;
+        case SDLK_MINUS:
+        case SDLK_KP_MINUS:
+        case SDLK_DOWN:--accelerer;
+          break;
+        default:break;
+      }
     }
   }
 
   return quitter;
+}
+
+void Affichage2d::definirTitre(const std::string &titre) {
+  SDL_SetWindowTitle(window, titre.c_str());
 }
 
 bool Affichage2d::fermerAffichage() {
@@ -180,25 +199,50 @@ bool Affichage2d::mettreAjourAffichage() {
 }
 
 
-void Affichage2d::afficherEcranFin(const std::vector<std::string> &lignes,
+void Affichage2d::afficherEcranFin(const MotifPixel &logo,
+                                   const std::vector<std::string> &lignes,
                                    const std::vector<SDL_Point> &enValeur) {
 
-  if (lignes.empty()) {
-    return;
-  }
   envoyerZoneModifiee();
 
-  // Dimensions du panneau pour une échelle de texte de 1 (un caractère fait
-  // 5x7 pixels, plus 1 d'espacement et 2 d'interligne ; le titre est 2x)
+  // Découpe des lignes : style (préfixe) et texte à afficher
+  enum Style { gauche, titre, intertitre, centre, discret };
+  std::vector<std::pair<Style, std::string>> textes;
+  for (const std::string &ligne : lignes) {
+    if (ligne.rfind("# ", 0) == 0) {
+      textes.emplace_back(titre, ligne.substr(2));
+    } else if (ligne.rfind("^ ", 0) == 0) {
+      textes.emplace_back(centre, ligne.substr(2));
+    } else if (ligne.rfind("~ ", 0) == 0) {
+      textes.emplace_back(discret, ligne.substr(2));
+    } else if (ligne.rfind("--", 0) == 0) {
+      textes.emplace_back(intertitre, ligne);
+    } else {
+      textes.emplace_back(gauche, ligne);
+    }
+  }
+
+  // Dimensions du panneau pour une échelle de 1 : un caractère fait 5x7
+  // pixels, plus 1 d'espacement et 2 d'interligne ; titre et logo sont 2x
   const int PAS_X = LARGEUR_GLYPHE + 1;
   const int PAS_Y = HAUTEUR_GLYPHE + 2;
   const int MARGE = 6;
-  size_t maxCaracteres = lignes[0].size() * 2;
-  for (const std::string &ligne : lignes) {
-    maxCaracteres = std::max(maxCaracteres, ligne.size());
+  const int PIXEL_LOGO = 3;
+  size_t logoL = 0;
+  for (const std::string &l : logo.lignes) {
+    logoL = std::max(logoL, l.size());
   }
-  const int panneauL = int(maxCaracteres) * PAS_X + 2 * MARGE;
-  const int panneauH = PAS_Y * 2 + int(lignes.size() - 1) * PAS_Y + 2 * MARGE;
+  const int logoH = int(logo.lignes.size()) * PIXEL_LOGO;
+
+  int largeurTexte = int(logoL) * PIXEL_LOGO;
+  int hauteurTexte = logo.lignes.empty() ? 0 : logoH + PAS_Y / 2;
+  for (const auto &t : textes) {
+    const int facteur = t.first == titre ? 2 : 1;
+    largeurTexte = std::max(largeurTexte, int(t.second.size()) * PAS_X * facteur);
+    hauteurTexte += PAS_Y * facteur;
+  }
+  const int panneauL = largeurTexte + 2 * MARGE;
+  const int panneauH = hauteurTexte + 2 * MARGE;
 
   // Plus grande échelle qui tient dans 90 % de la fenêtre ; si même
   // l'échelle 1 ne tient pas (petit terrain), on agrandit la fenêtre
@@ -216,13 +260,16 @@ void Affichage2d::afficherEcranFin(const std::vector<std::string> &lignes,
     echelle = 1;
   }
 
-  // Cases mises en valeur (le vainqueur), à l'échelle de la fenêtre
+  // Cases mises en valeur (le vainqueur), à l'échelle de la fenêtre ; au
+  // moins 3 pixels de côté pour rester visibles avec un petit zoom
   const int caseL = std::max(1, fenL / int(largeur));
   const int caseH = std::max(1, fenH / int(hauteur));
+  const int trait = std::max(3, std::max(caseL, caseH));
   std::vector<SDL_Rect> cases;
   cases.reserve(enValeur.size());
   for (const SDL_Point &p : enValeur) {
-    cases.push_back({p.x * caseL, p.y * caseH, caseL, caseH});
+    cases.push_back({p.x * caseL + (caseL - trait) / 2,
+                     p.y * caseH + (caseH - trait) / 2, trait, trait});
   }
 
   // Le panneau se place (centre, côtés, coins) là où il cache le moins de
@@ -257,30 +304,40 @@ void Affichage2d::afficherEcranFin(const std::vector<std::string> &lignes,
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_RenderCopy(renderer, texture, nullptr, nullptr);
 
-    // Terrain assombri, panneau presque opaque
+    // Terrain assombri, vainqueur par-dessus, puis panneau presque opaque
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 140);
     SDL_RenderFillRect(renderer, nullptr);
-
     SDL_SetRenderDrawColor(renderer, VERT.r, VERT.g, VERT.b, 255);
     SDL_RenderFillRects(renderer, cases.data(), int(cases.size()));
-
     SDL_SetRenderDrawColor(renderer, 15, 20, 25, 235);
     SDL_RenderFillRect(renderer, &panneau);
     SDL_SetRenderDrawColor(renderer, OR.r, OR.g, OR.b, 255);
     SDL_RenderDrawRect(renderer, &panneau);
 
-    // Titre centré en double taille, puis les lignes alignées à gauche
-    const int titreL = int(lignes[0].size()) * PAS_X * 2 * echelle;
+    const int gaucheX = panneau.x + MARGE * echelle;
     int y = panneau.y + MARGE * echelle;
-    dessinerTexte(panneau.x + (panneau.w - titreL) / 2, y, lignes[0],
-                  2 * echelle, OR);
-    y += PAS_Y * 2 * echelle;
-    for (size_t i = 1; i < lignes.size(); ++i) {
-      const bool intertitre = lignes[i].rfind("--", 0) == 0;
-      const bool derniere = i + 1 == lignes.size();
-      dessinerTexte(panneau.x + MARGE * echelle, y, lignes[i], echelle,
-                    intertitre ? VERT : (derniere ? GRIS : BLANC));
-      y += PAS_Y * echelle;
+    if (not logo.lignes.empty()) {
+      dessinerMotif(panneau.x + (panneau.w - int(logoL) * PIXEL_LOGO * echelle) / 2,
+                    y, logo, PIXEL_LOGO * echelle);
+      y += (logoH + PAS_Y / 2) * echelle;
+    }
+    for (const auto &t : textes) {
+      const int ech = (t.first == titre ? 2 : 1) * echelle;
+      const int texteL = int(t.second.size()) * PAS_X * ech;
+      const int centreX = panneau.x + (panneau.w - texteL) / 2;
+      switch (t.first) {
+        case titre:dessinerTexte(centreX, y, t.second, ech, OR);
+          break;
+        case centre:dessinerTexte(centreX, y, t.second, ech, BLANC);
+          break;
+        case discret:dessinerTexte(centreX, y, t.second, ech, GRIS);
+          break;
+        case intertitre:dessinerTexte(gaucheX, y, t.second, ech, VERT);
+          break;
+        case gauche:dessinerTexte(gaucheX, y, t.second, ech, BLANC);
+          break;
+      }
+      y += PAS_Y * ech;
     }
 
     SDL_RenderPresent(renderer);
@@ -339,6 +396,28 @@ void Affichage2d::dessinerTexte(int x, int y, const std::string &texte,
   }
   SDL_SetRenderDrawColor(renderer, couleur.r, couleur.g, couleur.b, couleur.a);
   SDL_RenderFillRects(renderer, rects.data(), int(rects.size()));
+}
+
+void Affichage2d::dessinerMotif(int x, int y, const MotifPixel &motif,
+                                int taillePixel) {
+
+  // Un appel groupé par couleur de la palette
+  for (const auto &entree : motif.palette) {
+    std::vector<SDL_Rect> rects;
+    for (size_t ligne = 0; ligne < motif.lignes.size(); ++ligne) {
+      const std::string &l = motif.lignes[ligne];
+      for (size_t col = 0; col < l.size(); ++col) {
+        if (l[col] == entree.first) {
+          rects.push_back({x + int(col) * taillePixel,
+                           y + int(ligne) * taillePixel,
+                           taillePixel, taillePixel});
+        }
+      }
+    }
+    const SDL_Color &c = entree.second;
+    SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a);
+    SDL_RenderFillRects(renderer, rects.data(), int(rects.size()));
+  }
 }
 
 //--------------------------- gestion couleur -----------------------------

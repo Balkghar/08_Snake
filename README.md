@@ -39,7 +39,8 @@ programme par un simple double-clic.
 ./build/08_snake -l 200 -H 150 -s 20      # aucune question posée
 ./build/08_snake -l 300 -H 200 -s 200 -d 10 -z 3
 ./build/08_snake --serpents=50            # seules largeur et hauteur sont demandées
-./build/08_snake -l 1200 -H 800 -s 20000 -z 1 -d 16   # la grosse mêlée
+./build/08_snake -l 1200 -H 800 -s 20000 -v 0   # la grosse mêlée, vitesse auto
+./build/08_snake --turbo                  # 100 000 serpents, le plus vite possible
 ```
 
 | Option                | Description                              | Valeurs  | Défaut    |
@@ -49,7 +50,8 @@ programme par un simple double-clic.
 | `-s`, `--serpents N`  | Nombre de serpents (≤ cases / 4)         | 2–100000 | demandé   |
 | `-d`, `--delai N`     | Délai entre deux images, en ms (vitesse) | 0–1000   | 50        |
 | `-z`, `--zoom N`      | Taille d'une case à l'écran, en pixels   | 1–16     | 4         |
-| `-v`, `--vitesse N`   | Tours de jeu par image affichée          | 1–1000   | 1         |
+| `-v`, `--vitesse N`   | Tours de jeu par image, 0 = automatique  | 0–1000   | 1         |
+| `-t`, `--turbo`       | Terrain et serpents au maximum, vitesse auto, zoom 1 |  |      |
 | `-h`, `--aide`        | Affiche l'aide                           |          |           |
 
 Les formes `--option N` et `--option=N` sont acceptées. Une option inconnue
@@ -58,17 +60,31 @@ de sortie 1).
 
 La fenêtre fait `largeur × zoom` par `hauteur × zoom` pixels ; si elle ne
 tient pas à l'écran, le zoom est réduit automatiquement. Pour accélérer la
-partie : `-d 0` supprime l'attente entre les images et `-v N` joue N tours
-par image. Fermer la fenêtre interrompt la partie.
+partie :
+
+- `-d 0` supprime l'attente entre les images ;
+- `-v N` joue N tours par image ;
+- `-v 0` (automatique) joue autant de tours que possible pendant chaque image
+  et garde ~60 images/s : la partie va aussi vite que la machine le permet ;
+- `--turbo` lance directement la plus grosse partie possible (1200×800,
+  100 000 serpents) en vitesse automatique. Les options données en plus
+  restent prioritaires, par exemple `--turbo -s 20000`. Une partie turbo
+  complète dure une dizaine de secondes.
+
+En jeu, **+** / **−** (ou ↑ / ↓) accélèrent ou ralentissent la partie par
+paliers (×1, ×2, ×5 … ×1000, puis auto), **ÉCHAP** ou la fermeture de la
+fenêtre l'interrompent. Le titre de la fenêtre indique les serpents restants,
+le tour en cours et la vitesse.
 
 ### Écran de victoire
 
 ![Écran de victoire](docs/ecran-victoire.png)
 
 Quand il ne reste qu'un serpent, le terrain s'assombrit, le vainqueur reste
-affiché en vert et un panneau résume la partie (ÉCHAP, ENTRÉE, ESPACE ou la
-fermeture de la fenêtre pour quitter). Les mêmes chiffres sont écrits dans la
-console.
+affiché en vert et la Green Katze Korporation présente son rapport de
+simulation, chat vert en pixel art compris (ÉCHAP, ENTRÉE, ESPACE ou la
+fermeture de la fenêtre pour quitter). Les statistiques sont aussi écrites
+dans la console.
 
 - **Le vainqueur** : longueur finale et maximale, victimes (tête contre
   tête), pommes mangées, morsures données et subies.

@@ -35,6 +35,7 @@ class Combat {
   static constexpr unsigned DELAI_DEFAUT = 50;  // ms entre deux images
   static constexpr unsigned ZOOM_DEFAUT = 4;    // pixels écran par case
   static constexpr unsigned VITESSE_DEFAUT = 1; // tours de jeu par image
+  static constexpr unsigned VITESSE_AUTO = 0;   // autant que le temps permet
 
   void commencerCombat(unsigned delai = DELAI_DEFAUT,
                        unsigned zoom = ZOOM_DEFAUT,
@@ -60,12 +61,15 @@ class Combat {
   void tuer(Snake &victime, const Snake &tueur);
 
   //------------------------- méthodes d'affichage ------------------------
-  bool afficher(Affichage2d &affichage);
-  bool faireCombattreSerpents(Affichage2d &affichage, unsigned vitesse);
+  bool afficher(Affichage2d &affichage, int &accelerer);
+  bool faireCombattreSerpents(Affichage2d &affichage);
+  void changerVitesse(int pas);
+  void mettreAJourTitre(Affichage2d &affichage) const;
 
   //------------------------- fin de partie -------------------------------
   void afficherVictoire(Affichage2d &affichage);
   std::vector<std::string> statistiques() const;
+  static MotifPixel logoGreenKatze();
 
   //------------------------- Données -------------------------------------
   const unsigned largeur;
@@ -76,6 +80,9 @@ class Combat {
   const unsigned nbSerpentsDepart;
   unsigned long nbTours = 0;
   unsigned dureeMs = 0;
+  unsigned vitesse = VITESSE_DEFAUT;
+  unsigned delai = DELAI_DEFAUT;
+  unsigned long toursDerniereImage = 0;
 
   static constexpr unsigned MIN = 0;
   static constexpr unsigned AUCUNE_TETE = 0;
