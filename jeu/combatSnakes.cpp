@@ -737,34 +737,49 @@ void Combat::retirerMorts() {
 bool Combat::faireCombattreSerpents(Affichage2d &affichage) {
 
   // Deux threads qui ne s'attendent presque jamais :
-  //  - le moteur enchaîne sans s'arrêter : un lot de tours (sur le groupe de
-  //    threads), puis la liste des cases à recolorier, déposée pour
-  //    l'affichage ;
-  //  - le thread principal, sur son propre cœur, prend chaque liste,
-  //    colorie les pixels, envoie l'image à l'écran et lit le clavier.
-  // Double tampon : une liste en préparation, une déposée. Ce sont des
-  // différences (en sauter une laisserait des cases fausses à l'écran), donc
-  // le moteur attend si l'affichage n'a pas encore pris la précédente ; il
-  // a au plus un lot d'avance sur l'image montrée.
+  //  - le moteur enchaîne les lots de tours sur le groupe de threads ;
+  //  - le thread principal, sur son propre cœur, prend chaque liste de
+  //    cases à recolorier, colorie les pixels, envoie l'image à l'écran et
+  //    lit le clavier.
+  // Boîte aux lettres : une seule liste déposée à la fois. En vitesse
+  // automatique, si l'affichage n'a pas encore pris la précédente, le
+  // moteur ne l'attend pas : il continue de jouer et les cases modifiées
+  // s'accumulent (sans doublons) jusqu'à ce que la boîte se libère. Il ne
+  // prépare donc des listes qu'au rythme où l'écran les consomme, quelle que
+  // soit la lenteur de l'affichage. En vitesse fixe (N tours par image),
+  // c'est l'affichage qui donne la cadence : le moteur attend.
   mutex verrou;
   condition_variable signal;
   bool deposee = false, termine = false, arreter = false;
   Image enPreparation, prete, affichee;
 
   thread moteur([&] {
+    unsigned long faits = 0;  // tours depuis la dernière liste déposée
     for (;;) {
-      unsigned long faits = 0;
+      const unsigned v = vitesse;
       if (nbSerpent > 1) {
-        const unsigned v = vitesse;
-        faits = v == VITESSE_AUTO
+        faits += v == VITESSE_AUTO
             ? jouerTours(ULONG_MAX, SDL_GetTicks() + dureeLotAuto())
             : jouerTours(v, 0);
       }
+      const bool fin = nbSerpent <= 1;
+
+      {
+        lock_guard<mutex> garde(verrou);
+        if (arreter) {
+          return;
+        }
+        if (deposee and v == VITESSE_AUTO and not fin) {
+          continue;  // boîte pleine : on joue encore, on déposera plus tard
+        }
+      }
+
+      // Seul le moteur remplit la boîte : si elle était libre, elle le reste
       preparerImage(enPreparation);
       enPreparation.tours = nbTours;
       enPreparation.serpents = nbSerpent;
       enPreparation.toursLot = faits;
-      const bool fin = nbSerpent <= 1;
+      faits = 0;
       {
         unique_lock<mutex> garde(verrou);
         signal.wait(garde, [&] { return not deposee or arreter; });

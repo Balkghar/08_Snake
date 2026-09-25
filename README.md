@@ -306,10 +306,14 @@ le programme prévient. Mesures sur 4 cœurs, 30 000 serpents :
   de tours sans s'arrêter ; à la fin de chaque lot, il dépose la liste des
   cases à recolorier (case, couleur). Le thread principal, sur son propre
   cœur, prend la liste, colorie les pixels, envoie l'image et lit le
-  clavier. Double tampon : ce sont des différences (en sauter une laisserait
-  des cases fausses), donc le moteur n'attend que si l'affichage a déjà une
-  liste de retard ; il a au plus un lot d'avance sur l'image montrée. Par
-  défaut, un cœur est laissé à l'affichage (`-j` vaut cœurs − 1).
+  clavier. Boîte aux lettres : une seule liste déposée à la fois. En vitesse
+  automatique, le moteur n'attend jamais : si l'affichage n'a pas encore
+  pris la liste précédente, il continue de jouer et les cases modifiées
+  s'accumulent (sans doublons) jusqu'au prochain dépôt. Un affichage lent
+  (synchronisation imposée par le système, envoi lent à la carte graphique)
+  ne ralentit donc plus le calcul. En vitesse fixe (`-v N`), l'affichage
+  donne la cadence. Par défaut, un cœur est laissé à l'affichage (`-j` vaut
+  cœurs − 1).
 - **Vitesse automatique calée sur l'écran** : un lot dure une image de
   l'écran (1/60 s à 60 Hz, 1/144 s à 144 Hz). `--vsync` montre les images
   au rythme de l'écran, sans déchirure, sans ralentir le calcul.
