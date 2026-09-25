@@ -130,6 +130,7 @@ outils/
   saisie.*               Saisie sécurisée d'un entier
   aleatoire.*            Tirage aléatoire
   fileCirculaire.hpp     File circulaire (corps des serpents)
+  precharger.hpp         Préchargement mémoire (GCC / Clang)
   struct_coordonnees.hpp Coordonnées (x, y)
 ```
 
@@ -143,9 +144,9 @@ classDiagram
         -largeur, longueur : unsigned
         -serpents : vector~Snake~
         -pommes : vector~Pomme~
-        -occupationSerpents : vector~int~
-        -occupationPommes : vector~int~
-        -teteSurCase : vector~unsigned~
+        -cases : vector~Case~
+        -tetesBits : vector~uint64~
+        -morsuresEnAttente : vector~unsigned~
         -vivants : vector~unsigned~
         -casesModifiees : vector~CoordonneesXY~
         +commencerCombat(delai, zoom, vitesse)
@@ -182,19 +183,31 @@ Le simulateur est pensé pour tenir des dizaines de milliers de serpents :
 - **Affichage incrémental** : chaque serpent note les cases qu'il occupe ou
   libère (tête qui avance, queue qui suit, coupure, mort). `Combat` tient une
   grille du nombre de segments et de pommes par case et ne recolore que les
-  cases modifiées. `Affichage2d` garde son tampon de pixels et n'envoie à la
-  texture SDL que le rectangle modifié.
-- **Combats en O(longueur)** : la grille `teteSurCase` indique quel serpent a
-  sa tête sur chaque case (au plus un : deux têtes qui se rencontrent se
-  battent aussitôt). Un serpent vérifie tête contre tête en une lecture, et
-  les morsures en parcourant son propre corps, au lieu d'être comparé à tous
-  les autres serpents.
+  cases modifiées. `Affichage2d` garde son tampon de pixels et ne recopie
+  dans la texture SDL (par `SDL_LockTexture`, la méthode prévue pour les
+  textures qui changent souvent) que les bandes d'écran modifiées.
+- **Combats sans comparer les serpents deux à deux** : chaque case sait quel
+  serpent a sa tête dessus (au plus un : deux têtes qui se rencontrent se
+  battent aussitôt), donc tête contre tête se vérifie en une lecture.
+- **Morsures détectées à l'arrivée** : les segments d'un corps ne bougent
+  jamais, une tête ne peut donc se retrouver sur un corps qu'en y arrivant.
+  Chaque case garde le XOR des numéros des segments présents, ce qui donne
+  exactement le propriétaire d'un segment seul ; la victime possible est
+  prévenue et seuls les serpents menacés parcourent leur corps.
 - **Déplacement en O(1)** : le corps est une file circulaire, seules la tête
   et la queue bougent.
 - **Serpents morts ignorés** : seule la liste des vivants est parcourue, et
   la mémoire d'un serpent mort est libérée.
 - **Cases libres** : trouvées via la grille, sans parcourir les serpents ; un
   terrain plein ne bloque pas le programme.
+- **Mémoire proche** : avec des serpents éparpillés sur tout le terrain, le
+  temps part surtout en défauts de cache. Les informations d'une case sont
+  regroupées dans une seule structure, les petits corps sont rangés dans
+  l'objet serpent lui-même, et les cases des prochains serpents à jouer (ou
+  à redessiner) sont préchargées à l'avance.
+- **Compilation** : `Release` par défaut et optimisation à l'édition de liens
+  (LTO), qui permet d'intégrer les petits accesseurs appelés des millions de
+  fois ; la console n'écrit plus ligne par ligne.
 
 Mesures indicatives (terrain 1200×800, affichage désactivé, sans délai) :
 
@@ -206,6 +219,10 @@ Mesures indicatives (terrain 1200×800, affichage désactivé, sans délai) :
 
 Les premiers tours d'une grosse partie sont les plus lourds (hécatombe
 initiale), puis tout s'accélère à mesure que les serpents meurent.
+
+Une partie `--turbo` complète (100 000 serpents, ~660 000 tours) prend
+environ 4,7 s de calcul et d'affichage, contre 7 s avant les optimisations
+de mémoire ci-dessus.
 
 ## Contexte du labo
 

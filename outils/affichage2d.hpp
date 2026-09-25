@@ -50,6 +50,7 @@ class Affichage2d {
   //------------------------- méthode d'affichage -------------------------
   bool initalisationAffichage();
   bool ajouterElementAffichage(int x, int y, Couleur couleur);
+  void prechargerElement(int x, int y) const;  // voir precharger.hpp
   bool nettoyerAffichage(Couleur couleur);
   /**
    * @brief Traite les événements en attente.
@@ -97,9 +98,16 @@ class Affichage2d {
   std::vector<Uint32> pixels;
   Uint32 debutImage = 0;
 
-  // Zone modifiée depuis la dernière image (seule partie envoyée au GPU)
-  bool zoneModifiee = false;
-  unsigned zoneMinX = 0, zoneMinY = 0, zoneMaxX = 0, zoneMaxY = 0;
+  // Parties modifiées depuis la dernière image, seules envoyées au GPU :
+  // l'écran est découpé en bandes horizontales, chacune retenant l'intervalle
+  // de colonnes touché. Deux petits serpents aux deux coins ne font plus
+  // renvoyer tout l'écran.
+  static constexpr unsigned HAUTEUR_BANDE = 16;
+  struct Bande {
+    bool modifiee = false;
+    unsigned minX = 0, maxX = 0;
+  };
+  std::vector<Bande> bandes;
 };
 
 #endif

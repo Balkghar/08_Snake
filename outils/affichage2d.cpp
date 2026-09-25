@@ -14,10 +14,12 @@ Compilateur : gcc version 11.2.0
 */
 
 #include <algorithm>
+#include <cstring>
 #include <iomanip>
 #include <iostream>
 #include "affichage2d.hpp"
 #include "police.hpp"
+#include "precharger.hpp"
 
 using namespace std;
 
@@ -88,6 +90,7 @@ bool Affichage2d::initalisationAffichage() {
   couleurs[Couleur::rouge] = SDL_MapRGB(format, 255, 0, 0);
 
   pixels.assign(size_t(largeur) * hauteur, 0);
+  bandes.assign((hauteur + HAUTEUR_BANDE - 1) / HAUTEUR_BANDE, Bande());
   debutImage = SDL_GetTicks();
   return false;
 }
@@ -101,28 +104,31 @@ bool Affichage2d::ajouterElementAffichage(int x, int y, Couleur couleur) {
   const unsigned ux = unsigned(x), uy = unsigned(y);
   pixels[size_t(uy) * largeur + ux] = valeurCouleur(couleur);
 
-  if (zoneModifiee) {
-    zoneMinX = std::min(zoneMinX, ux);
-    zoneMinY = std::min(zoneMinY, uy);
-    zoneMaxX = std::max(zoneMaxX, ux);
-    zoneMaxY = std::max(zoneMaxY, uy);
+  Bande &bande = bandes[uy / HAUTEUR_BANDE];
+  if (bande.modifiee) {
+    bande.minX = std::min(bande.minX, ux);
+    bande.maxX = std::max(bande.maxX, ux);
   } else {
-    zoneModifiee = true;
-    zoneMinX = zoneMaxX = ux;
-    zoneMinY = zoneMaxY = uy;
+    bande.modifiee = true;
+    bande.minX = bande.maxX = ux;
   }
 
   return false;
+}
+
+void Affichage2d::prechargerElement(int x, int y) const {
+  if (x >= 0 and y >= 0 and unsigned(x) < largeur and unsigned(y) < hauteur) {
+    precharger(&pixels[size_t(y) * largeur + unsigned(x)]);
+  }
 }
 
 bool Affichage2d::nettoyerAffichage(Couleur couleur) {
 
   std::fill(pixels.begin(), pixels.end(), valeurCouleur(couleur));
 
-  zoneModifiee = true;
-  zoneMinX = zoneMinY = 0;
-  zoneMaxX = largeur - 1;
-  zoneMaxY = hauteur - 1;
+  for (Bande &bande : bandes) {
+    bande = {true, 0, largeur - 1};
+  }
 
   return false;
 }
@@ -360,16 +366,32 @@ void Affichage2d::afficherEcranFin(const MotifPixel &logo,
 //--------------------------- envoi au GPU --------------------------------
 void Affichage2d::envoyerZoneModifiee() {
 
-  // Le tampon est conservé d'une image à l'autre : seule la zone modifiée
-  // est renvoyée à la texture (rien du tout si rien n'a bougé)
-  if (zoneModifiee) {
-    const SDL_Rect zone = {int(zoneMinX), int(zoneMinY),
-                           int(zoneMaxX - zoneMinX + 1),
-                           int(zoneMaxY - zoneMinY + 1)};
-    SDL_UpdateTexture(texture, &zone,
-                      &pixels[size_t(zoneMinY) * largeur + zoneMinX],
-                      int(largeur * sizeof(Uint32)));
-    zoneModifiee = false;
+  // Le tampon est conservé d'une image à l'autre : seules les parties
+  // modifiées sont recopiées dans la texture. Le verrouillage (LockTexture)
+  // est la méthode prévue par SDL pour les textures qui changent souvent ;
+  // SDL_UpdateTexture est documentée comme lente et destinée aux textures
+  // statiques.
+  for (size_t b = 0; b < bandes.size(); ++b) {
+    Bande &bande = bandes[b];
+    if (not bande.modifiee) {
+      continue;
+    }
+    const unsigned y0 = unsigned(b) * HAUTEUR_BANDE;
+    const unsigned lignes = std::min(HAUTEUR_BANDE, hauteur - y0);
+    const unsigned colonnes = bande.maxX - bande.minX + 1;
+    const SDL_Rect zone = {int(bande.minX), int(y0), int(colonnes), int(lignes)};
+
+    void *destination = nullptr;
+    int pas = 0;
+    if (SDL_LockTexture(texture, &zone, &destination, &pas) == 0) {
+      for (unsigned l = 0; l < lignes; ++l) {
+        std::memcpy(static_cast<Uint8 *>(destination) + size_t(l) * size_t(pas),
+                    &pixels[size_t(y0 + l) * largeur + bande.minX],
+                    colonnes * sizeof(Uint32));
+      }
+      SDL_UnlockTexture(texture);
+    }
+    bande.modifiee = false;
   }
 }
 

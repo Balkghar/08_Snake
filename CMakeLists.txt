@@ -25,6 +25,15 @@ add_executable(08_snake main.cpp
 
 target_link_libraries(08_snake ${SDL2_LIBRARIES})
 
+# Optimisation à l'édition de liens (LTO) : permet d'intégrer (inline) les
+# petits accesseurs définis dans d'autres fichiers .cpp, appelés des millions
+# de fois par partie
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo_disponible OUTPUT ipo_message)
+if(ipo_disponible)
+  set_property(TARGET 08_snake PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
+
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)

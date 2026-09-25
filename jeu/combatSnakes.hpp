@@ -16,6 +16,7 @@ Compilateur : gcc version 11.2.0
 #ifndef LABO8_SNAKES_JEU_COMBATSNAKES_HPP
 #define LABO8_SNAKES_JEU_COMBATSNAKES_HPP
 
+#include <cstdint>
 #include <vector>
 #include <string>
 #include "snake.hpp"
@@ -51,8 +52,13 @@ class Combat {
   //------------------------- grille d'occupation -------------------------
   bool placeEstOccupee(size_t i) const;
   size_t indexCase(int x, int y) const;
-  void modifierCase(int x, int y, int deltaSerpent, int deltaPomme);
+  void modifierCase(int x, int y, int deltaSerpent, int deltaPomme,
+                    unsigned serpent = AUCUNE_TETE);
   void appliquerModifications(Snake &serpent);
+  void poserTete(size_t i, unsigned serpent);
+  bool tetePresente(size_t i) const;
+  void enregistrerArrivee(size_t indice);
+  void oublierArrivee(size_t indice);
 
   //------------------------- méthodes du jeu -----------------------------
   void jouerTour();
@@ -86,23 +92,49 @@ class Combat {
 
   static constexpr unsigned MIN = 0;
   static constexpr unsigned AUCUNE_TETE = 0;
+  static constexpr unsigned VICTIME_INCONNUE = ~0u;
 
   std::vector<Snake> serpents;
   std::vector<Pomme> pommes;
   std::vector<unsigned> vivants;  // indices des serpents en vie, dans l'ordre
 
-  // Grilles du terrain (une case par élément, indexCase(x, y)) :
-  //  - nombre de segments de serpents vivants et de pommes par case, tenus à
-  //    jour de façon incrémentale ; seules les casesModifiees sont redessinées
-  //  - teteSurCase : indice + 1 du serpent vivant dont la tête est sur la
-  //    case (il ne peut y en avoir qu'une : deux têtes qui se rencontrent se
-  //    battent aussitôt). Évite de comparer chaque serpent à tous les autres.
-  std::vector<int> occupationSerpents;
-  std::vector<int> occupationPommes;
-  std::vector<unsigned> teteSurCase;
+  // Grille du terrain (une case par élément, indexCase(x, y)). Toutes les
+  // informations d'une case sont regroupées : avec des serpents éparpillés
+  // sur tout le terrain, chaque accès est un défaut de cache, autant n'en
+  // payer qu'un par case plutôt qu'un par grille.
+  struct Case {
+    // segments de serpents vivants et pommes sur la case, tenus à jour de
+    // façon incrémentale (seules les casesModifiees sont redessinées)
+    std::int32_t serpents = 0;
+    std::int32_t pommes = 0;
+    // XOR des (indice + 1) des segments présents : avec un seul segment,
+    // c'est exactement son propriétaire (voir la détection des morsures)
+    std::uint32_t xorSerpents = 0;
+    // indice + 1 du serpent vivant dont la tête est sur la case (une seule
+    // possible : deux têtes qui se rencontrent se battent aussitôt). Évite
+    // de comparer chaque serpent à tous les autres.
+    std::uint32_t tete = AUCUNE_TETE;
+  };
+  std::vector<Case> cases;
   std::vector<bool> caseMarquee;
   std::vector<CoordonneesXY> casesModifiees;
   size_t nbCasesOccupees = 0;
+
+  // Présence d'une tête réduite à 1 bit par case (120 Ko pour 1200x800) :
+  // tient dans le cache du processeur, ce qui accélère le parcours des corps
+  std::vector<std::uint64_t> tetesBits;
+
+  // Détection des morsures sans parcourir tous les corps à chaque tour. Les
+  // segments d'un serpent ne bougent jamais (seules la tête et la queue
+  // changent) : une tête ne se retrouve sur un corps qu'en y arrivant.
+  //  - Case::xorSerpents donne le propriétaire d'un segment seul sur sa case
+  //  - quand une tête arrive sur une case occupée, la victime possible est
+  //    notée (arrivee) et son compteur morsuresEnAttente augmenté ; s'il y a
+  //    plusieurs segments, la victime est inconnue et tout le monde vérifie
+  //  - un serpent ne parcourt son corps que s'il peut être mordu
+  std::vector<unsigned> morsuresEnAttente;  // par serpent
+  std::vector<unsigned> arrivee;            // par serpent : victime + 1
+  unsigned morsuresInconnues = 0;
 };
 
 #endif

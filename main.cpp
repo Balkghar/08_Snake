@@ -130,6 +130,10 @@ bool lireArguments(int argc, char **argv, vector<Parametre> &params,
 //-----------------------------------------------------------------------------
 int main(int argc, char **argv) {
 
+  // cout garde son propre tampon au lieu d'écrire à chaque ligne : des
+  // dizaines de milliers de morts annoncées ne ralentissent plus la partie
+  ios::sync_with_stdio(false);
+
   //=========================== Paramètres ===================================
   const string MSG_TERRAIN = "Veuillez choisir la "s;
   const string MSG_INTERVALLE = "Elle doit etre comprise entre "s;

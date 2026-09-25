@@ -7,9 +7,10 @@ Date        : 10.01.2023
 But         : File circulaire (tampon en anneau) : ajout en tête et retrait en
               queue en temps constant, accès indexé, mémoire contiguë.
 
-Remarque(s) : Plus économe qu'une std::deque pour de petites files : la
-              capacité part de 16 éléments et double au besoin, alors qu'une
-              deque réserve d'emblée un bloc de 512 octets et sa table.
+Remarque(s) : Plus économe qu'une std::deque pour de petites files : les
+              16 premiers éléments sont dans l'objet, puis la capacité
+              double au besoin, alors qu'une deque réserve d'emblée un bloc
+              de 512 octets et sa table.
 
 Compilateur : gcc version 11.2.0
 ---------------------------------------------------------------------------
@@ -21,25 +22,27 @@ Compilateur : gcc version 11.2.0
 #include <cstddef>
 #include <vector>
 
-template<typename T>
+template<typename T, std::size_t N = 16>
 class FileCirculaire {
+  static_assert(N > 0 and (N & (N - 1)) == 0, "N doit etre une puissance de 2");
+
  public:
   std::size_t size() const { return taille; }
   bool empty() const { return taille == 0; }
 
   // Élément k depuis la tête (0 = tête)
   const T &operator[](std::size_t k) const {
-    return anneau[(debut + k) & (anneau.size() - 1)];
+    return donnees()[(debut + k) & masque];
   }
   const T &front() const { return (*this)[0]; }
   const T &back() const { return (*this)[taille - 1]; }
 
   void push_front(const T &valeur) {
-    if (taille == anneau.size()) {
+    if (taille == masque + 1) {
       agrandir();
     }
-    debut = (debut + anneau.size() - 1) & (anneau.size() - 1);
-    anneau[debut] = valeur;
+    debut = (debut + masque) & masque;
+    donnees()[debut] = valeur;
     ++taille;
   }
 
@@ -50,24 +53,32 @@ class FileCirculaire {
 
   // Vide la file et rend sa mémoire
   void liberer() {
-    std::vector<T>().swap(anneau);
+    std::vector<T>().swap(externe);
+    masque = N - 1;
     debut = taille = 0;
   }
 
  private:
+  // Les N premiers éléments sont rangés dans l'objet lui-même (pas d'accès
+  // à une zone mémoire lointaine pour les petites files, les plus nombreuses)
+  // ; au-delà, un tableau alloué dont la taille double à chaque fois.
+  const T *donnees() const { return externe.empty() ? interne : externe.data(); }
+  T *donnees() { return externe.empty() ? interne : externe.data(); }
+
   // La capacité reste une puissance de 2 : le modulo devient un simple masque
   void agrandir() {
-    std::vector<T> nouveau(anneau.empty() ? CAPACITE_INITIALE : anneau.size() * 2);
+    std::vector<T> nouveau((masque + 1) * 2);
     for (std::size_t k = 0; k < taille; ++k) {
       nouveau[k] = (*this)[k];
     }
-    anneau.swap(nouveau);
+    externe.swap(nouveau);
+    masque = externe.size() - 1;
     debut = 0;
   }
 
-  static constexpr std::size_t CAPACITE_INITIALE = 16;
-
-  std::vector<T> anneau;
+  T interne[N] = {};
+  std::vector<T> externe;
+  std::size_t masque = N - 1;
   std::size_t debut = 0;
   std::size_t taille = 0;
 };
