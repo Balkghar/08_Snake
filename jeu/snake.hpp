@@ -52,6 +52,16 @@ class Snake {
   bool getEstEnVie() const;
   const std::vector<CoordonneesXY> &getCoord() const;
 
+  //------------------------- suivi des modifications ---------------------
+  /**
+   * @brief Cases occupées / libérées par le serpent depuis le dernier appel à
+   *        oublierModifications() (déplacement, coupure, mort). Permet de ne
+   *        redessiner que ce qui a changé.
+   */
+  const std::vector<CoordonneesXY> &getCasesAjoutees() const;
+  const std::vector<CoordonneesXY> &getCasesRetirees() const;
+  void oublierModifications();
+
   //------------------------- autres --------------------------------------
   void longueurAAjouterSupl(unsigned valeur);
   bool combattreSerpent(Snake &serpent);
@@ -76,7 +86,8 @@ class Snake {
   unsigned longueurAAjouter;
   bool estEnVie;
   std::vector<CoordonneesXY> coordonnees;
-
+  std::vector<CoordonneesXY> casesAjoutees;
+  std::vector<CoordonneesXY> casesRetirees;
 };
 
 #endif

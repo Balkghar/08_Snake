@@ -42,6 +42,7 @@ class Affichage2d {
   bool initalisationAffichage();
   bool ajouterElementAffichage(int x, int y, Couleur couleur);
   bool nettoyerAffichage(Couleur couleur);
+  bool fermetureDemandee();
   bool fermerAffichage();
   bool mettreAjourAffichage();
  private:
@@ -58,6 +59,10 @@ class Affichage2d {
   SDL_PixelFormat *format = nullptr;
   std::vector<Uint32> pixels;
   Uint32 debutImage = 0;
+
+  // Zone modifiée depuis la dernière image (seule partie envoyée au GPU)
+  bool zoneModifiee = false;
+  unsigned zoneMinX = 0, zoneMinY = 0, zoneMaxX = 0, zoneMaxY = 0;
 };
 
 #endif

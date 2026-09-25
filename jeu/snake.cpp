@@ -32,6 +32,7 @@ Snake::Snake(int x,
 
   coordonnees.at(0).x = x;
   coordonnees.at(0).y = y;
+  casesAjoutees.push_back(coordonnees.at(0));
 
   longueurAAjouter = longueur - 1;
 
@@ -94,9 +95,14 @@ void Snake::deplacerVers(Direction dir) {
       break;
   }
 
+  casesAjoutees.push_back(coordonnees.at(0));
+
   if (longueurAAjouter) {
     agrandirSerpent(tmpCoord);
     longueurAAjouter -= 1;
+  } else {
+    // pas d'agrandissement : l'ancienne queue est libérée
+    casesRetirees.push_back(tmpCoord);
   }
 }
 
@@ -119,6 +125,20 @@ bool Snake::getEstEnVie() const {
 
 const std::vector<CoordonneesXY> &Snake::getCoord() const {
   return coordonnees;
+}
+
+//------------------------- suivi des modifications ---------------------
+const std::vector<CoordonneesXY> &Snake::getCasesAjoutees() const {
+  return casesAjoutees;
+}
+
+const std::vector<CoordonneesXY> &Snake::getCasesRetirees() const {
+  return casesRetirees;
+}
+
+void Snake::oublierModifications() {
+  casesAjoutees.clear();
+  casesRetirees.clear();
 }
 
 //------------------------- autres --------------------------------------
@@ -162,6 +182,9 @@ void Snake::couperSerpent(Snake &serpent) {
     if (coordo.x == (*this).getCoordX() && coordo.y == (*this).getCoordY()) {
       longueurAAjouterSupl(calculAjoutLongueur(serpent.coordonnees.size() - i, 40));
       serpent.longueurAAjouter = 0;
+      serpent.casesRetirees.insert(serpent.casesRetirees.end(),
+                                   serpent.coordonnees.begin() + i,
+                                   serpent.coordonnees.end());
       serpent.coordonnees.resize(i);
       break;
     }
@@ -172,5 +195,7 @@ void Snake::couperSerpent(Snake &serpent) {
 void Snake::mourir(Snake &serpent) {
 
   estEnVie = false;
+  // un serpent mort n'est plus affiché : tout son corps est libéré
+  casesRetirees.insert(casesRetirees.end(), coordonnees.begin(), coordonnees.end());
   serpent.longueurAAjouterSupl(calculAjoutLongueur(coordonnees.size(), 60));
 }

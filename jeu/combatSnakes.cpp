@@ -31,6 +31,9 @@ Combat::Combat(unsigned int largeur,
   longueurAffichage = longueur - 1;
   largeurAffichage = largeur - 1;
 
+  occupationSerpents.assign(size_t(largeur) * longueur, 0);
+  occupationPommes.assign(size_t(largeur) * longueur, 0);
+
   initialiserSerpent();
   initialiserPomme();
 }
@@ -40,6 +43,7 @@ void Combat::commencerCombat() {
   Affichage2d affichage(largeur, longueur, SDL_DELAY, AUGMENT_PIXEL);
 
   if (not affichage.initalisationAffichage()) {
+    affichage.nettoyerAffichage(Couleur::blanc);
     faireCombattreSerpents(affichage);
   }
 
@@ -58,6 +62,7 @@ void Combat::initialiserPomme() {
     CoordonneesXY nouvelleCoord = generateurDeCoord();
 
     pommes.emplace_back(nouvelleCoord.x, nouvelleCoord.y, i, true);
+    modifierCase(nouvelleCoord.x, nouvelleCoord.y, 0, +1);
 
   }
 }
@@ -70,6 +75,7 @@ void Combat::initialiserSerpent() {
     CoordonneesXY nouvelleCoord = generateurDeCoord();
 
     serpents.emplace_back(nouvelleCoord.x, nouvelleCoord.y, i, true, 10);
+    appliquerModificationsSerpents();
   }
 
 }
@@ -86,30 +92,36 @@ CoordonneesXY Combat::generateurDeCoord() {
 }
 
 //------------------------- contrôle de présence ------------------------
-bool Combat::placeEstOccupee(int x, int y) {
-  return (serpentPresent(x, y) or pommePresente(x, y));
+bool Combat::placeEstOccupee(int x, int y) const {
+  const size_t i = indexCase(x, y);
+  return occupationSerpents[i] > 0 or occupationPommes[i] > 0;
 }
 
-bool Combat::serpentPresent(int x, int y) {
+//------------------------- grille d'occupation -------------------------
+size_t Combat::indexCase(int x, int y) const {
+  return size_t(y) * largeur + size_t(x);
+}
+
+void Combat::modifierCase(int x, int y, int deltaSerpent, int deltaPomme) {
+  if (x < 0 or y < 0 or unsigned(x) >= largeur or unsigned(y) >= longueur) {
+    return;
+  }
+  const size_t i = indexCase(x, y);
+  occupationSerpents[i] += deltaSerpent;
+  occupationPommes[i] += deltaPomme;
+  casesModifiees.push_back({x, y});
+}
+
+void Combat::appliquerModificationsSerpents() {
   for (Snake &serpent : serpents) {
-    for (const CoordonneesXY &coord : serpent.getCoord()) {
-      if (coord.x == x and coord.y == y) {
-        return true;
-      }
+    for (const CoordonneesXY &coord : serpent.getCasesAjoutees()) {
+      modifierCase(coord.x, coord.y, +1, 0);
     }
-  }
-
-  return false;
-}
-
-bool Combat::pommePresente(int x, int y) {
-  for (Pomme &mesPommes : pommes) {
-    if (mesPommes.getCoordX() == x and mesPommes.getCoordY() == y) {
-      return true;
+    for (const CoordonneesXY &coord : serpent.getCasesRetirees()) {
+      modifierCase(coord.x, coord.y, -1, 0);
     }
+    serpent.oublierModifications();
   }
-
-  return false;
 }
 
 //------------------------- méthodes du jeu -----------------------------
@@ -117,10 +129,14 @@ bool Combat::pommePresente(int x, int y) {
 void Combat::mangerPomme(Snake &serpent, Pomme &pomme) {
 
   if (serpent.getCoordX() == pomme.getCoordX() && serpent.getCoordY() == pomme.getCoordY()) {
+    // La grille doit être à jour pour trouver une case libre
+    appliquerModificationsSerpents();
+    modifierCase(pomme.getCoordX(), pomme.getCoordY(), 0, -1);
     CoordonneesXY nouvelleCoord = generateurDeCoord();
 
     serpent.longueurAAjouterSupl(pomme.getValeur());
     pomme.setCoordPomme(nouvelleCoord.x, nouvelleCoord.y);
+    modifierCase(nouvelleCoord.x, nouvelleCoord.y, 0, +1);
     pomme.setValPomme();
   }
 }
@@ -141,6 +157,7 @@ void Combat::faireCombattreSerpents(Affichage2d &affichage) {
       } else {
         if (pommes.at(d).estIntacte()) {
           pommes.at(d).pommeEstMangee();
+          modifierCase(pommes.at(d).getCoordX(), pommes.at(d).getCoordY(), 0, -1);
         }
       }
     }
@@ -172,37 +189,25 @@ void Combat::combatSerpent(Snake &serpent) {
 
 //------------------------- méthodes d'affichage ------------------------
 
-void Combat::ajouterSerpentAffichage(Affichage2d &affichage) {
-
-  for (const Snake &serpent : serpents) {
-    if (not serpent.getEstEnVie()) {
-      continue;
-    }
-    for (const CoordonneesXY &coord : serpent.getCoord()) {
-      affichage.ajouterElementAffichage(coord.x, coord.y, Couleur::noir);
-    }
-  }
-}
-
-void Combat::ajouterPommeAffichage(Affichage2d &affichage) {
-
-  for (Pomme &pomme : pommes) {
-    if (pomme.estIntacte()) {
-      affichage.ajouterElementAffichage(pomme.getCoordX(), pomme.getCoordY(), Couleur::rouge);
-    }
-
-  }
-}
-
 bool Combat::afficher(Affichage2d &affichage) {
 
-  const bool quitter = affichage.nettoyerAffichage(Couleur::blanc);
+  appliquerModificationsSerpents();
 
-  ajouterSerpentAffichage(affichage);
-
-  ajouterPommeAffichage(affichage);
+  // Seules les cases modifiées depuis la dernière image sont redessinées
+  // (une pomme reste dessinée par-dessus un serpent)
+  for (const CoordonneesXY &coord : casesModifiees) {
+    const size_t i = indexCase(coord.x, coord.y);
+    Couleur couleur = Couleur::blanc;
+    if (occupationPommes[i] > 0) {
+      couleur = Couleur::rouge;
+    } else if (occupationSerpents[i] > 0) {
+      couleur = Couleur::noir;
+    }
+    affichage.ajouterElementAffichage(coord.x, coord.y, couleur);
+  }
+  casesModifiees.clear();
 
   affichage.mettreAjourAffichage();
 
-  return quitter;
+  return affichage.fermetureDemandee();
 }

@@ -42,17 +42,18 @@ class Combat {
   CoordonneesXY generateurDeCoord();
 
   //------------------------- contrôle de présence ------------------------
-  bool placeEstOccupee(int x, int y);
-  bool serpentPresent(int x, int y);
-  bool pommePresente(int x, int y);
+  bool placeEstOccupee(int x, int y) const;
+
+  //------------------------- grille d'occupation -------------------------
+  size_t indexCase(int x, int y) const;
+  void modifierCase(int x, int y, int deltaSerpent, int deltaPomme);
+  void appliquerModificationsSerpents();
 
   //------------------------- méthodes du jeu -----------------------------
   void mangerPomme(Snake &serpent, Pomme &pomme);
   void combatSerpent(Snake &serpent);
 
   //------------------------- méthodes d'affichage ------------------------
-  void ajouterSerpentAffichage(Affichage2d &affichage);
-  void ajouterPommeAffichage(Affichage2d &affichage);
   bool afficher(Affichage2d &affichage);
   void faireCombattreSerpents(Affichage2d &affichage);
 
@@ -70,6 +71,13 @@ class Combat {
   std::string serpentTueur;
   std::vector<Snake> serpents;
   std::vector<Pomme> pommes;
+
+  // Nombre de segments de serpents vivants / de pommes sur chaque case. Tenue
+  // à jour de façon incrémentale : seules les cases listées dans
+  // casesModifiees sont redessinées à chaque image.
+  std::vector<int> occupationSerpents;
+  std::vector<int> occupationPommes;
+  std::vector<CoordonneesXY> casesModifiees;
 };
 
 #endif

@@ -80,15 +80,39 @@ bool Affichage2d::ajouterElementAffichage(int x, int y, Couleur couleur) {
     return true;
   }
 
-  pixels[size_t(y) * largeur + unsigned(x)] = valeurCouleur(couleur);
+  const unsigned ux = unsigned(x), uy = unsigned(y);
+  pixels[size_t(uy) * largeur + ux] = valeurCouleur(couleur);
+
+  if (zoneModifiee) {
+    zoneMinX = std::min(zoneMinX, ux);
+    zoneMinY = std::min(zoneMinY, uy);
+    zoneMaxX = std::max(zoneMaxX, ux);
+    zoneMaxY = std::max(zoneMaxY, uy);
+  } else {
+    zoneModifiee = true;
+    zoneMinX = zoneMaxX = ux;
+    zoneMinY = zoneMaxY = uy;
+  }
 
   return false;
 }
 
 bool Affichage2d::nettoyerAffichage(Couleur couleur) {
 
+  std::fill(pixels.begin(), pixels.end(), valeurCouleur(couleur));
+
+  zoneModifiee = true;
+  zoneMinX = zoneMinY = 0;
+  zoneMaxX = largeur - 1;
+  zoneMaxY = hauteur - 1;
+
+  return false;
+}
+
+bool Affichage2d::fermetureDemandee() {
+
   // Vide toute la file d'événements, sinon elle s'accumule et la fenêtre
-  // ne répond plus (un seul événement lu par image auparavant)
+  // ne répond plus
   bool quitter = false;
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
@@ -96,8 +120,6 @@ bool Affichage2d::nettoyerAffichage(Couleur couleur) {
       quitter = true;
     }
   }
-
-  std::fill(pixels.begin(), pixels.end(), valeurCouleur(couleur));
 
   return quitter;
 }
@@ -121,8 +143,20 @@ bool Affichage2d::fermerAffichage() {
 
 bool Affichage2d::mettreAjourAffichage() {
 
-  SDL_UpdateTexture(texture, nullptr, pixels.data(),
-                    int(largeur * sizeof(Uint32)));
+  // Le tampon est conservé d'une image à l'autre : seule la zone modifiée
+  // est renvoyée à la texture (rien du tout si rien n'a bougé)
+  if (zoneModifiee) {
+    const SDL_Rect zone = {int(zoneMinX), int(zoneMinY),
+                           int(zoneMaxX - zoneMinX + 1),
+                           int(zoneMaxY - zoneMinY + 1)};
+    SDL_UpdateTexture(texture, &zone,
+                      &pixels[size_t(zoneMinY) * largeur + zoneMinX],
+                      int(largeur * sizeof(Uint32)));
+    zoneModifiee = false;
+  }
+
+  // Le back buffer est indéfini après un Present : on recopie la texture
+  // entière, ce qui ne coûte qu'une opération côté GPU
   SDL_RenderCopy(renderer, texture, nullptr, nullptr);
   SDL_RenderPresent(renderer);
 
