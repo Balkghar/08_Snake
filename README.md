@@ -347,12 +347,29 @@ le programme prévient. Mesures sur 4 cœurs, 30 000 serpents :
 - **`--profil`** : en fin de partie, temps passé dans le calcul, la
   préparation des images, le coloriage, l'envoi et la présentation, les
   attentes de part et d'autre, et la méthode d'envoi retenue, ainsi que la
-  graine, le nombre de tours et de déplacements et le temps de calcul par
-  déplacement. C'est la seule façon fiable de savoir ce qui limite la
+  graine, le nombre de tours et de déplacements, le temps de calcul par
+  déplacement, et la part des tours joués à plusieurs threads et à un seul
+  (fin de partie, moins de 512 serpents). C'est la seule façon fiable de savoir ce qui limite la
   vitesse sur une machine donnée. Pour comparer deux réglages, rejouer la
   même partie : `--turbo --profil --graine 42 -j 4`, puis `-j 8`, etc.
+- **Tenir dans le cache** : sur un portable, le cache L3 fait ~12 Mo ; ce
+  qui n'y tient pas coûte un aller-retour à la mémoire (~100 ns) à chaque
+  accès au hasard. Mesuré en simulant un L3 de 12 Mo (cachegrind), une
+  partie `--turbo` : 46,7 → 30,2 millions de défauts de cache (−35 %) :
+  - une case du terrain tient en **8 octets** au lieu de 16 (numéros de
+    serpent sur 17 bits, la taille d'une tête lue dans le serpent lors d'un
+    face-à-face) : 7,7 Mo pour 1200 × 800 au lieu de 15 Mo ;
+  - un **résumé de 8 octets par serpent** (case de tête, taille) à côté de
+    l'objet `Snake` (~300 octets, 28 Mo pour 100 000 serpents) : les
+    combats et les conséquences ne lisent plus l'objet complet que pour les
+    morts et les mordus ;
+  - **morsures ambiguës** (une tête arrive sur une case où passent plusieurs
+    corps : impossible de savoir à qui) : au lieu que tous les serpents
+    vérifient tout leur corps case par case, la tuile de 8 × 8 cases est
+    marquée, et seuls les serpents assez longs pour l'atteindre depuis leur
+    tête vérifient.
 - **Pages de 2 Mo** pour la grille du terrain (Linux) : moins de défauts de
-  traduction d'adresse pour un tableau de 15 Mo lu au hasard.
+  traduction d'adresse pour un tableau lu au hasard.
 - **Console** : annoncer 100 000 morts dans un terminal peut coûter plus
   cher que la simulation ; `--turbo` est donc silencieux, et `-q` l'est
   aussi pour les autres parties.

@@ -33,6 +33,10 @@ Compilateur : gcc version 11.2.0
 
 class Combat {
  public:
+  // Les numéros de serpent sont rangés sur 17 bits dans chaque case
+  static constexpr unsigned BITS_NUMERO = 17;
+  static constexpr std::uint32_t MAX_SERPENTS = (1u << BITS_NUMERO) - 1;
+
   //------------------------- Constructeur --------------------------------
   Combat() : Combat(100, 100, 10) {}
   /**
@@ -82,26 +86,29 @@ class Combat {
 
   //------------------------- grille du terrain ---------------------------
   // Une case par élément (indexCase). Toutes les informations d'une case
-  // sont regroupées dans 16 octets : avec des serpents éparpillés sur tout
-  // le terrain, chaque accès est un défaut de cache, autant n'en payer
-  // qu'un.
+  // tiennent dans 8 octets : avec des serpents éparpillés sur tout le
+  // terrain, chaque accès est un défaut de cache, autant n'en payer qu'un ;
+  // et 1200 x 800 cases font 7,7 Mo, qui tiennent dans le cache L3 d'un
+  // processeur de portable (12 Mo), au lieu de 15 Mo qui n'y tenaient pas.
   struct Case {
     // segments de serpents vivants sur la case
-    std::int32_t serpents = 0;
+    std::uint64_t serpents : 17;
     // XOR des numéros des segments présents : avec un seul segment, c'est
     // exactement son propriétaire (détection des morsures)
-    std::uint32_t xorSerpents = 0;
+    std::uint64_t xorSerpents : BITS_NUMERO;
     // numéro du serpent dont la tête occupe la case (une seule : quand
-    // plusieurs têtes arrivent ensemble, la plus longue gagne), sa taille
-    // et la parité du tour où elle est arrivée : une tête du tour précédent
-    // est l'ancienne position d'un serpent qui vient de repartir
-    std::uint32_t teteId = AUCUNE_TETE;
-    std::uint32_t teteTaille : 19;
-    std::uint32_t teteParite : 1;
-    std::uint32_t pommes : 11;
-    std::uint32_t marquee : 1;  // déjà dans la liste des cases à redessiner
-    Case() : teteTaille(0), teteParite(0), pommes(0), marquee(0) {}
+    // plusieurs têtes arrivent ensemble, la plus longue gagne) et parité du
+    // tour où elle est arrivée : une tête du tour précédent est l'ancienne
+    // position d'un serpent qui vient de repartir. (Sa taille n'est pas
+    // gardée : lue dans le serpent lors d'un face-à-face, rare.)
+    std::uint64_t teteId : BITS_NUMERO;
+    std::uint64_t teteParite : 1;
+    std::uint64_t pommes : 11;
+    std::uint64_t marquee : 1;  // déjà dans la liste des cases à redessiner
+    Case() : serpents(0), xorSerpents(0), teteId(AUCUNE_TETE), teteParite(0),
+             pommes(0), marquee(0) {}
   };
+  static_assert(sizeof(Case) == 8, "une case doit tenir dans 8 octets");
   static constexpr std::uint32_t TAILLE_MAX_TETE = (1u << 19) - 1;
 
   // Le terrain est découpé en bandes horizontales, une par thread, alignées
@@ -110,6 +117,7 @@ class Combat {
   struct alignas(TAILLE_LIGNE_CACHE) Region {
     std::vector<std::uint32_t> casesModifiees;  // à redessiner
     std::int64_t nbOccupees = 0;                 // cases non vides
+    std::vector<std::uint32_t> tuilesMarquees;  // à effacer en fin de tour
   };
 
   //------------------------- messages entre phases -----------------------
@@ -180,6 +188,8 @@ class Combat {
   void emettreRetraits(Snake &serpent, std::uint32_t id, Boite &boite);
   std::uint64_t hasard(std::uint32_t serpent) const;
   std::uint32_t parite() const;
+  // Taille d'un serpent telle que rangée dans les arrivées de têtes
+  std::uint32_t tailleTete(std::uint32_t id) const;
   void retirerMorts();
 
   //------------------------- méthodes d'affichage ------------------------
@@ -227,6 +237,15 @@ class Combat {
   std::vector<Pomme> pommes;
   std::vector<std::uint32_t> vivants;  // indices des serpents en vie
   std::vector<std::uint32_t> ancienneTete;  // case de tête au tour précédent
+  // Résumé de chaque serpent, tenu à jour à côté de l'objet Snake (près de
+  // 300 octets : 100 000 serpents font 28 Mo, bien plus que le cache) :
+  // 8 octets par serpent suffisent aux combats et aux conséquences, qui ne
+  // touchent plus l'objet complet que pour les morts et les mordus.
+  struct Resume {
+    std::uint32_t teteCase;  // case de la tête
+    std::uint32_t taille;    // 0 : mort
+  };
+  std::vector<Resume> resumes;
   size_t mortsDansVivants = 0;  // retirés de vivants de temps en temps
 
   // Par serpent, écrits pendant un tour par un seul thread chacun :
@@ -267,6 +286,9 @@ class Combat {
   unsigned boitesActives = 1; // boîtes remplies pendant ce tour
   std::uint64_t graine;       // suites aléatoires des serpents
   std::uint64_t nbMouvements = 0; // déplacements joués (pour le profil)
+  // [0] tours joués à un thread, [1] à plusieurs (profil)
+  std::uint64_t dureeMode[2] = {0, 0};
+  std::uint64_t toursMode[2] = {0, 0};
   bool continuer = false;     // décidé par le thread 0 à chaque tour
   bool silencieux = false;
   bool finAuto = false;
@@ -277,6 +299,16 @@ class Combat {
   // (donné par le XOR) est prévenu ; avec plusieurs, tout le monde vérifie
   // ce tour-ci. Seuls les serpents prévenus parcourent leur corps.
   std::unique_ptr<std::atomic<std::uint8_t>[]> menace;  // par serpent
+  // Tuiles de 8 x 8 cases où une tête est arrivée sur plusieurs corps
+  // (propriétaires inconnus). Seuls les serpents dont le corps peut
+  // atteindre une tuile marquée vérifient tout leur corps, au lieu de tous
+  // les serpents : chacun de ces parcours lit la grille sous chaque
+  // segment, un défaut de cache par segment.
+  static constexpr unsigned BITS_TUILE = 3;
+  std::vector<std::uint8_t> tuilesAmbigues;
+  std::uint32_t tuilesParLigne = 0;
+  std::uint32_t tuileDe(std::uint32_t cellule) const;
+  bool peutAtteindreAmbigue(Resume resume) const;
   std::atomic<bool> victimeInconnue{false};
 };
 

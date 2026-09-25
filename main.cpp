@@ -203,6 +203,8 @@ int main(int argc, char **argv) {
   const string MSG_TERRAIN = "Veuillez choisir la "s;
   const string MSG_INTERVALLE = "Elle doit etre comprise entre "s;
 
+  // (les numéros de serpent sont rangés sur 17 bits dans chaque case)
+  static_assert(100'000 <= Combat::MAX_SERPENTS, "trop de serpents");
   vector<Parametre> params = {
       {"-l", "--largeur", "Largeur du terrain (cases)", 50, 1200, -1,
        MSG_TERRAIN + "largeur du terrain de combat.\n" + MSG_INTERVALLE},
