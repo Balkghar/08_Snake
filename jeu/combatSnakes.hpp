@@ -58,6 +58,13 @@ class Combat {
    */
   void choisirSorties(bool silencieux, bool finAuto);
 
+  /**
+   * @brief Synchronisation verticale : les images sont montrées au rythme
+   *        de l'écran, sans déchirure. Ne ralentit pas le calcul, qui tourne
+   *        sur d'autres threads.
+   */
+  void activerVsync(bool actif);
+
   void commencerCombat(unsigned delai = DELAI_DEFAUT,
                        unsigned zoom = ZOOM_DEFAUT,
                        unsigned vitesse = VITESSE_DEFAUT);
@@ -170,12 +177,25 @@ class Combat {
   void retirerMorts();
 
   //------------------------- méthodes d'affichage ------------------------
-  void peindre(Affichage2d &affichage);
+  // Ce que le moteur dépose pour l'affichage à la fin d'un lot de tours :
+  // les cases à recolorier (numéro de case, couleur dans les 2 bits de
+  // poids fort), par région, et de quoi écrire le titre
+  struct Image {
+    std::vector<std::vector<std::uint32_t>> parRegion;
+    unsigned long tours = 0;
+    unsigned serpents = 0;
+    unsigned long toursLot = 0;
+  };
+  static constexpr std::uint32_t MASQUE_CASE = (1u << 30) - 1;
+
+  void preparerImage(Image &image);
+  void preparerRegion(Region &region, std::vector<std::uint32_t> &sortie);
+  void appliquerImage(Affichage2d &affichage, const Image &image) const;
   bool presenter(Affichage2d &affichage, int &accelerer);
-  void dessinerRegion(Affichage2d &affichage, Region &region);
   bool faireCombattreSerpents(Affichage2d &affichage);
+  Uint32 dureeLotAuto() const;
   void changerVitesse(int pas);
-  void mettreAJourTitre(Affichage2d &affichage) const;
+  void mettreAJourTitre(Affichage2d &affichage, const Image &image) const;
 
   //------------------------- fin de partie -------------------------------
   void afficherVictoire(Affichage2d &affichage);
@@ -191,9 +211,10 @@ class Combat {
   const unsigned nbSerpentsDepart;
   unsigned long nbTours = 0;
   unsigned dureeMs = 0;
-  unsigned vitesse = VITESSE_DEFAUT;
+  std::atomic<unsigned> vitesse{VITESSE_DEFAUT};  // changée au clavier
   unsigned delai = DELAI_DEFAUT;
-  unsigned long toursDerniereImage = 0;
+  unsigned frequenceEcran = 60;  // images par seconde de l'écran
+  bool vsync = false;
 
   std::vector<Snake> serpents;
   std::vector<Pomme> pommes;

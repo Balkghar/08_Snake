@@ -68,6 +68,7 @@ programme par un simple double-clic.
 | `-j`, `--threads N`   | Threads de calcul, 0 = cœurs − 1         | 0–256    | 0         |
 | `-q`, `--silencieux`  | N'annonce pas chaque mort                |          |           |
 | `-f`, `--fin-auto`    | Statistiques dans la console, pas d'écran de fin à fermer | | |
+| `--vsync`             | Images au rythme de l'écran, sans déchirure |        |           |
 | `-h`, `--aide`        | Affiche l'aide                           |          |           |
 
 Les formes `--option N` et `--option=N` sont acceptées. Une option inconnue
@@ -301,10 +302,17 @@ le programme prévient. Mesures sur 4 cœurs, 30 000 serpents :
 |------|---|---|---|----|----|
 | Durée | 2,0 s | 1,2 s | 2,2 s | 2,5 s | 8,7 s |
 - Le redessin des cases modifiées est lui aussi réparti par région.
-- **Affichage en même temps que le calcul** : un thread « moteur » joue les
-  tours de l'image suivante pendant que le thread principal envoie l'image
-  précédente à l'écran et lit le clavier. Par défaut, un cœur est laissé à
-  cet affichage (`-j` vaut cœurs − 1).
+- **Affichage découplé du calcul** : un thread « moteur » enchaîne les lots
+  de tours sans s'arrêter ; à la fin de chaque lot, il dépose la liste des
+  cases à recolorier (case, couleur). Le thread principal, sur son propre
+  cœur, prend la liste, colorie les pixels, envoie l'image et lit le
+  clavier. Double tampon : ce sont des différences (en sauter une laisserait
+  des cases fausses), donc le moteur n'attend que si l'affichage a déjà une
+  liste de retard ; il a au plus un lot d'avance sur l'image montrée. Par
+  défaut, un cœur est laissé à l'affichage (`-j` vaut cœurs − 1).
+- **Vitesse automatique calée sur l'écran** : un lot dure une image de
+  l'écran (1/60 s à 60 Hz, 1/144 s à 144 Hz). `--vsync` montre les images
+  au rythme de l'écran, sans déchirure, sans ralentir le calcul.
 - **Pages de 2 Mo** pour la grille du terrain (Linux) : moins de défauts de
   traduction d'adresse pour un tableau de 15 Mo lu au hasard.
 - **Console** : annoncer 100 000 morts dans un terminal peut coûter plus

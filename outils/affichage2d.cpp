@@ -37,6 +37,20 @@ Affichage2d::Affichage2d(const unsigned int larg,
 ) : largeur(larg), hauteur(haut), sdl_delay(sdl_del), nbre_values(nbr_vals) {}
 
 //------------------------- méthode d'affichage -------------------------
+void Affichage2d::activerVsync(bool actif) {
+  vsync = actif;
+}
+
+unsigned Affichage2d::frequenceEcran() const {
+  SDL_DisplayMode mode;
+  const int ecran = window ? SDL_GetWindowDisplayIndex(window) : 0;
+  if (SDL_GetCurrentDisplayMode(ecran < 0 ? 0 : ecran, &mode) == 0
+      and mode.refresh_rate > 0) {
+    return unsigned(mode.refresh_rate);
+  }
+  return 60;
+}
+
 bool Affichage2d::initalisationAffichage() {
 
   if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -46,6 +60,7 @@ bool Affichage2d::initalisationAffichage() {
 
   // Agrandissement au plus proche voisin : chaque case reste un carré net
   SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
+  SDL_SetHint(SDL_HINT_RENDER_VSYNC, vsync ? "1" : "0");
 
   // Réduit le zoom si la fenêtre ne tient pas à l'écran
   SDL_Rect ecran;

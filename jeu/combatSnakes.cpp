@@ -129,13 +129,19 @@ void Combat::choisirSorties(bool silencieux, bool finAuto) {
   this->finAuto = finAuto;
 }
 
+void Combat::activerVsync(bool actif) {
+  vsync = actif;
+}
+
 void Combat::commencerCombat(unsigned delai, unsigned zoom, unsigned vitesse) {
 
   this->delai = delai;
   this->vitesse = vitesse;
   Affichage2d affichage(largeur, longueur, delai, zoom);
+  affichage.activerVsync(vsync);
 
   if (not affichage.initalisationAffichage()) {
+    frequenceEcran = affichage.frequenceEcran();
     affichage.nettoyerAffichage(Couleur::blanc);
 
     const Uint32 debut = SDL_GetTicks();
@@ -730,70 +736,68 @@ void Combat::retirerMorts() {
 
 bool Combat::faireCombattreSerpents(Affichage2d &affichage) {
 
-  // Le moteur (un thread à part) joue les tours de l'image suivante pendant
-  // que le thread principal envoie l'image précédente à l'écran et lit le
-  // clavier. Seul le coloriage des cases, qui lit le terrain, se fait
-  // pendant que le moteur est à l'arrêt.
+  // Deux threads qui ne s'attendent presque jamais :
+  //  - le moteur enchaîne sans s'arrêter : un lot de tours (sur le groupe de
+  //    threads), puis la liste des cases à recolorier, déposée pour
+  //    l'affichage ;
+  //  - le thread principal, sur son propre cœur, prend chaque liste,
+  //    colorie les pixels, envoie l'image à l'écran et lit le clavier.
+  // Double tampon : une liste en préparation, une déposée. Ce sont des
+  // différences (en sauter une laisserait des cases fausses à l'écran), donc
+  // le moteur attend si l'affichage n'a pas encore pris la précédente ; il
+  // a au plus un lot d'avance sur l'image montrée.
   mutex verrou;
   condition_variable signal;
-  bool travail = false, arreter = false;
-  unsigned long demandeMax = 0;
-  Uint32 demandeFin = 0;
+  bool deposee = false, termine = false, arreter = false;
+  Image enPreparation, prete, affichee;
 
   thread moteur([&] {
     for (;;) {
-      unsigned long nbMax;
-      Uint32 fin;
+      unsigned long faits = 0;
+      if (nbSerpent > 1) {
+        const unsigned v = vitesse;
+        faits = v == VITESSE_AUTO
+            ? jouerTours(ULONG_MAX, SDL_GetTicks() + dureeLotAuto())
+            : jouerTours(v, 0);
+      }
+      preparerImage(enPreparation);
+      enPreparation.tours = nbTours;
+      enPreparation.serpents = nbSerpent;
+      enPreparation.toursLot = faits;
+      const bool fin = nbSerpent <= 1;
       {
         unique_lock<mutex> garde(verrou);
-        signal.wait(garde, [&] { return travail or arreter; });
+        signal.wait(garde, [&] { return not deposee or arreter; });
         if (arreter) {
           return;
         }
-        nbMax = demandeMax;
-        fin = demandeFin;
-      }
-      const unsigned long faits = jouerTours(nbMax, fin);
-      {
-        lock_guard<mutex> garde(verrou);
-        toursDerniereImage = faits;
-        travail = false;
+        swap(enPreparation, prete);
+        deposee = true;
+        termine = fin;
       }
       signal.notify_all();
+      if (fin) {
+        return;
+      }
     }
   });
 
-  Uint32 dernierTitre = 0;
   bool quitter = false;
-  for (;;) {
-    peindre(affichage);  // moteur à l'arrêt : le terrain ne bouge pas
-    if (nbSerpent <= 1) {
-      break;
-    }
-
-    // Tours suivants, calculés pendant l'affichage
-    {
-      lock_guard<mutex> garde(verrou);
-      if (vitesse == VITESSE_AUTO) {
-        // Autant de tours que possible pendant la durée d'une image (au
-        // moins ~60 images/s pour que la fenêtre reste fluide)
-        demandeMax = ULONG_MAX;
-        demandeFin = SDL_GetTicks() + (delai > 0 ? delai : 16);
-      } else {
-        demandeMax = vitesse;
-        demandeFin = 0;
-      }
-      travail = true;
-    }
-    signal.notify_all();
-
-    int accelerer = 0;
-    quitter = presenter(affichage, accelerer);
-
+  bool fini = false;
+  Uint32 dernierTitre = 0;
+  while (not fini) {
     {
       unique_lock<mutex> garde(verrou);
-      signal.wait(garde, [&] { return not travail; });
+      signal.wait(garde, [&] { return deposee; });
+      swap(prete, affichee);
+      deposee = false;
+      fini = termine;
     }
+    signal.notify_all();  // le moteur peut déposer la suivante
+
+    appliquerImage(affichage, affichee);
+    int accelerer = 0;
+    quitter = presenter(affichage, accelerer);
     if (quitter) {
       break;  // fenêtre fermée ou ÉCHAP
     }
@@ -802,7 +806,7 @@ bool Combat::faireCombattreSerpents(Affichage2d &affichage) {
       dernierTitre = 0;  // titre mis à jour tout de suite
     }
     if (SDL_GetTicks() - dernierTitre >= 250) {
-      mettreAJourTitre(affichage);
+      mettreAJourTitre(affichage, affichee);
       dernierTitre = SDL_GetTicks();
     }
   }
@@ -814,11 +818,15 @@ bool Combat::faireCombattreSerpents(Affichage2d &affichage) {
   signal.notify_all();
   moteur.join();
 
-  if (quitter) {
-    return false;
+  return not quitter;
+}
+
+Uint32 Combat::dureeLotAuto() const {
+  // Vitesse automatique : un lot dure une image de l'écran (au moins 1 ms)
+  if (delai > 0) {
+    return delai;
   }
-  int ignore = 0;
-  return not presenter(affichage, ignore);  // état final
+  return max(1u, 1000u / max(1u, frequenceEcran));
 }
 
 void Combat::changerVitesse(int pas) {
@@ -828,10 +836,11 @@ void Combat::changerVitesse(int pas) {
                                      1000, VITESSE_AUTO};
   const int nbPaliers = int(sizeof(PALIERS) / sizeof(PALIERS[0]));
 
+  const unsigned actuelle = vitesse;
   int palier = nbPaliers - 1;
-  if (vitesse != VITESSE_AUTO) {
+  if (actuelle != VITESSE_AUTO) {
     palier = 0;
-    while (palier < nbPaliers - 2 and PALIERS[palier] < vitesse) {
+    while (palier < nbPaliers - 2 and PALIERS[palier] < actuelle) {
       ++palier;
     }
   }
@@ -839,30 +848,74 @@ void Combat::changerVitesse(int pas) {
   vitesse = PALIERS[palier];
 }
 
-void Combat::mettreAJourTitre(Affichage2d &affichage) const {
-  string titre = "Snake battle simulator - "s + to_string(nbSerpent)
-      + " serpents - tour "s + to_string(nbTours) + " - vitesse "s;
-  titre += vitesse == VITESSE_AUTO
-      ? "auto (x"s + to_string(toursDerniereImage) + ")"s
-      : "x"s + to_string(vitesse);
+void Combat::mettreAJourTitre(Affichage2d &affichage, const Image &image) const {
+  const unsigned v = vitesse;
+  string titre = "Snake battle simulator - "s + to_string(image.serpents)
+      + " serpents - tour "s + to_string(image.tours) + " - vitesse "s;
+  titre += v == VITESSE_AUTO
+      ? "auto (x"s + to_string(image.toursLot) + ")"s
+      : "x"s + to_string(v);
   affichage.definirTitre(titre + "  [+/-]"s);
 }
 
-void Combat::peindre(Affichage2d &affichage) {
+void Combat::preparerImage(Image &image) {
 
-  // Seules les cases modifiées depuis la dernière image sont redessinées,
-  // chaque région par son thread quand il y en a beaucoup
+  // Côté moteur : les cases modifiées depuis la dernière image deviennent
+  // une liste (case, couleur). Seul ce passage lit le terrain ; le
+  // coloriage des pixels se fera sur le thread principal pendant que le
+  // moteur repart. Chaque région par son thread s'il y a beaucoup de cases.
+  image.parRegion.resize(regions.size());
   size_t total = 0;
   for (const Region &region : regions) {
     total += region.casesModifiees.size();
   }
   if (pool.taille() > 1 and total >= SEUIL_DESSIN_PARALLELE) {
     pool.executer([&](unsigned thread) {
-      dessinerRegion(affichage, regions[thread]);
+      preparerRegion(regions[thread], image.parRegion[thread]);
     });
   } else {
-    for (Region &region : regions) {
-      dessinerRegion(affichage, region);
+    for (size_t r = 0; r < regions.size(); ++r) {
+      preparerRegion(regions[r], image.parRegion[r]);
+    }
+  }
+}
+
+void Combat::preparerRegion(Region &region, vector<uint32_t> &sortie) {
+
+  // Une pomme reste dessinée par-dessus un serpent. Les cases sont
+  // éparpillées : préchargées quelques-unes à l'avance.
+  sortie.clear();
+  vector<uint32_t> &liste = region.casesModifiees;
+  for (size_t k = 0; k < liste.size(); ++k) {
+    if (k + AVANCE_MESSAGES < liste.size()) {
+      precharger(&cases[liste[k + AVANCE_MESSAGES]]);
+    }
+    const uint32_t i = liste[k];
+    Case &c = cases[i];
+    uint32_t couleur = Couleur::blanc;
+    if (c.pommes > 0) {
+      couleur = Couleur::rouge;
+    } else if (c.serpents > 0) {
+      couleur = Couleur::noir;
+    }
+    sortie.push_back(i | (couleur << 30));
+    c.marquee = 0;
+  }
+  liste.clear();
+}
+
+void Combat::appliquerImage(Affichage2d &affichage, const Image &image) const {
+  // Côté affichage : les pixels sont coloriés depuis la liste, sans toucher
+  // au terrain (que le moteur est déjà en train de modifier)
+  for (const vector<uint32_t> &liste : image.parRegion) {
+    for (size_t k = 0; k < liste.size(); ++k) {
+      if (k + AVANCE_MESSAGES < liste.size()) {
+        const uint32_t suivante = liste[k + AVANCE_MESSAGES] & MASQUE_CASE;
+        affichage.prechargerElement(int(suivante % largeur), int(suivante / largeur));
+      }
+      const uint32_t i = liste[k] & MASQUE_CASE;
+      affichage.ajouterElementAffichage(int(i % largeur), int(i / largeur),
+                                        Couleur(liste[k] >> 30));
     }
   }
 }
@@ -870,32 +923,6 @@ void Combat::peindre(Affichage2d &affichage) {
 bool Combat::presenter(Affichage2d &affichage, int &accelerer) {
   affichage.mettreAjourAffichage();
   return affichage.fermetureDemandee(accelerer);
-}
-
-void Combat::dessinerRegion(Affichage2d &affichage, Region &region) {
-
-  // Une pomme reste dessinée par-dessus un serpent. Les cases sont
-  // éparpillées : on précharge quelques cases à l'avance pour que les accès
-  // mémoire se recouvrent au lieu de s'attendre.
-  vector<uint32_t> &liste = region.casesModifiees;
-  for (size_t k = 0; k < liste.size(); ++k) {
-    if (k + AVANCE_MESSAGES < liste.size()) {
-      const uint32_t suivante = liste[k + AVANCE_MESSAGES];
-      precharger(&cases[suivante]);
-      affichage.prechargerElement(int(suivante % largeur), int(suivante / largeur));
-    }
-    const uint32_t i = liste[k];
-    Case &c = cases[i];
-    Couleur couleur = Couleur::blanc;
-    if (c.pommes > 0) {
-      couleur = Couleur::rouge;
-    } else if (c.serpents > 0) {
-      couleur = Couleur::noir;
-    }
-    affichage.ajouterElementAffichage(int(i % largeur), int(i / largeur), couleur);
-    c.marquee = 0;
-  }
-  liste.clear();
 }
 
 //------------------------- fin de partie -------------------------------

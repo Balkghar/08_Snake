@@ -48,7 +48,17 @@ class Affichage2d {
   );
 
   //------------------------- méthode d'affichage -------------------------
+  /**
+   * @brief À appeler avant initalisationAffichage : images présentées au
+   *        rythme de l'écran (pas de déchirure).
+   */
+  void activerVsync(bool actif);
   bool initalisationAffichage();
+  /**
+   * @brief Fréquence de rafraîchissement de l'écran de la fenêtre, en Hz
+   *        (60 si inconnue).
+   */
+  unsigned frequenceEcran() const;
   /**
    * @brief Colorie une case. Peut être appelée en même temps par plusieurs
    *        threads, à condition que chacun travaille sur ses propres bandes
@@ -97,6 +107,7 @@ class Affichage2d {
   const unsigned hauteur;
   const unsigned sdl_delay;
   unsigned nbre_values;  // zoom : taille d'une case en pixels
+  bool vsync = false;
   SDL_Window *window = nullptr;
   SDL_Renderer *renderer = nullptr;
   SDL_Texture *texture = nullptr;

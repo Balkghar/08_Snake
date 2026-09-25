@@ -59,6 +59,8 @@ void afficherAide(const string &programme, const vector<Parametre> &params) {
        << "  -q, --silencieux        N'annonce pas chaque mort dans la console\n"
        << "  -f, --fin-auto          Quitte a la fin sans attendre (statistiques\n"
        << "                          dans la console seulement)\n"
+       << "      --vsync             Images au rythme de l'ecran, sans\n"
+       << "                          dechirure (ne ralentit pas le calcul)\n"
        << "  -h, --aide              Affiche cette aide\n\n"
        << "En jeu : + / - pour accelerer / ralentir, ECHAP pour quitter.\n\n"
        << "Exemples : " << programme << " -l 200 -H 150 -s 20\n"
@@ -71,6 +73,7 @@ struct Drapeaux {
   bool turbo = false;
   bool silencieux = false;
   bool finAuto = false;
+  bool vsync = false;
 };
 
 // Lit un entier compris dans [min, max] ; renvoie false si invalide.
@@ -105,6 +108,10 @@ bool lireArguments(int argc, char **argv, vector<Parametre> &params,
     }
     if (arg == "-f" or arg == "--fin-auto") {
       drapeaux.finAuto = true;
+      continue;
+    }
+    if (arg == "--vsync") {
+      drapeaux.vsync = true;
       continue;
     }
 
@@ -267,6 +274,7 @@ int main(int argc, char **argv) {
   // Annoncer 100 000 morts dans un terminal peut coûter plus cher que la
   // simulation elle-même : le mode turbo est silencieux
   combat.choisirSorties(drapeaux.silencieux or drapeaux.turbo, drapeaux.finAuto);
+  combat.activerVsync(drapeaux.vsync);
   combat.commencerCombat(unsigned(params[DELAI].valeur),
                          unsigned(params[ZOOM].valeur),
                          unsigned(params[VITESSE].valeur));
