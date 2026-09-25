@@ -12,6 +12,7 @@
   ---------------------------------------------------------------------------
 */
 #include "snake.hpp"
+#include "../outils/aleatoire.hpp"
 #include <vector>
 #include <cstdlib>
 
@@ -38,36 +39,21 @@ Snake::Snake(int x,
 //------------------------- Déplacements --------------------------------
 void Snake::deplacerVersXY(int x, int y) {
 
-  if (getCoordX() != x || getCoordY() != y) {
+  const int diffX = abs(x - getCoordX());
+  const int diffY = abs(y - getCoordY());
+  if (diffX == 0 and diffY == 0) {
+    return;
+  }
 
-    int diffX = abs(getCoordX() - x);
-    int diffY = abs(getCoordY() - y);
-
-    if (getCoordX() <= x && getCoordY() <= y) {
-      if (diffX < diffY) {
-        deplacerVers(Direction::bas);
-      } else {
-        deplacerVers(Direction::droite);
-      }
-    } else if (getCoordX() >= x && getCoordY() <= y) {
-      if (diffX < diffY) {
-        deplacerVers(Direction::bas);
-      } else {
-        deplacerVers(Direction::gauche);
-      }
-    } else if (getCoordX() >= x && getCoordY() >= y) {
-      if (diffX < diffY) {
-        deplacerVers(Direction::haut);
-      } else {
-        deplacerVers(Direction::gauche);
-      }
-    } else if (getCoordX() <= x && getCoordY() >= y) {
-      if (diffX < diffY) {
-        deplacerVers(Direction::haut);
-      } else {
-        deplacerVers(Direction::droite);
-      }
-    }
+  // L'axe du pas est tiré au hasard, pondéré par la distance restante sur
+  // chaque axe : le serpent suit à peu près la droite vers sa pomme, et
+  // chaque pas le rapproche (chemin toujours le plus court). Prendre
+  // systématiquement l'axe le plus long faisait partir tous les serpents à
+  // l'horizontale en même temps : deux grandes vagues en début de partie.
+  if (aleatoireEntreDeuxValeurs(1, diffX + diffY) <= diffX) {
+    deplacerVers(x > getCoordX() ? Direction::droite : Direction::gauche);
+  } else {
+    deplacerVers(y > getCoordY() ? Direction::bas : Direction::haut);
   }
 }
 

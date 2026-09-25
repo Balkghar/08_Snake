@@ -101,7 +101,10 @@ il cache le moins le vainqueur.
 - Les serpents apparaissent à des positions aléatoires avec une longueur
   initiale de 10 cases.
 - Chaque serpent a sa propre pomme, placée aléatoirement, avec une valeur.
-  Il s'en approche par le plus court chemin, une case à la fois (N, S, E, O).
+  Il s'en approche par le plus court chemin, une case à la fois (N, S, E, O) ;
+  à chaque pas, l'axe (horizontal ou vertical) est tiré au hasard en fonction
+  de la distance restante sur chacun, ce qui le fait suivre à peu près la
+  ligne droite vers sa pomme.
 - Quand il la mange, il grandit de la valeur de la pomme et une nouvelle
   pomme est créée pour lui.
 - **Tête sur corps** : le serpent mordu est coupé à cet endroit et
