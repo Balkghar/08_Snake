@@ -80,13 +80,18 @@ int main(int argv, char **args) {
   //======================== Début du programme ===================================
 
   cout << MSG_DEBUT << endl;
-  Combat combat((unsigned) saisirIntervalle(MIN_LARGEUR, MAX_LARGEUR,
-                                            MSG_LARG_TERRAIN, MSG_ERR_TAILLE),
-                (unsigned) saisirIntervalle(MIN_LONGUEUR, MAX_LONGUEUR,
-                                            MSG_HAUT_TERRAIN, MSG_ERR_TAILLE),
-                (unsigned) saisirIntervalle(MIN_SERPENT, MAX_SERPENT,
-                                            MSG_SAISIE_SERPENT,
-                                            MSG_ERR_SERPENT));
+  // Saisies séparées : l'ordre d'évaluation des arguments d'une fonction
+  // n'est pas garanti en C++ (GCC posait les questions à l'envers)
+  const unsigned largeur = (unsigned) saisirIntervalle(MIN_LARGEUR, MAX_LARGEUR,
+                                                       MSG_LARG_TERRAIN,
+                                                       MSG_ERR_TAILLE);
+  const unsigned hauteur = (unsigned) saisirIntervalle(MIN_LONGUEUR, MAX_LONGUEUR,
+                                                       MSG_HAUT_TERRAIN,
+                                                       MSG_ERR_TAILLE);
+  const unsigned nbSerpents = (unsigned) saisirIntervalle(MIN_SERPENT, MAX_SERPENT,
+                                                          MSG_SAISIE_SERPENT,
+                                                          MSG_ERR_SERPENT);
+  Combat combat(largeur, hauteur, nbSerpents);
 
   combat.commencerCombat();
   cout << MSG_FIN << endl;

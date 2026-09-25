@@ -117,7 +117,7 @@ bool Snake::getEstEnVie() const {
   return estEnVie;
 }
 
-std::vector<CoordonneesXY> Snake::getCoord() const {
+const std::vector<CoordonneesXY> &Snake::getCoord() const {
   return coordonnees;
 }
 

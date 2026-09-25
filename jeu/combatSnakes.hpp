@@ -53,7 +53,7 @@ class Combat {
   //------------------------- méthodes d'affichage ------------------------
   void ajouterSerpentAffichage(Affichage2d &affichage);
   void ajouterPommeAffichage(Affichage2d &affichage);
-  void afficher(Affichage2d &affichage);
+  bool afficher(Affichage2d &affichage);
   void faireCombattreSerpents(Affichage2d &affichage);
 
   //------------------------- Données -------------------------------------

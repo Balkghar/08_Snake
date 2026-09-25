@@ -39,9 +39,9 @@ void Combat::commencerCombat() {
 
   Affichage2d affichage(largeur, longueur, SDL_DELAY, AUGMENT_PIXEL);
 
-  affichage.initalisationAffichage();
-
-  faireCombattreSerpents(affichage);
+  if (not affichage.initalisationAffichage()) {
+    faireCombattreSerpents(affichage);
+  }
 
   affichage.fermerAffichage();
 
@@ -92,7 +92,7 @@ bool Combat::placeEstOccupee(int x, int y) {
 
 bool Combat::serpentPresent(int x, int y) {
   for (Snake &serpent : serpents) {
-    for (CoordonneesXY &coord : serpent.getCoord()) {
+    for (const CoordonneesXY &coord : serpent.getCoord()) {
       if (coord.x == x and coord.y == y) {
         return true;
       }
@@ -129,7 +129,9 @@ void Combat::faireCombattreSerpents(Affichage2d &affichage) {
 
   do {
 
-    afficher(affichage);
+    if (afficher(affichage)) {
+      return;  // fenêtre fermée par l'utilisateur
+    }
 
     for (size_t d = 0; d < serpents.size(); ++d) {
       if (serpents.at(d).getEstEnVie()) {
@@ -172,11 +174,12 @@ void Combat::combatSerpent(Snake &serpent) {
 
 void Combat::ajouterSerpentAffichage(Affichage2d &affichage) {
 
-  for (Snake &serpent : serpents) {
-    for (CoordonneesXY &coord : serpent.getCoord()) {
-      if (serpent.getEstEnVie()) {
-        affichage.ajouterElementAffichage(coord.x, coord.y, Couleur::noir);
-      }
+  for (const Snake &serpent : serpents) {
+    if (not serpent.getEstEnVie()) {
+      continue;
+    }
+    for (const CoordonneesXY &coord : serpent.getCoord()) {
+      affichage.ajouterElementAffichage(coord.x, coord.y, Couleur::noir);
     }
   }
 }
@@ -191,9 +194,9 @@ void Combat::ajouterPommeAffichage(Affichage2d &affichage) {
   }
 }
 
-void Combat::afficher(Affichage2d &affichage) {
+bool Combat::afficher(Affichage2d &affichage) {
 
-  affichage.nettoyerAffichage(Couleur::blanc);
+  const bool quitter = affichage.nettoyerAffichage(Couleur::blanc);
 
   ajouterSerpentAffichage(affichage);
 
@@ -201,4 +204,5 @@ void Combat::afficher(Affichage2d &affichage) {
 
   affichage.mettreAjourAffichage();
 
+  return quitter;
 }

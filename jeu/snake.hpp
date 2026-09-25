@@ -50,7 +50,7 @@ class Snake {
   int getCoordY() const;
   unsigned getId() const;
   bool getEstEnVie() const;
-  std::vector<CoordonneesXY> getCoord() const;
+  const std::vector<CoordonneesXY> &getCoord() const;
 
   //------------------------- autres --------------------------------------
   void longueurAAjouterSupl(unsigned valeur);

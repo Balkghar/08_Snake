@@ -25,6 +25,8 @@ Compilateur : gcc version 11.2.0
 #include <SDL2/SDL.h>
 #endif
 
+#include <vector>
+
 enum Couleur { blanc, noir, rouge };
 
 class Affichage2d {
@@ -43,7 +45,7 @@ class Affichage2d {
   bool fermerAffichage();
   bool mettreAjourAffichage();
  private:
-  void configCouleur(Couleur couleur);
+  Uint32 valeurCouleur(Couleur couleur) const;
 
   //------------------------- Données -------------------------------------
   const unsigned largeur;
@@ -52,7 +54,10 @@ class Affichage2d {
   const unsigned nbre_values;
   SDL_Window *window = nullptr;
   SDL_Renderer *renderer = nullptr;
-  SDL_Event event;
+  SDL_Texture *texture = nullptr;
+  SDL_PixelFormat *format = nullptr;
+  std::vector<Uint32> pixels;
+  Uint32 debutImage = 0;
 };
 
 #endif
