@@ -119,13 +119,15 @@ class Snake {
   unsigned calculAjoutLongueur(std::size_t longu, unsigned pourcentage);
 
   //------------------------- Données -------------------------------------
+  // Ordre choisi pour le cache : ce qui sert à chaque déplacement d'abord,
+  // les statistiques (rarement touchées) à la fin
   const unsigned id;
   unsigned longueurAAjouter;
   bool estEnVie;
   FileCirculaire<CoordonneesXY> coordonnees;
-  StatsSerpent stats;
   std::vector<CoordonneesXY> casesAjoutees;
   std::vector<CoordonneesXY> casesRetirees;
+  StatsSerpent stats;
 };
 
 #endif

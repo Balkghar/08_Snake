@@ -29,13 +29,15 @@ Compilateur : gcc version 11.2.0
 #include "pomme.hpp"
 #include "../outils/affichage2d.hpp"
 #include "../outils/poolThreads.hpp"
+#include "../outils/allocateurGrandesPages.hpp"
 
 class Combat {
  public:
   //------------------------- Constructeur --------------------------------
   Combat() : Combat(100, 100, 10) {}
   /**
-   * @param nbThreads threads de calcul (0 = autant que de cœurs)
+   * @param nbThreads threads de calcul (0 = un par cœur, moins un laissé
+   *                  à l'affichage)
    */
   Combat(unsigned largeur,
          unsigned longueur,
@@ -49,11 +51,19 @@ class Combat {
   static constexpr unsigned VITESSE_DEFAUT = 1; // tours de jeu par image
   static constexpr unsigned VITESSE_AUTO = 0;   // autant que le temps permet
 
+  /**
+   * @param silencieux  ne pas annoncer chaque mort dans la console
+   * @param finAuto     à la fin, statistiques dans la console seulement,
+   *                    sans écran de victoire à fermer
+   */
+  void choisirSorties(bool silencieux, bool finAuto);
+
   void commencerCombat(unsigned delai = DELAI_DEFAUT,
                        unsigned zoom = ZOOM_DEFAUT,
                        unsigned vitesse = VITESSE_DEFAUT);
 
  private:
+  static unsigned threadsParDefaut(unsigned demandes);
   static constexpr unsigned MIN = 0;
   static constexpr std::uint32_t AUCUNE_TETE = 0;
 
@@ -160,7 +170,8 @@ class Combat {
   void retirerMorts();
 
   //------------------------- méthodes d'affichage ------------------------
-  bool afficher(Affichage2d &affichage, int &accelerer);
+  void peindre(Affichage2d &affichage);
+  bool presenter(Affichage2d &affichage, int &accelerer);
   void dessinerRegion(Affichage2d &affichage, Region &region);
   bool faireCombattreSerpents(Affichage2d &affichage);
   void changerVitesse(int pas);
@@ -196,7 +207,8 @@ class Combat {
   std::vector<std::uint32_t> rencontre;
   std::vector<std::uint32_t> mortPar;
 
-  std::vector<Case> cases;
+  // Grand tableau lu à des endroits aléatoires : pages de 2 Mo
+  std::vector<Case, AllocateurGrandesPages<Case>> cases;
   std::vector<Region> regions;
   std::vector<std::uint16_t> regionParLigne;
 
@@ -206,6 +218,8 @@ class Combat {
   unsigned boitesActives = 1; // boîtes remplies pendant ce tour
   std::uint64_t graine;       // suites aléatoires des serpents
   bool continuer = false;     // décidé par le thread 0 à chaque tour
+  bool silencieux = false;
+  bool finAuto = false;
 
   // Détection des morsures : les segments d'un corps ne bougent jamais,
   // une tête ne se retrouve donc sur un corps qu'en y arrivant. Quand une

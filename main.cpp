@@ -54,14 +54,24 @@ void afficherAide(const string &programme, const vector<Parametre> &params) {
     cout << '\n';
   }
   cout << "  -t, --turbo             Terrain maximal, un maximum de serpents,\n"
-       << "                          vitesse maximale (les autres options\n"
-       << "                          restent prioritaires)\n"
+       << "                          vitesse maximale, silencieux (les autres\n"
+       << "                          options restent prioritaires)\n"
+       << "  -q, --silencieux        N'annonce pas chaque mort dans la console\n"
+       << "  -f, --fin-auto          Quitte a la fin sans attendre (statistiques\n"
+       << "                          dans la console seulement)\n"
        << "  -h, --aide              Affiche cette aide\n\n"
        << "En jeu : + / - pour accelerer / ralentir, ECHAP pour quitter.\n\n"
        << "Exemples : " << programme << " -l 200 -H 150 -s 20\n"
        << "           " << programme << " -l 1200 -H 800 -s 20000 -v 0\n"
        << "           " << programme << " --turbo\n";
 }
+
+// Options sans valeur
+struct Drapeaux {
+  bool turbo = false;
+  bool silencieux = false;
+  bool finAuto = false;
+};
 
 // Lit un entier compris dans [min, max] ; renvoie false si invalide.
 bool lireEntier(const string &texte, int min, int max, int &resultat) {
@@ -77,7 +87,7 @@ bool lireEntier(const string &texte, int min, int max, int &resultat) {
 // Remplit params depuis argv. Renvoie false (après un message) si la ligne de
 // commande est invalide.
 bool lireArguments(int argc, char **argv, vector<Parametre> &params,
-                   bool &aideDemandee, bool &turbo) {
+                   bool &aideDemandee, Drapeaux &drapeaux) {
   for (int i = 1; i < argc; ++i) {
     string arg = argv[i];
 
@@ -86,7 +96,15 @@ bool lireArguments(int argc, char **argv, vector<Parametre> &params,
       return true;
     }
     if (arg == "-t" or arg == "--turbo") {
-      turbo = true;
+      drapeaux.turbo = true;
+      continue;
+    }
+    if (arg == "-q" or arg == "--silencieux") {
+      drapeaux.silencieux = true;
+      continue;
+    }
+    if (arg == "-f" or arg == "--fin-auto") {
+      drapeaux.finAuto = true;
       continue;
     }
 
@@ -153,7 +171,7 @@ int main(int argc, char **argv) {
        int(Combat::ZOOM_DEFAUT), ""},
       {"-v", "--vitesse", "Tours par image (0 = auto)", 0, 1000,
        int(Combat::VITESSE_DEFAUT), ""},
-      {"-j", "--threads", "Threads de calcul (0 = tous les coeurs)", 0, 256,
+      {"-j", "--threads", "Threads de calcul (0 = coeurs - 1)", 0, 256,
        0, ""},
   };
   enum { LARGEUR, HAUTEUR, SERPENTS, DELAI, ZOOM, VITESSE, THREADS };
@@ -183,8 +201,8 @@ int main(int argc, char **argv) {
   //======================== Début du programme ===================================
 
   bool aideDemandee = false;
-  bool turbo = false;
-  if (not lireArguments(argc, argv, params, aideDemandee, turbo)) {
+  Drapeaux drapeaux;
+  if (not lireArguments(argc, argv, params, aideDemandee, drapeaux)) {
     return EXIT_FAILURE;
   }
   if (aideDemandee) {
@@ -194,7 +212,7 @@ int main(int argc, char **argv) {
 
   // Mode turbo : tout au maximum, sauf ce qui a été donné explicitement (le
   // nombre de serpents est fixé plus bas, une fois le terrain connu)
-  if (turbo) {
+  if (drapeaux.turbo) {
     auto parDefaut = [&params](int indice, int valeur) {
       if (not params[size_t(indice)].donne) {
         params[size_t(indice)].valeur = valeur;
@@ -216,7 +234,7 @@ int main(int argc, char **argv) {
     if (&p == &params[SERPENTS] and params[LARGEUR].valeur > 0
         and params[HAUTEUR].valeur > 0) {
       p.max = maxSerpents();
-      if (turbo and not p.donne) {
+      if (drapeaux.turbo and not p.donne) {
         p.valeur = p.max;
       }
       if (p.donne and p.valeur > p.max) {
@@ -246,6 +264,9 @@ int main(int argc, char **argv) {
                 unsigned(params[SERPENTS].valeur),
                 unsigned(params[THREADS].valeur));
 
+  // Annoncer 100 000 morts dans un terminal peut coûter plus cher que la
+  // simulation elle-même : le mode turbo est silencieux
+  combat.choisirSorties(drapeaux.silencieux or drapeaux.turbo, drapeaux.finAuto);
   combat.commencerCombat(unsigned(params[DELAI].valeur),
                          unsigned(params[ZOOM].valeur),
                          unsigned(params[VITESSE].valeur));

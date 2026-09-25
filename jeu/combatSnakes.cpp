@@ -28,6 +28,9 @@ Compilateur : gcc version 11.2.0
 #include "../outils/precharger.hpp"
 #include <algorithm>
 #include <climits>
+#include <condition_variable>
+#include <mutex>
+#include <thread>
 #include <iostream>
 
 using namespace std;
@@ -65,6 +68,16 @@ inline bool gagneContre(uint32_t taille, uint32_t id,
 
 }  // namespace
 
+// Par défaut, un cœur reste libre pour l'affichage, qui travaille en même
+// temps que le calcul (voir faireCombattreSerpents) ; les autres calculent
+unsigned Combat::threadsParDefaut(unsigned demandes) {
+  if (demandes != 0) {
+    return demandes;
+  }
+  const unsigned coeurs = PoolThreads::coeursDisponibles();
+  return coeurs > 1 ? coeurs - 1 : 1;
+}
+
 //=========================== Partie public ===============================
 
 //------------------------- Constructeur --------------------------------
@@ -73,7 +86,7 @@ Combat::Combat(unsigned int largeur,
                unsigned int nbSerpent,
                unsigned int nbThreads
 ) : largeur(largeur), longueur(longueur), nbSerpent(nbSerpent),
-    nbSerpentsDepart(nbSerpent), pool(nbThreads) {
+    nbSerpentsDepart(nbSerpent), pool(threadsParDefaut(nbThreads)) {
 
   // L'affichage SDL partant de 0, pour que l'affichage soit correct à l'écran,
   // il faut faire moins 1 à la valeur entrée par l'utilisateur.
@@ -111,6 +124,11 @@ Combat::Combat(unsigned int largeur,
 }
 
 //------------------------- lancement du combat -------------------------
+void Combat::choisirSorties(bool silencieux, bool finAuto) {
+  this->silencieux = silencieux;
+  this->finAuto = finAuto;
+}
+
 void Combat::commencerCombat(unsigned delai, unsigned zoom, unsigned vitesse) {
 
   this->delai = delai;
@@ -647,11 +665,13 @@ void Combat::phaseResolution() {
        [](const Mort &a, const Mort &b) { return a.victime < b.victime; });
   string annonces;
   for (const Mort &m : morts) {
-    annonces += "Le serpent ";
-    annonces += to_string(m.tueur + 1);
-    annonces += " a tuer le serpent ";
-    annonces += to_string(m.victime + 1);
-    annonces += '\n';
+    if (not silencieux) {
+      annonces += "Le serpent ";
+      annonces += to_string(m.tueur + 1);
+      annonces += " a tuer le serpent ";
+      annonces += to_string(m.victime + 1);
+      annonces += '\n';
+    }
     serpents[m.tueur].recompenserVictoire(m.longueur);
     Pomme &pomme = pommes[m.victime];
     if (pomme.estIntacte()) {
@@ -661,7 +681,9 @@ void Combat::phaseResolution() {
     --nbSerpent;
     ++mortsDansVivants;
   }
-  cout << annonces;
+  if (not annonces.empty()) {
+    cout << annonces;
+  }
 
   // Morsures (additions : l'ordre ne compte pas)
   for (const Morsure &m : morsures) {
@@ -708,36 +730,95 @@ void Combat::retirerMorts() {
 
 bool Combat::faireCombattreSerpents(Affichage2d &affichage) {
 
-  Uint32 dernierTitre = 0;
+  // Le moteur (un thread à part) joue les tours de l'image suivante pendant
+  // que le thread principal envoie l'image précédente à l'écran et lit le
+  // clavier. Seul le coloriage des cases, qui lit le terrain, se fait
+  // pendant que le moteur est à l'arrêt.
+  mutex verrou;
+  condition_variable signal;
+  bool travail = false, arreter = false;
+  unsigned long demandeMax = 0;
+  Uint32 demandeFin = 0;
 
-  while (nbSerpent > 1) {
+  thread moteur([&] {
+    for (;;) {
+      unsigned long nbMax;
+      Uint32 fin;
+      {
+        unique_lock<mutex> garde(verrou);
+        signal.wait(garde, [&] { return travail or arreter; });
+        if (arreter) {
+          return;
+        }
+        nbMax = demandeMax;
+        fin = demandeFin;
+      }
+      const unsigned long faits = jouerTours(nbMax, fin);
+      {
+        lock_guard<mutex> garde(verrou);
+        toursDerniereImage = faits;
+        travail = false;
+      }
+      signal.notify_all();
+    }
+  });
+
+  Uint32 dernierTitre = 0;
+  bool quitter = false;
+  for (;;) {
+    peindre(affichage);  // moteur à l'arrêt : le terrain ne bouge pas
+    if (nbSerpent <= 1) {
+      break;
+    }
+
+    // Tours suivants, calculés pendant l'affichage
+    {
+      lock_guard<mutex> garde(verrou);
+      if (vitesse == VITESSE_AUTO) {
+        // Autant de tours que possible pendant la durée d'une image (au
+        // moins ~60 images/s pour que la fenêtre reste fluide)
+        demandeMax = ULONG_MAX;
+        demandeFin = SDL_GetTicks() + (delai > 0 ? delai : 16);
+      } else {
+        demandeMax = vitesse;
+        demandeFin = 0;
+      }
+      travail = true;
+    }
+    signal.notify_all();
 
     int accelerer = 0;
-    if (afficher(affichage, accelerer)) {
-      return false;  // fenêtre fermée ou ÉCHAP
+    quitter = presenter(affichage, accelerer);
+
+    {
+      unique_lock<mutex> garde(verrou);
+      signal.wait(garde, [&] { return not travail; });
+    }
+    if (quitter) {
+      break;  // fenêtre fermée ou ÉCHAP
     }
     if (accelerer != 0) {
       changerVitesse(accelerer);
       dernierTitre = 0;  // titre mis à jour tout de suite
     }
-
-    if (vitesse == VITESSE_AUTO) {
-      // Autant de tours que possible pendant la durée d'une image (au moins
-      // ~60 images/s pour que la fenêtre reste fluide)
-      const Uint32 budget = delai > 0 ? delai : 16;
-      toursDerniereImage = jouerTours(ULONG_MAX, SDL_GetTicks() + budget);
-    } else {
-      toursDerniereImage = jouerTours(vitesse, 0);
-    }
-
     if (SDL_GetTicks() - dernierTitre >= 250) {
       mettreAJourTitre(affichage);
       dernierTitre = SDL_GetTicks();
     }
   }
 
+  {
+    lock_guard<mutex> garde(verrou);
+    arreter = true;
+  }
+  signal.notify_all();
+  moteur.join();
+
+  if (quitter) {
+    return false;
+  }
   int ignore = 0;
-  return not afficher(affichage, ignore);  // état final
+  return not presenter(affichage, ignore);  // état final
 }
 
 void Combat::changerVitesse(int pas) {
@@ -767,7 +848,7 @@ void Combat::mettreAJourTitre(Affichage2d &affichage) const {
   affichage.definirTitre(titre + "  [+/-]"s);
 }
 
-bool Combat::afficher(Affichage2d &affichage, int &accelerer) {
+void Combat::peindre(Affichage2d &affichage) {
 
   // Seules les cases modifiées depuis la dernière image sont redessinées,
   // chaque région par son thread quand il y en a beaucoup
@@ -784,9 +865,10 @@ bool Combat::afficher(Affichage2d &affichage, int &accelerer) {
       dessinerRegion(affichage, region);
     }
   }
+}
 
+bool Combat::presenter(Affichage2d &affichage, int &accelerer) {
   affichage.mettreAjourAffichage();
-
   return affichage.fermetureDemandee(accelerer);
 }
 
@@ -857,7 +939,9 @@ void Combat::afficherVictoire(Affichage2d &affichage) {
       "~ ECHAP / ENTREE : QUITTER",
   });
 
-  affichage.afficherEcranFin(logoGreenKatze(), panneau, cases);
+  if (not finAuto) {
+    affichage.afficherEcranFin(logoGreenKatze(), panneau, cases);
+  }
 }
 
 MotifPixel Combat::logoGreenKatze() {

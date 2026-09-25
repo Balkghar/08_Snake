@@ -76,11 +76,13 @@ class FileCirculaire {
     debut = 0;
   }
 
-  T interne[N] = {};
-  std::vector<T> externe;
+  // Champs lus à chaque accès d'abord, sur la même ligne de cache que les
+  // premiers éléments
   std::size_t masque = N - 1;
   std::size_t debut = 0;
   std::size_t taille = 0;
+  std::vector<T> externe;
+  T interne[N] = {};
 };
 
 #endif

@@ -28,6 +28,19 @@ cmake --build build
 
 L'exécutable est `build/08_snake` (`build\08_snake.exe` sous Windows).
 
+### Version la plus rapide (GCC)
+
+```sh
+./pgo.sh            # compile, entraîne sur deux parties, recompile : build-pgo/08_snake
+```
+
+`pgo.sh` fait une optimisation guidée par profil : une première version
+mesure où le programme passe son temps pendant deux parties sans fenêtre,
+puis GCC recompile en s'en servant (environ 10 % plus rapide). Options
+CMake équivalentes : `-DSNAKE_PGO=GENERER` puis `-DSNAKE_PGO=UTILISER`.
+`-DSNAKE_NATIVE=ON` compile pour le processeur de la machine (quelques %
+sur un thread, mais l'exécutable peut ne pas fonctionner ailleurs).
+
 ## Utilisation
 
 Tous les paramètres peuvent être passés en options de lancement. Ceux qui
@@ -51,8 +64,10 @@ programme par un simple double-clic.
 | `-d`, `--delai N`     | Délai entre deux images, en ms (vitesse) | 0–1000   | 50        |
 | `-z`, `--zoom N`      | Taille d'une case à l'écran, en pixels   | 1–16     | 4         |
 | `-v`, `--vitesse N`   | Tours de jeu par image, 0 = automatique  | 0–1000   | 1         |
-| `-t`, `--turbo`       | Terrain et serpents au maximum, vitesse auto, zoom 1 |  |      |
-| `-j`, `--threads N`   | Threads de calcul, 0 = tous les cœurs    | 0–256    | 0         |
+| `-t`, `--turbo`       | Terrain et serpents au maximum, vitesse auto, zoom 1, silencieux | | |
+| `-j`, `--threads N`   | Threads de calcul, 0 = cœurs − 1         | 0–256    | 0         |
+| `-q`, `--silencieux`  | N'annonce pas chaque mort                |          |           |
+| `-f`, `--fin-auto`    | Statistiques dans la console, pas d'écran de fin à fermer | | |
 | `-h`, `--aide`        | Affiche l'aide                           |          |           |
 
 Les formes `--option N` et `--option=N` sont acceptées. Une option inconnue
@@ -286,6 +301,15 @@ le programme prévient. Mesures sur 4 cœurs, 30 000 serpents :
 |------|---|---|---|----|----|
 | Durée | 2,0 s | 1,2 s | 2,2 s | 2,5 s | 8,7 s |
 - Le redessin des cases modifiées est lui aussi réparti par région.
+- **Affichage en même temps que le calcul** : un thread « moteur » joue les
+  tours de l'image suivante pendant que le thread principal envoie l'image
+  précédente à l'écran et lit le clavier. Par défaut, un cœur est laissé à
+  cet affichage (`-j` vaut cœurs − 1).
+- **Pages de 2 Mo** pour la grille du terrain (Linux) : moins de défauts de
+  traduction d'adresse pour un tableau de 15 Mo lu au hasard.
+- **Console** : annoncer 100 000 morts dans un terminal peut coûter plus
+  cher que la simulation ; `--turbo` est donc silencieux, et `-q` l'est
+  aussi pour les autres parties.
 
 Sur 4 cœurs, une partie `--turbo` complète (100 000 serpents) coûte environ
 150 ns de calcul par déplacement de serpent, contre ~285 ns sur un seul

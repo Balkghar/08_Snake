@@ -37,3 +37,4 @@ main
 compile.sh
 
 build
+build-pgo
