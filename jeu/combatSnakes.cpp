@@ -25,7 +25,8 @@ using namespace std;
 Combat::Combat(unsigned int largeur,
                unsigned int longueur,
                unsigned int nbSerpent
-) : largeur(largeur), longueur(longueur), nbSerpent(nbSerpent) {
+) : largeur(largeur), longueur(longueur), nbSerpent(nbSerpent),
+    nbSerpentsDepart(nbSerpent) {
 
   // L'affichage SDL partant de 0, pour que l'affichage soit correct à l'écran,
   // il faut faire moins 1 à la valeur entrée par l'utilisateur.
@@ -48,7 +49,16 @@ void Combat::commencerCombat(unsigned delai, unsigned zoom, unsigned vitesse) {
 
   if (not affichage.initalisationAffichage()) {
     affichage.nettoyerAffichage(Couleur::blanc);
-    faireCombattreSerpents(affichage, vitesse);
+
+    const Uint32 debut = SDL_GetTicks();
+    const bool termine = faireCombattreSerpents(affichage, vitesse);
+    dureeMs = SDL_GetTicks() - debut;
+
+    if (termine) {
+      afficherVictoire(affichage);
+    } else {
+      cout << "Partie interrompue apres " << nbTours << " tours." << endl;
+    }
   }
 
   affichage.fermerAffichage();
@@ -164,7 +174,7 @@ void Combat::mangerPomme(Snake &serpent, Pomme &pomme) {
     modifierCase(pomme.getCoordX(), pomme.getCoordY(), 0, -1);
     CoordonneesXY nouvelleCoord = generateurDeCoord();
 
-    serpent.longueurAAjouterSupl(pomme.getValeur());
+    serpent.mangerPomme(pomme.getValeur());
     pomme.setCoordPomme(nouvelleCoord.x, nouvelleCoord.y);
     modifierCase(nouvelleCoord.x, nouvelleCoord.y, 0, +1);
     pomme.setValPomme();
@@ -256,20 +266,21 @@ void Combat::tuer(Snake &victime, const Snake &tueur) {
 
 //------------------------- méthodes d'affichage ------------------------
 
-void Combat::faireCombattreSerpents(Affichage2d &affichage, unsigned vitesse) {
+bool Combat::faireCombattreSerpents(Affichage2d &affichage, unsigned vitesse) {
 
   while (nbSerpent > 1) {
 
     if (afficher(affichage)) {
-      return;  // fenêtre fermée par l'utilisateur
+      return false;  // fenêtre fermée par l'utilisateur
     }
 
     for (unsigned t = 0; t < vitesse and nbSerpent > 1; ++t) {
       jouerTour();
+      ++nbTours;
     }
   }
 
-  afficher(affichage);  // état final
+  return not afficher(affichage);  // état final
 }
 
 bool Combat::afficher(Affichage2d &affichage) {
@@ -292,4 +303,86 @@ bool Combat::afficher(Affichage2d &affichage) {
   affichage.mettreAjourAffichage();
 
   return affichage.fermetureDemandee();
+}
+
+//------------------------- fin de partie -------------------------------
+
+void Combat::afficherVictoire(Affichage2d &affichage) {
+
+  // Le vainqueur reste en évidence sur le terrain assombri
+  const auto &corps = serpents[vivants.front()].getCoord();
+  vector<SDL_Point> gagnant;
+  gagnant.reserve(corps.size());
+  for (size_t k = 0; k < corps.size(); ++k) {
+    gagnant.push_back({corps[k].x, corps[k].y});
+  }
+
+  const vector<string> lignes = statistiques();
+  cout << '\n';
+  for (size_t i = 0; i + 1 < lignes.size(); ++i) {
+    cout << lignes[i] << '\n';
+  }
+  cout << endl;
+
+  affichage.afficherEcranFin(lignes, gagnant);
+}
+
+vector<string> Combat::statistiques() const {
+
+  const Snake &gagnant = serpents[vivants.front()];
+  const StatsSerpent &sg = gagnant.getStats();
+
+  // Totaux et records de la partie, morts compris
+  unsigned long pommesTotal = 0, morsuresTotal = 0;
+  const Snake *plusLong = &gagnant, *plusMeurtrier = &gagnant;
+  for (const Snake &s : serpents) {
+    const StatsSerpent &st = s.getStats();
+    pommesTotal += st.pommes;
+    morsuresTotal += st.morsuresInfligees;
+    if (st.longueurMax > plusLong->getStats().longueurMax) {
+      plusLong = &s;
+    }
+    if (st.victimes > plusMeurtrier->getStats().victimes) {
+      plusMeurtrier = &s;
+    }
+  }
+
+  const unsigned secondes = dureeMs / 1000;
+  const string duree = secondes >= 60
+      ? to_string(secondes / 60) + " MIN " + to_string(secondes % 60) + " S"
+      : to_string(secondes) + "." + to_string(dureeMs % 1000 / 100) + " S";
+
+  // Libellé aligné sur 19 caractères (police à chasse fixe)
+  auto ligne = [](string libelle, const string &valeur) {
+    libelle.resize(19, ' ');
+    return libelle + valeur;
+  };
+  auto id = [](const Snake &s) { return "#" + to_string(s.getId()); };
+
+  return {
+      "VICTOIRE !",
+      "LE SERPENT " + id(gagnant) + " A GAGNE",
+      "",
+      "-- LE VAINQUEUR",
+      ligne("LONGUEUR FINALE", to_string(gagnant.getCoord().size())),
+      ligne("LONGUEUR MAX", to_string(sg.longueurMax)),
+      ligne("VICTIMES", to_string(sg.victimes)),
+      ligne("POMMES MANGEES", to_string(sg.pommes)),
+      ligne("MORSURES DONNEES", to_string(sg.morsuresInfligees)),
+      ligne("MORSURES SUBIES", to_string(sg.morsuresSubies)),
+      "",
+      "-- LA PARTIE",
+      ligne("SERPENTS", to_string(nbSerpentsDepart)),
+      ligne("TERRAIN", to_string(largeur) + " X " + to_string(longueur)),
+      ligne("DUREE", duree),
+      ligne("TOURS", to_string(nbTours)),
+      ligne("POMMES MANGEES", to_string(pommesTotal)),
+      ligne("MORSURES", to_string(morsuresTotal)),
+      ligne("PLUS LONG", to_string(plusLong->getStats().longueurMax)
+          + " (" + id(*plusLong) + ")"),
+      ligne("PLUS DE VICTIMES", to_string(plusMeurtrier->getStats().victimes)
+          + " (" + id(*plusMeurtrier) + ")"),
+      "",
+      "ECHAP / ENTREE : QUITTER",
+  };
 }

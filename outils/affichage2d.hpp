@@ -25,6 +25,7 @@ Compilateur : gcc version 11.2.0
 #include <SDL2/SDL.h>
 #endif
 
+#include <string>
 #include <vector>
 
 enum Couleur { blanc, noir, rouge };
@@ -45,7 +46,21 @@ class Affichage2d {
   bool fermetureDemandee();
   bool fermerAffichage();
   bool mettreAjourAffichage();
+
+  /**
+   * @brief Assombrit le terrain et affiche un panneau de texte par-dessus,
+   *        jusqu'à ce que l'utilisateur appuie sur une touche ou ferme la
+   *        fenêtre. La première ligne est le titre ; les lignes commençant
+   *        par "--" sont des intertitres. Les cases enValeur (en cases du
+   *        terrain) restent en vert vif par-dessus l'assombrissement.
+   */
+  void afficherEcranFin(const std::vector<std::string> &lignes,
+                        const std::vector<SDL_Point> &enValeur);
  private:
+  void envoyerZoneModifiee();
+  void dessinerTexte(int x, int y, const std::string &texte, int echelle,
+                     SDL_Color couleur);
+
   Uint32 valeurCouleur(Couleur couleur) const;
   Uint32 couleurs[3] = {0, 0, 0};  // indexé par Couleur, format de la texture
 

@@ -20,6 +20,7 @@ add_executable(08_snake main.cpp
                         jeu/combatSnakes.cpp
                         outils/affichage2d.cpp
                         outils/aleatoire.cpp
+                        outils/police.cpp
                         outils/saisie.cpp)
 
 target_link_libraries(08_snake ${SDL2_LIBRARIES})

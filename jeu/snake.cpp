@@ -94,6 +94,9 @@ void Snake::deplacerVers(Direction dir) {
 
   if (longueurAAjouter) {
     longueurAAjouter -= 1;
+    if (coordonnees.size() > stats.longueurMax) {
+      stats.longueurMax = coordonnees.size();
+    }
   } else {
     casesRetirees.push_back(coordonnees.back());
     coordonnees.pop_back();
@@ -121,6 +124,10 @@ const FileCirculaire<CoordonneesXY> &Snake::getCoord() const {
   return coordonnees;
 }
 
+const StatsSerpent &Snake::getStats() const {
+  return stats;
+}
+
 //------------------------- suivi des modifications ---------------------
 const std::vector<CoordonneesXY> &Snake::getCasesAjoutees() const {
   return casesAjoutees;
@@ -146,6 +153,11 @@ void Snake::longueurAAjouterSupl(unsigned valeur) {
   longueurAAjouter += valeur;
 }
 
+void Snake::mangerPomme(unsigned valeur) {
+  ++stats.pommes;
+  longueurAAjouterSupl(valeur);
+}
+
 //------------------------- Combat --------------------------------------
 Snake &Snake::combattreTete(Snake &autre) {
   if (coordonnees.size() < autre.coordonnees.size()) {
@@ -163,6 +175,8 @@ void Snake::etreMordu(std::size_t position, Snake &attaquant) {
   }
   attaquant.longueurAAjouterSupl(
       calculAjoutLongueur(coordonnees.size() - garde, 40));
+  ++attaquant.stats.morsuresInfligees;
+  ++stats.morsuresSubies;
   longueurAAjouter = 0;
   for (size_t k = garde; k < coordonnees.size(); ++k) {
     casesRetirees.push_back(coordonnees[k]);
@@ -188,6 +202,7 @@ void Snake::mourir(Snake &vainqueur) {
     casesRetirees.push_back(coordonnees[k]);
   }
   vainqueur.longueurAAjouterSupl(calculAjoutLongueur(coordonnees.size(), 60));
+  ++vainqueur.stats.victimes;
 
   // Seule la position de la tête reste utile (getCoordX/Y) : le reste du
   // corps est rendu à la mémoire

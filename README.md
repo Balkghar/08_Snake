@@ -61,6 +61,25 @@ tient pas à l'écran, le zoom est réduit automatiquement. Pour accélérer la
 partie : `-d 0` supprime l'attente entre les images et `-v N` joue N tours
 par image. Fermer la fenêtre interrompt la partie.
 
+### Écran de victoire
+
+![Écran de victoire](docs/ecran-victoire.png)
+
+Quand il ne reste qu'un serpent, le terrain s'assombrit, le vainqueur reste
+affiché en vert et un panneau résume la partie (ÉCHAP, ENTRÉE, ESPACE ou la
+fermeture de la fenêtre pour quitter). Les mêmes chiffres sont écrits dans la
+console.
+
+- **Le vainqueur** : longueur finale et maximale, victimes (tête contre
+  tête), pommes mangées, morsures données et subies.
+- **La partie** : nombre de serpents, terrain, durée, tours joués, pommes
+  mangées et morsures au total, serpent le plus long et le plus meurtrier.
+
+Le texte utilise une petite police matricielle 5×7 intégrée au code : pas
+besoin de SDL_ttf ni de fichier de police. Sur un petit terrain, la fenêtre
+est agrandie pour que le panneau reste lisible, et le panneau se place là où
+il cache le moins le vainqueur.
+
 ## Règles du jeu
 
 - Les serpents apparaissent à des positions aléatoires avec une longueur
@@ -87,7 +106,8 @@ jeu/
   snake.*                Déplacement, croissance, morsures, mort
   pomme.*                Position et valeur des pommes
 outils/
-  affichage2d.*          Fenêtre SDL2 et tampon de pixels
+  affichage2d.*          Fenêtre SDL2, tampon de pixels, écran de fin
+  police.*               Police matricielle 5x7 (texte sans SDL_ttf)
   saisie.*               Saisie sécurisée d'un entier
   aleatoire.*            Tirage aléatoire
   fileCirculaire.hpp     File circulaire (corps des serpents)
@@ -117,6 +137,7 @@ classDiagram
         -longueurAAjouter : unsigned
         -coordonnees : FileCirculaire~CoordonneesXY~
         -casesAjoutees, casesRetirees : vector~CoordonneesXY~
+        -stats : StatsSerpent
         +deplacerVersXY(x, y)
         +combattreTete(Snake) Snake
         +etreMordu(position, Snake)
@@ -131,6 +152,7 @@ classDiagram
         -texture : SDL_Texture*
         +ajouterElementAffichage(x, y, couleur)
         +mettreAjourAffichage()
+        +afficherEcranFin(lignes, enValeur)
     }
 ```
 

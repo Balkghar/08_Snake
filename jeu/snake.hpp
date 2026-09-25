@@ -23,6 +23,15 @@
 
 enum Direction { haut, bas, droite, gauche };
 
+// Statistiques d'un serpent sur toute la partie
+struct StatsSerpent {
+  unsigned victimes = 0;           // serpents tués tête contre tête
+  unsigned pommes = 0;             // pommes mangées
+  unsigned morsuresInfligees = 0;  // serpents coupés
+  unsigned morsuresSubies = 0;     // fois où il a été coupé
+  std::size_t longueurMax = 1;     // plus grande longueur atteinte
+};
+
 class Snake {
  public:
   //------------------------- Constructeur --------------------------------
@@ -66,8 +75,11 @@ class Snake {
   const std::vector<CoordonneesXY> &getCasesRetirees() const;
   void oublierModifications();  // vide les listes (et leur mémoire si mort)
 
+  const StatsSerpent &getStats() const;
+
   //------------------------- autres --------------------------------------
   void longueurAAjouterSupl(unsigned valeur);
+  void mangerPomme(unsigned valeur);
 
   //------------------------- Combat --------------------------------------
   /**
@@ -99,6 +111,7 @@ class Snake {
   unsigned longueurAAjouter;
   bool estEnVie;
   FileCirculaire<CoordonneesXY> coordonnees;
+  StatsSerpent stats;
   std::vector<CoordonneesXY> casesAjoutees;
   std::vector<CoordonneesXY> casesRetirees;
 };

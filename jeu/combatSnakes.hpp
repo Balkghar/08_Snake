@@ -61,7 +61,11 @@ class Combat {
 
   //------------------------- méthodes d'affichage ------------------------
   bool afficher(Affichage2d &affichage);
-  void faireCombattreSerpents(Affichage2d &affichage, unsigned vitesse);
+  bool faireCombattreSerpents(Affichage2d &affichage, unsigned vitesse);
+
+  //------------------------- fin de partie -------------------------------
+  void afficherVictoire(Affichage2d &affichage);
+  std::vector<std::string> statistiques() const;
 
   //------------------------- Données -------------------------------------
   const unsigned largeur;
@@ -69,6 +73,9 @@ class Combat {
   unsigned largeurAffichage;
   unsigned longueurAffichage;
   unsigned nbSerpent;
+  const unsigned nbSerpentsDepart;
+  unsigned long nbTours = 0;
+  unsigned dureeMs = 0;
 
   static constexpr unsigned MIN = 0;
   static constexpr unsigned AUCUNE_TETE = 0;
