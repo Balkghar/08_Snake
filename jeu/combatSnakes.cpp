@@ -25,8 +25,12 @@ Compilateur : gcc version 11.2.0
 
 #include "combatSnakes.hpp"
 #include "../outils/aleatoire.hpp"
+#include "../outils/cycles.hpp"
 #include "../outils/precharger.hpp"
 #include <algorithm>
+#include <fstream>
+#include <iomanip>
+#include <sstream>
 #include <climits>
 #include <condition_variable>
 #include <mutex>
@@ -449,6 +453,10 @@ void Combat::jouerTourParallele(unsigned thread) {
 
 void Combat::jouerTourSerie() {
   // Peu de serpents : mêmes phases, sur un seul thread (même résultat)
+  if (profil) {
+    jouerTourSerieMesure();
+    return;
+  }
   phaseDeplacement(0, 0, vivants.size());
   for (unsigned r = 0; r < regions.size(); ++r) {
     phaseGrille(r);
@@ -491,6 +499,76 @@ bool Combat::peutAtteindreAmbigue(Resume resume) const {
 
 uint32_t Combat::tailleTete(uint32_t id) const {
   return min(resumes[id - 1].taille, TAILLE_MAX_TETE);
+}
+
+string Combat::detailSerie() const {
+  if (toursMode[0] == 0) {
+    return "";
+  }
+  uint64_t total = 0;
+  for (uint64_t c : cyclesSerie) {
+    total += c;
+  }
+  const double nsParTour = double(dureeMode[0]) * 1e9
+      / double(SDL_GetPerformanceFrequency()) / double(toursMode[0]);
+  const char *noms[] = {"deplacement", "grille", "combats", "consequences",
+                        "retraits", "resolution"};
+  ostringstream texte;
+  texte << fixed << setprecision(0) << "  un tour a un thread : " << nsParTour
+        << " ns (";
+  for (unsigned p = 0; p < 6; ++p) {
+    texte << (p ? ", " : "") << noms[p] << " "
+          << (total ? nsParTour * double(cyclesSerie[p]) / double(total) : 0.0);
+  }
+  texte << ")\n";
+
+  // Coût d'une lecture d'horloge (certains portables utilisent une source
+  // d'horloge lente, un appel système à chaque lecture)
+  const unsigned N = 20000;
+  const uint64_t debut = SDL_GetPerformanceCounter();
+  Uint64 somme = 0;
+  for (unsigned i = 0; i < N; ++i) {
+    somme += SDL_GetTicks();
+  }
+  const uint64_t fin = SDL_GetPerformanceCounter();
+  texte << setprecision(1) << "  lecture d'horloge : "
+        << double(fin - debut) * 1e9 / double(SDL_GetPerformanceFrequency()) / N
+        << " ns" << (somme == 0 ? " " : "");
+#if defined(__linux__)
+  ifstream source("/sys/devices/system/clocksource/clocksource0/current_clocksource");
+  string nom;
+  if (getline(source, nom) and not nom.empty()) {
+    texte << " (source " << nom << ")";
+  }
+#endif
+  texte << "\n";
+  return texte.str();
+}
+
+void Combat::jouerTourSerieMesure() {
+  // Même tour, chaque phase chronométrée (pour --profil)
+  uint64_t t = compteurCycles();
+  auto top = [&](unsigned phase) {
+    const uint64_t maintenant = compteurCycles();
+    cyclesSerie[phase] += maintenant - t;
+    t = maintenant;
+  };
+  phaseDeplacement(0, 0, vivants.size());
+  top(0);
+  for (unsigned r = 0; r < regions.size(); ++r) {
+    phaseGrille(r);
+  }
+  top(1);
+  phaseCombats(0, vivants.size());
+  top(2);
+  phaseConsequences(0, 0, vivants.size());
+  top(3);
+  for (unsigned r = 0; r < regions.size(); ++r) {
+    phaseRetraits(r);
+  }
+  top(4);
+  phaseResolution();
+  top(5);
 }
 
 uint32_t Combat::parite() const {
@@ -1002,7 +1080,7 @@ bool Combat::faireCombattreSerpents(Affichage2d &affichage) {
          << ", a un thread (moins de " << SEUIL_PARALLELE << " serpents) : "
          << toursMode[0] << " en "
          << ms(double(dureeMode[0]) * 1000.0 / double(SDL_GetPerformanceFrequency()))
-         << "\n"
+         << "\n" << detailSerie()
          << "Moteur : calcul " << ms(moteurCalcul) << ", preparation des images "
          << ms(moteurPreparation) << ", attente de l'affichage " << ms(moteurAttente)
          << "\n  " << nbDepots << " images deposees, " << nbLotsSansDepot

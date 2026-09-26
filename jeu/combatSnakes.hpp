@@ -179,6 +179,8 @@ class Combat {
   unsigned long jouerTours(unsigned long nbMax, Uint32 finAuPlusTard);
   void jouerTourParallele(unsigned thread);
   void jouerTourSerie();
+  void jouerTourSerieMesure();
+  std::string detailSerie() const;  // profil des tours à un thread
   void phaseDeplacement(unsigned thread, size_t debut, size_t fin);
   void phaseGrille(unsigned region);
   void phaseCombats(size_t debut, size_t fin);
@@ -289,6 +291,7 @@ class Combat {
   // [0] tours joués à un thread, [1] à plusieurs (profil)
   std::uint64_t dureeMode[2] = {0, 0};
   std::uint64_t toursMode[2] = {0, 0};
+  std::uint64_t cyclesSerie[6] = {};  // par phase, tours à un thread
   bool continuer = false;     // décidé par le thread 0 à chaque tour
   bool silencieux = false;
   bool finAuto = false;
