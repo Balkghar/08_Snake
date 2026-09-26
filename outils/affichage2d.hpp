@@ -54,15 +54,16 @@ class Affichage2d {
    */
   void activerVsync(bool actif);
 
-  // Fenêtre sans bord qui couvre tout l'écran (à appeler avant
-  // initalisationAffichage)
-  void activerPleinEcran(bool actif);
+  // Fenêtre sans bord qui couvre tout l'écran numéro « ecran » (numérotation
+  // SDL ; -1 : fenêtre ordinaire). À appeler avant initalisationAffichage.
+  void activerPleinEcran(int ecran);
 
   /**
-   * @brief Résolution de l'écran principal, en pixels. Renvoie false si elle
-   *        est inconnue (pas d'affichage).
+   * @brief Le plus grand des écrans branchés (en nombre de pixels) : sa
+   *        résolution et son numéro. Renvoie false s'il n'y en a aucun.
    */
-  static bool tailleEcran(unsigned &largeurEcran, unsigned &hauteurEcran);
+  static bool plusGrandEcran(unsigned &largeurEcran, unsigned &hauteurEcran,
+                             int &numero);
   bool initalisationAffichage();
   /**
    * @brief Fréquence de rafraîchissement de l'écran de la fenêtre, en Hz
@@ -130,7 +131,7 @@ class Affichage2d {
   const unsigned sdl_delay;
   unsigned nbre_values;  // zoom : taille d'une case en pixels
   bool vsync = false;
-  bool pleinEcran = false;
+  int ecranPleinEcran = -1;  // -1 : fenêtre ordinaire
   SDL_Window *window = nullptr;
   SDL_Renderer *renderer = nullptr;
   SDL_Texture *texture = nullptr;

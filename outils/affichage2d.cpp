@@ -48,25 +48,31 @@ void Affichage2d::activerVsync(bool actif) {
   vsync = actif;
 }
 
-void Affichage2d::activerPleinEcran(bool actif) {
-  pleinEcran = actif;
+void Affichage2d::activerPleinEcran(int ecran) {
+  ecranPleinEcran = ecran;
 }
 
-bool Affichage2d::tailleEcran(unsigned &largeurEcran, unsigned &hauteurEcran) {
-  // (SDL compte les initialisations : celle de l'affichage suivra sans
-  // problème)
+bool Affichage2d::plusGrandEcran(unsigned &largeurEcran, unsigned &hauteurEcran,
+                                 int &numero) {
   if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
     return false;
   }
-  SDL_DisplayMode mode;
-  const bool connue = SDL_GetDesktopDisplayMode(0, &mode) == 0
-      and mode.w > 0 and mode.h > 0;
-  if (connue) {
-    largeurEcran = unsigned(mode.w);
-    hauteurEcran = unsigned(mode.h);
+  // Résolution de bureau de chaque écran ; le plus de pixels gagne (à
+  // égalité, le premier, en général l'écran principal)
+  long meilleur = 0;
+  const int nbEcrans = SDL_GetNumVideoDisplays();
+  for (int ecran = 0; ecran < nbEcrans; ++ecran) {
+    SDL_DisplayMode mode;
+    if (SDL_GetDesktopDisplayMode(ecran, &mode) == 0
+        and long(mode.w) * mode.h > meilleur) {
+      meilleur = long(mode.w) * mode.h;
+      largeurEcran = unsigned(mode.w);
+      hauteurEcran = unsigned(mode.h);
+      numero = ecran;
+    }
   }
   SDL_QuitSubSystem(SDL_INIT_VIDEO);
-  return connue;
+  return meilleur > 0;
 }
 
 unsigned Affichage2d::frequenceEcran() const {
@@ -103,13 +109,19 @@ bool Affichage2d::initalisationAffichage() {
     }
   }
 
-  SDL_CreateWindowAndRenderer(int(largeur * nbre_values),
-                              int(hauteur * nbre_values),
-                              pleinEcran ? SDL_WINDOW_FULLSCREEN_DESKTOP
-                                         : SDL_WINDOW_SHOWN,
-                              &window,
-                              &renderer
-  );
+  // En plein écran, la fenêtre est placée sur l'écran choisi avant de
+  // l'occuper entièrement (sinon, elle irait sur l'écran principal)
+  const int numeroEcran = ecranPleinEcran < 0 ? 0 : ecranPleinEcran;
+  window = SDL_CreateWindow("Snake battle simulator",
+                            int(SDL_WINDOWPOS_CENTERED_DISPLAY(numeroEcran)),
+                            int(SDL_WINDOWPOS_CENTERED_DISPLAY(numeroEcran)),
+                            int(largeur * nbre_values),
+                            int(hauteur * nbre_values),
+                            ecranPleinEcran >= 0 ? SDL_WINDOW_FULLSCREEN_DESKTOP
+                                                 : SDL_WINDOW_SHOWN);
+  if (window != nullptr) {
+    renderer = SDL_CreateRenderer(window, -1, 0);
+  }
   if (window == nullptr or renderer == nullptr) {
     cout << "SDL not ready ... quitting" << endl;
     return true;

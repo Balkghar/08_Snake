@@ -56,8 +56,9 @@ void afficherAide(const string &programme, const vector<Parametre> &params) {
     }
     cout << '\n';
   }
-  cout << "  -t, --turbo             Plein ecran : terrain de la taille de\n"
-       << "                          l'ecran, un serpent pour 4 cases, vitesse\n"
+  cout << "  -t, --turbo             Plein ecran sur le plus grand ecran :\n"
+       << "                          terrain de sa taille (une case par pixel),\n"
+       << "                          un serpent pour 4 cases, vitesse\n"
        << "                          maximale, silencieux (les autres options\n"
        << "                          restent prioritaires)\n"
        << "  -q, --silencieux        N'annonce pas chaque mort dans la console\n"
@@ -260,19 +261,23 @@ int main(int argc, char **argv) {
 
   // Mode turbo : tout au maximum, sauf ce qui a été donné explicitement (le
   // nombre de serpents est fixé plus bas, une fois le terrain connu)
-  bool pleinEcran = false;
+  int ecranPleinEcran = -1;  // -1 : fenêtre ordinaire
   if (drapeaux.turbo) {
     auto parDefaut = [&params](int indice, int valeur) {
       if (not params[size_t(indice)].donne) {
         params[size_t(indice)].valeur = valeur;
       }
     };
-    // Terrain de la taille de l'écran, une case par pixel, en plein écran
-    // (si ni la largeur ni la hauteur ne sont imposées)
+    // Terrain de la taille du plus grand écran branché, une case par pixel,
+    // en plein écran sur celui-ci (si ni la largeur, ni la hauteur, ni le
+    // zoom ne sont imposés)
     unsigned largeurEcran = 1200, hauteurEcran = 800;
-    const bool ecranConnu = Affichage2d::tailleEcran(largeurEcran, hauteurEcran);
-    pleinEcran = ecranConnu and not params[LARGEUR].donne
-        and not params[HAUTEUR].donne and not params[ZOOM].donne;
+    int ecran = 0;
+    const bool ecranConnu = Affichage2d::plusGrandEcran(largeurEcran, hauteurEcran, ecran);
+    if (ecranConnu and not params[LARGEUR].donne and not params[HAUTEUR].donne
+        and not params[ZOOM].donne) {
+      ecranPleinEcran = ecran;
+    }
     parDefaut(LARGEUR, min(int(largeurEcran), params[LARGEUR].max));
     parDefaut(HAUTEUR, min(int(hauteurEcran), params[HAUTEUR].max));
     parDefaut(DELAI, 0);
@@ -335,7 +340,7 @@ int main(int argc, char **argv) {
   // simulation elle-même : le mode turbo est silencieux
   combat.choisirSorties(drapeaux.silencieux or drapeaux.turbo, drapeaux.finAuto);
   combat.activerVsync(drapeaux.vsync);
-  combat.activerPleinEcran(pleinEcran);
+  combat.activerPleinEcran(ecranPleinEcran);
   combat.activerProfil(drapeaux.profil);
   combat.commencerCombat(unsigned(params[DELAI].valeur),
                          unsigned(params[ZOOM].valeur),

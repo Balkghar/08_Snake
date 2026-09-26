@@ -86,7 +86,7 @@ programme par un simple double-clic.
 | `-d`, `--delai N`     | Délai entre deux images, en ms (vitesse) | 0–1000   | 50        |
 | `-z`, `--zoom N`      | Taille d'une case à l'écran, en pixels   | 1–16     | 4         |
 | `-v`, `--vitesse N`   | Tours de jeu par image, 0 = automatique  | 0–1000   | 1         |
-| `-t`, `--turbo`       | Plein écran, terrain de la taille de l'écran, serpents au maximum, vitesse auto, silencieux | | |
+| `-t`, `--turbo`       | Plein écran sur le plus grand écran, terrain de sa taille, serpents au maximum, vitesse auto, silencieux | | |
 | `-j`, `--threads N`   | Threads de calcul, 0 = cœurs physiques − 1 | 0–256  | 0         |
 | `-g`, `--graine N`    | Rejoue exactement la même partie (mêmes `-l -H -s`, tout `-j`) | entier ≥ 0 | au hasard |
 | `-q`, `--silencieux`  | N'annonce pas chaque mort                |          |           |
@@ -108,8 +108,9 @@ partie :
 - `-v 0` (automatique) joue autant de tours que possible pendant chaque image
   et garde ~60 images/s : la partie va aussi vite que la machine le permet ;
 - `--turbo` lance directement la plus grosse partie possible : en plein
-  écran, un terrain de la taille de l'écran (une case par pixel) et un
-  serpent pour 4 cases, en vitesse automatique. Sur un écran 1920×1200,
+  écran sur le **plus grand écran branché** (en nombre de pixels : un
+  moniteur 4K l'emporte sur l'écran d'un portable), un terrain de sa taille
+  (une case par pixel) et un serpent pour 4 cases, en vitesse automatique. Sur un écran 1920×1200,
   576 000 serpents ; au-delà de 1 048 575 serpents (un écran 4K), le nombre
   est plafonné. Les options données en plus restent prioritaires, par
   exemple `--turbo -s 20000`, ou `--turbo -l 1200 -H 800` pour une fenêtre

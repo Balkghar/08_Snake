@@ -155,8 +155,8 @@ void Combat::activerVsync(bool actif) {
   vsync = actif;
 }
 
-void Combat::activerPleinEcran(bool actif) {
-  pleinEcran = actif;
+void Combat::activerPleinEcran(int ecran) {
+  ecranPleinEcran = ecran;
 }
 
 void Combat::activerProfil(bool actif) {
@@ -169,7 +169,7 @@ void Combat::commencerCombat(unsigned delai, unsigned zoom, unsigned vitesse) {
   this->vitesse = vitesse;
   Affichage2d affichage(largeur, longueur, delai, zoom);
   affichage.activerVsync(vsync);
-  affichage.activerPleinEcran(pleinEcran);
+  affichage.activerPleinEcran(ecranPleinEcran);
 
   if (not affichage.initalisationAffichage()) {
     frequenceEcran = affichage.frequenceEcran();

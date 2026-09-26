@@ -69,7 +69,7 @@ class Combat {
    *        de l'écran, sans déchirure. Ne ralentit pas le calcul, qui tourne
    *        sur d'autres threads.
    */
-  void activerPleinEcran(bool actif);
+  void activerPleinEcran(int ecran);  // -1 : fenêtre ordinaire
   void activerVsync(bool actif);
 
   /**
@@ -240,7 +240,7 @@ class Combat {
   unsigned frequenceEcran = 60;  // images par seconde de l'écran
   bool vsync = false;
   bool profil = false;
-  bool pleinEcran = false;
+  int ecranPleinEcran = -1;
 
   std::vector<Snake> serpents;
   std::vector<Pomme> pommes;
