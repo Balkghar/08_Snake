@@ -64,6 +64,7 @@ programme par un simple double-clic.
 ./build/08_snake --serpents=50            # seules largeur et hauteur sont demandées
 ./build/08_snake -l 1200 -H 800 -s 20000 -v 0   # la grosse mêlée, vitesse auto
 ./build/08_snake --turbo                  # 100 000 serpents, le plus vite possible
+./build/08_snake --turbo --vsync -v 2     # la même, à regarder (voir plus bas)
 ```
 
 | Option                | Description                              | Valeurs  | Défaut    |
@@ -98,12 +99,46 @@ partie :
 - `--turbo` lance directement la plus grosse partie possible (1200×800,
   100 000 serpents) en vitesse automatique. Les options données en plus
   restent prioritaires, par exemple `--turbo -s 20000`. Une partie turbo
-  complète dure une dizaine de secondes.
+  complète dure moins d'une seconde sur un portable récent (0,5 s sur un
+  i7-1255U) : trop vite pour voir quoi que ce soit.
 
 En jeu, **+** / **−** (ou ↑ / ↓) accélèrent ou ralentissent la partie par
 paliers (×1, ×2, ×5 … ×1000, puis auto), **ÉCHAP** ou la fermeture de la
 fenêtre l'interrompent. Le titre de la fenêtre indique les serpents restants,
 le tour en cours et la vitesse.
+
+### Une partie turbo à regarder
+
+Une partie turbo a deux temps : une mêlée de 100 000 serpents qui ne dure
+que ~1 600 tours, puis une longue fin (~320 000 tours) entre une poignée de
+survivants. En vitesse automatique, la mêlée tient en une trentaine
+d'images. Pour la voir :
+
+```sh
+./build/08_snake --turbo --vsync -v 2
+```
+
+- `--vsync` cale les images sur l'écran (60 par seconde sur un écran à
+  60 Hz) : avec `-v N`, la partie avance de 60 × N tours par seconde, quelle
+  que soit la puissance de la machine ;
+- `-v 2` : la mêlée dure ~15 s, on voit les serpents foncer vers leurs
+  pommes et le terrain se vider ;
+- quand il ne reste qu'une centaine de serpents, **+** plusieurs fois
+  (×5, ×10 … ×1000, puis auto) pour ne pas attendre 45 minutes la fin.
+
+Durées complètes à vitesse fixe (écran 60 Hz), sans toucher au clavier :
+
+| Commande | Mêlée | Partie entière |
+|----------|-------|----------------|
+| `--turbo --vsync -v 1`  | ~27 s | ~1 h 30 |
+| `--turbo --vsync -v 2`  | ~14 s | ~45 min |
+| `--turbo --vsync -v 50` | < 1 s | ~2 min  |
+| `--turbo --vsync -v 200` | —    | ~27 s   |
+
+Les chiffres varient d'une graine à l'autre (`--graine N` rejoue la même
+partie). Quelle que soit la taille, la fin entre quelques survivants est
+longue : `-l 400 -H 300 -s 2000 -z 2 --vsync -v 20` dure de 1 à 4 minutes
+selon la graine (70 000 à 260 000 tours).
 
 ### Écran de victoire
 
