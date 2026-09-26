@@ -41,15 +41,26 @@ cmake --build build
 ### Version la plus rapide (GCC)
 
 ```sh
-./pgo.sh            # compile, entraîne sur deux parties, recompile : build-pgo/08_snake
+./pgo.sh            # build-pgo/08_snake
+./pgo.sh --natif    # idem, pour le processeur de cette machine seulement
 ```
 
-`pgo.sh` fait une optimisation guidée par profil : une première version
-mesure où le programme passe son temps pendant deux parties sans fenêtre,
-puis GCC recompile en s'en servant (environ 10 % plus rapide). Options
-CMake équivalentes : `-DSNAKE_PGO=GENERER` puis `-DSNAKE_PGO=UTILISER`.
-`-DSNAKE_NATIVE=ON` compile pour le processeur de la machine (quelques %
-sur un thread, mais l'exécutable peut ne pas fonctionner ailleurs).
+`pgo.sh` fait une optimisation guidée par profil, toujours en Release :
+
+1. une version instrumentée est compilée ;
+2. elle joue trois parties sans fenêtre, à graines fixes (la mêlée à
+   100 000 serpents, une fin de partie sur un thread, une petite partie
+   avec les images) et mesure où le programme passe son temps ;
+3. GCC recompile en s'en servant ;
+4. le script compare avec une compilation Release ordinaire sur une partie
+   jamais vue (`--turbo --graine 42`, meilleur de 3) et affiche les deux
+   temps. Mesuré sur 4 cœurs : 729 → 654 ms (−10 %).
+
+`--natif` ajoute `-march=native` (quelques % de plus, mais l'exécutable
+peut ne pas fonctionner sur un autre ordinateur). Avec Clang, le script
+s'arrête : ses options de PGO sont différentes (`CXX=g++ ./pgo.sh`).
+Options CMake équivalentes : `-DSNAKE_PGO=GENERER` puis
+`-DSNAKE_PGO=UTILISER`, et `-DSNAKE_NATIVE=ON`.
 
 ## Utilisation
 
