@@ -586,6 +586,10 @@ void Combat::phaseDeplacement(unsigned thread, size_t debut, size_t fin) {
 
   Boite &boite = boites[thread];
 
+  // (les premiers aussi : avec peu de serpents, ce sont presque tous)
+  for (size_t v = debut; v < min(debut + AVANCE, fin); ++v) {
+    precharger(&cases[ancienneTete[vivants[v]]]);
+  }
   for (size_t v = debut; v < fin; ++v) {
     // Préchargement de la case (ancienne tête) qu'un serpent à venir va
     // modifier
@@ -637,6 +641,10 @@ void Combat::phaseGrille(unsigned r) {
   for (unsigned b = 0; b < boitesActives; ++b) {
     Boite &boite = boites[b];
     vector<Mouvement> &liste = boite.mouvements[r];
+    // (les premiers aussi : sur une courte liste, ce sont presque tous)
+    for (size_t k = 0; k < min(AVANCE_MESSAGES, liste.size()); ++k) {
+      precharger(&cases[liste[k].cellule]);
+    }
     for (size_t k = 0; k < liste.size(); ++k) {
       if (k + AVANCE_MESSAGES < liste.size()) {
         precharger(&cases[liste[k + AVANCE_MESSAGES].cellule]);
@@ -666,6 +674,10 @@ void Combat::phaseGrille(unsigned r) {
   for (unsigned b = 0; b < boitesActives; ++b) {
     Boite &boite = boites[b];
     vector<ArriveeTete> &liste = boite.tetes[r];
+    // (les premiers aussi : sur une courte liste, ce sont presque tous)
+    for (size_t k = 0; k < min(AVANCE_MESSAGES, liste.size()); ++k) {
+      precharger(&cases[liste[k].cellule]);
+    }
     for (size_t k = 0; k < liste.size(); ++k) {
       if (k + AVANCE_MESSAGES < liste.size()) {
         precharger(&cases[liste[k + AVANCE_MESSAGES].cellule]);
@@ -715,6 +727,9 @@ void Combat::phaseCombats(size_t debut, size_t fin) {
   // Un serpent qui perd l'un de ses combats meurt.
   const uint32_t tour = parite();
 
+  for (size_t v = debut; v < min(debut + AVANCE, fin); ++v) {
+    precharger(&cases[resumes[vivants[v]].teteCase]);
+  }
   for (size_t v = debut; v < fin; ++v) {
     if (v + AVANCE < fin) {
       precharger(&cases[resumes[vivants[v + AVANCE]].teteCase]);
@@ -829,6 +844,10 @@ void Combat::phaseRetraits(unsigned r) {
   for (unsigned b = 0; b < boitesActives; ++b) {
     Boite &boite = boites[b];
     vector<Mouvement> &liste = boite.mouvements[r];
+    // (les premiers aussi : sur une courte liste, ce sont presque tous)
+    for (size_t k = 0; k < min(AVANCE_MESSAGES, liste.size()); ++k) {
+      precharger(&cases[liste[k].cellule]);
+    }
     for (size_t k = 0; k < liste.size(); ++k) {
       if (k + AVANCE_MESSAGES < liste.size()) {
         precharger(&cases[liste[k + AVANCE_MESSAGES].cellule]);
@@ -1167,6 +1186,9 @@ void Combat::preparerRegion(Region &region, vector<uint32_t> &sortie) {
   // éparpillées : préchargées quelques-unes à l'avance.
   sortie.clear();
   vector<uint32_t> &liste = region.casesModifiees;
+  for (size_t k = 0; k < min(AVANCE_MESSAGES, liste.size()); ++k) {
+    precharger(&cases[liste[k]]);
+  }
   for (size_t k = 0; k < liste.size(); ++k) {
     if (k + AVANCE_MESSAGES < liste.size()) {
       precharger(&cases[liste[k + AVANCE_MESSAGES]]);
