@@ -10,6 +10,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release)
 endif()
+# Un dossier de compilation déjà configuré garde son type (par exemple
+# Debug, choisi par défaut par l'extension CMake de VS Code) : sans
+# optimisation, la simulation est 5 à 10 fois plus lente
+if(CMAKE_BUILD_TYPE AND NOT CMAKE_BUILD_TYPE MATCHES "^(Release|RelWithDebInfo)$")
+  message(WARNING "Compilation en ${CMAKE_BUILD_TYPE} : simulation 5 a 10 fois "
+                  "plus lente. Pour la vitesse : cmake -B build -DCMAKE_BUILD_TYPE=Release")
+endif()
 
 find_package(SDL2 REQUIRED)
 find_package(Threads REQUIRED)

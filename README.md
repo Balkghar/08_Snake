@@ -28,6 +28,16 @@ cmake --build build
 
 L'exécutable est `build/08_snake` (`build\08_snake.exe` sous Windows).
 
+**Attention au mode Debug** : un dossier `build` déjà configuré garde son
+type de compilation. L'extension CMake de VS Code, par exemple, le configure
+en `Debug` : sans optimisation, la simulation est **5 à 10 fois plus
+lente** (le programme et CMake le signalent). En cas de doute :
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+```
+
 ### Version la plus rapide (GCC)
 
 ```sh

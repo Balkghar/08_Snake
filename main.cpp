@@ -279,6 +279,14 @@ int main(int argc, char **argv) {
 
   cout << MSG_DEBUT << endl;
 
+#if (defined(__GNUC__) || defined(__clang__)) && !defined(__OPTIMIZE__)
+  // (dossier de compilation configuré en Debug : erreur facile, très coûteuse)
+  cout << "Attention : programme compile sans optimisation (Debug), la "
+          "simulation est 5 a 10 fois plus lente.\n"
+          "Recompiler avec : cmake -B build -DCMAKE_BUILD_TYPE=Release && "
+          "cmake --build build\n" << endl;
+#endif
+
   // Les paramètres sans valeur (ni option, ni défaut) sont demandés, dans
   // l'ordre de la liste
   bool modeInteractif = false;
