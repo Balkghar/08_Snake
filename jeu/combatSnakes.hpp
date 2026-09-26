@@ -33,8 +33,10 @@ Compilateur : gcc version 11.2.0
 
 class Combat {
  public:
-  // Les numéros de serpent sont rangés sur 17 bits dans chaque case
-  static constexpr unsigned BITS_NUMERO = 17;
+  // Les numéros de serpent sont rangés sur 20 bits dans chaque case :
+  // jusqu'à 1 048 575 serpents (un écran 4K en permet 2 millions, à raison
+  // d'un serpent pour 4 cases)
+  static constexpr unsigned BITS_NUMERO = 20;
   static constexpr std::uint32_t MAX_SERPENTS = (1u << BITS_NUMERO) - 1;
 
   //------------------------- Constructeur --------------------------------
@@ -67,6 +69,7 @@ class Combat {
    *        de l'écran, sans déchirure. Ne ralentit pas le calcul, qui tourne
    *        sur d'autres threads.
    */
+  void activerPleinEcran(bool actif);
   void activerVsync(bool actif);
 
   /**
@@ -90,9 +93,12 @@ class Combat {
   // terrain, chaque accès est un défaut de cache, autant n'en payer qu'un ;
   // et 1200 x 800 cases font 7,7 Mo, qui tiennent dans le cache L3 d'un
   // processeur de portable (12 Mo), au lieu de 15 Mo qui n'y tenaient pas.
+  // Bits : 11 + 20 + 20 + 1 + 11 + 1 = 64.
   struct Case {
-    // segments de serpents vivants sur la case
-    std::uint64_t serpents : 17;
+    // segments de serpents vivants sur la case (au plus 2047 : une tête
+    // qui arrive sur un corps le coupe ou meurt, les segments ne
+    // s'empilent jamais au-delà de quelques-uns)
+    std::uint64_t serpents : 11;
     // XOR des numéros des segments présents : avec un seul segment, c'est
     // exactement son propriétaire (détection des morsures)
     std::uint64_t xorSerpents : BITS_NUMERO;
@@ -234,6 +240,7 @@ class Combat {
   unsigned frequenceEcran = 60;  // images par seconde de l'écran
   bool vsync = false;
   bool profil = false;
+  bool pleinEcran = false;
 
   std::vector<Snake> serpents;
   std::vector<Pomme> pommes;

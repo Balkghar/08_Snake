@@ -40,7 +40,7 @@ rm -rf "$dossier/pgo"
 # partie turbo) et une petite avec les images (préparation, pixels).
 echo "== 2/4 Entrainement"
 export SDL_VIDEODRIVER=dummy
-"$dossier/08_snake" --turbo --graine 1 -f > /dev/null
+"$dossier/08_snake" --turbo -l 1200 -H 800 -s 100000 --graine 1 -f > /dev/null
 "$dossier/08_snake" -l 400 -H 300 -s 3000 -v 0 -d 0 -z 1 -f -q -j 1 --graine 2 > /dev/null
 "$dossier/08_snake" -l 200 -H 150 -s 200 -v 20 -d 0 -z 2 -f -q --graine 3 > /dev/null
 
@@ -53,7 +53,7 @@ cmake -S . -B "$reference" $options -DSNAKE_PGO= > /dev/null
 cmake --build "$reference" --parallel > /dev/null
 # Graine différente de l'entraînement : on mesure une partie jamais vue
 calcul() {
-  "$1" --turbo --graine 42 -f --profil 2>/dev/null \
+  "$1" --turbo -l 1200 -H 800 -s 100000 --graine 42 -f --profil 2>/dev/null \
     | sed -n 's/.*Moteur : calcul \([0-9]*\) ms.*/\1/p'
 }
 meilleur() {
@@ -66,7 +66,7 @@ meilleur() {
 }
 tRef=$(meilleur "$reference/08_snake")
 tPgo=$(meilleur "$dossier/08_snake")
-echo "Partie --turbo --graine 42, calcul (meilleur de 3) :"
+echo "Partie --turbo -l 1200 -H 800 -s 100000 --graine 42, calcul (meilleur de 3) :"
 echo "  Release ordinaire : $tRef ms"
 echo "  Release + PGO     : $tPgo ms"
 echo "Executable optimise : $dossier/08_snake"

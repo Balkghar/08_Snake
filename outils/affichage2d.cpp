@@ -48,6 +48,27 @@ void Affichage2d::activerVsync(bool actif) {
   vsync = actif;
 }
 
+void Affichage2d::activerPleinEcran(bool actif) {
+  pleinEcran = actif;
+}
+
+bool Affichage2d::tailleEcran(unsigned &largeurEcran, unsigned &hauteurEcran) {
+  // (SDL compte les initialisations : celle de l'affichage suivra sans
+  // problème)
+  if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
+    return false;
+  }
+  SDL_DisplayMode mode;
+  const bool connue = SDL_GetDesktopDisplayMode(0, &mode) == 0
+      and mode.w > 0 and mode.h > 0;
+  if (connue) {
+    largeurEcran = unsigned(mode.w);
+    hauteurEcran = unsigned(mode.h);
+  }
+  SDL_QuitSubSystem(SDL_INIT_VIDEO);
+  return connue;
+}
+
 unsigned Affichage2d::frequenceEcran() const {
   SDL_DisplayMode mode;
   const int ecran = window ? SDL_GetWindowDisplayIndex(window) : 0;
@@ -84,7 +105,8 @@ bool Affichage2d::initalisationAffichage() {
 
   SDL_CreateWindowAndRenderer(int(largeur * nbre_values),
                               int(hauteur * nbre_values),
-                              SDL_WINDOW_SHOWN,
+                              pleinEcran ? SDL_WINDOW_FULLSCREEN_DESKTOP
+                                         : SDL_WINDOW_SHOWN,
                               &window,
                               &renderer
   );

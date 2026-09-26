@@ -24,6 +24,7 @@
 #include "outils/aleatoire.hpp"
 #include "outils/saisie.hpp"
 #include "jeu/combatSnakes.hpp"
+#include "outils/affichage2d.hpp"
 #include "outils/poolThreads.hpp"
 
 using namespace std;
@@ -55,9 +56,10 @@ void afficherAide(const string &programme, const vector<Parametre> &params) {
     }
     cout << '\n';
   }
-  cout << "  -t, --turbo             Terrain maximal, un maximum de serpents,\n"
-       << "                          vitesse maximale, silencieux (les autres\n"
-       << "                          options restent prioritaires)\n"
+  cout << "  -t, --turbo             Plein ecran : terrain de la taille de\n"
+       << "                          l'ecran, un serpent pour 4 cases, vitesse\n"
+       << "                          maximale, silencieux (les autres options\n"
+       << "                          restent prioritaires)\n"
        << "  -q, --silencieux        N'annonce pas chaque mort dans la console\n"
        << "  -f, --fin-auto          Quitte a la fin sans attendre (statistiques\n"
        << "                          dans la console seulement)\n"
@@ -203,14 +205,12 @@ int main(int argc, char **argv) {
   const string MSG_TERRAIN = "Veuillez choisir la "s;
   const string MSG_INTERVALLE = "Elle doit etre comprise entre "s;
 
-  // (les numéros de serpent sont rangés sur 17 bits dans chaque case)
-  static_assert(100'000 <= Combat::MAX_SERPENTS, "trop de serpents");
   vector<Parametre> params = {
-      {"-l", "--largeur", "Largeur du terrain (cases)", 50, 1200, -1,
+      {"-l", "--largeur", "Largeur du terrain (cases)", 50, 7680, -1,
        MSG_TERRAIN + "largeur du terrain de combat.\n" + MSG_INTERVALLE},
-      {"-H", "--hauteur", "Hauteur du terrain (cases)", 50, 800, -1,
+      {"-H", "--hauteur", "Hauteur du terrain (cases)", 50, 4320, -1,
        MSG_TERRAIN + "hauteur du terrain de combat.\n" + MSG_INTERVALLE},
-      {"-s", "--serpents", "Nombre de serpents", 2, 100'000, -1,
+      {"-s", "--serpents", "Nombre de serpents", 2, int(Combat::MAX_SERPENTS), -1,
        "Choisisez combien de serpents devront combattre.\n"
        "Ce nombre doit etre compris entre "s},
       {"-d", "--delai", "Delai entre deux images (ms)", 0, 1000,
@@ -260,14 +260,21 @@ int main(int argc, char **argv) {
 
   // Mode turbo : tout au maximum, sauf ce qui a été donné explicitement (le
   // nombre de serpents est fixé plus bas, une fois le terrain connu)
+  bool pleinEcran = false;
   if (drapeaux.turbo) {
     auto parDefaut = [&params](int indice, int valeur) {
       if (not params[size_t(indice)].donne) {
         params[size_t(indice)].valeur = valeur;
       }
     };
-    parDefaut(LARGEUR, params[LARGEUR].max);
-    parDefaut(HAUTEUR, params[HAUTEUR].max);
+    // Terrain de la taille de l'écran, une case par pixel, en plein écran
+    // (si ni la largeur ni la hauteur ne sont imposées)
+    unsigned largeurEcran = 1200, hauteurEcran = 800;
+    const bool ecranConnu = Affichage2d::tailleEcran(largeurEcran, hauteurEcran);
+    pleinEcran = ecranConnu and not params[LARGEUR].donne
+        and not params[HAUTEUR].donne and not params[ZOOM].donne;
+    parDefaut(LARGEUR, min(int(largeurEcran), params[LARGEUR].max));
+    parDefaut(HAUTEUR, min(int(hauteurEcran), params[HAUTEUR].max));
     parDefaut(DELAI, 0);
     parDefaut(ZOOM, 1);
     parDefaut(VITESSE, 0);
@@ -328,6 +335,7 @@ int main(int argc, char **argv) {
   // simulation elle-même : le mode turbo est silencieux
   combat.choisirSorties(drapeaux.silencieux or drapeaux.turbo, drapeaux.finAuto);
   combat.activerVsync(drapeaux.vsync);
+  combat.activerPleinEcran(pleinEcran);
   combat.activerProfil(drapeaux.profil);
   combat.commencerCombat(unsigned(params[DELAI].valeur),
                          unsigned(params[ZOOM].valeur),

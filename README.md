@@ -49,11 +49,11 @@ cmake --build build
 
 1. une version instrumentée est compilée ;
 2. elle joue trois parties sans fenêtre, à graines fixes (la mêlée à
-   100 000 serpents, une fin de partie sur un thread, une petite partie
+   100 000 serpents sur 1200×800, une fin de partie sur un thread, une petite partie
    avec les images) et mesure où le programme passe son temps ;
 3. GCC recompile en s'en servant ;
 4. le script compare avec une compilation Release ordinaire sur une partie
-   jamais vue (`--turbo --graine 42`, meilleur de 3) et affiche les deux
+   jamais vue (`--turbo -l 1200 -H 800 -s 100000 --graine 42`, meilleur de 3) et affiche les deux
    temps. Mesuré sur 4 cœurs : 729 → 654 ms (−10 %).
 
 `--natif` ajoute `-march=native` (quelques % de plus, mais l'exécutable
@@ -74,19 +74,19 @@ programme par un simple double-clic.
 ./build/08_snake -l 300 -H 200 -s 200 -d 10 -z 3
 ./build/08_snake --serpents=50            # seules largeur et hauteur sont demandées
 ./build/08_snake -l 1200 -H 800 -s 20000 -v 0   # la grosse mêlée, vitesse auto
-./build/08_snake --turbo                  # 100 000 serpents, le plus vite possible
-./build/08_snake --turbo --vsync -v 2     # la même, à regarder (voir plus bas)
+./build/08_snake --turbo                  # plein écran, un serpent pour 4 pixels
+./build/08_snake --turbo --vsync -v 5     # la même, à regarder (voir plus bas)
 ```
 
 | Option                | Description                              | Valeurs  | Défaut    |
 |-----------------------|------------------------------------------|----------|-----------|
-| `-l`, `--largeur N`   | Largeur du terrain, en cases             | 50–1200  | demandée  |
-| `-H`, `--hauteur N`   | Hauteur du terrain, en cases             | 50–800   | demandée  |
-| `-s`, `--serpents N`  | Nombre de serpents (≤ cases / 4)         | 2–100000 | demandé   |
+| `-l`, `--largeur N`   | Largeur du terrain, en cases             | 50–7680  | demandée  |
+| `-H`, `--hauteur N`   | Hauteur du terrain, en cases             | 50–4320  | demandée  |
+| `-s`, `--serpents N`  | Nombre de serpents (≤ cases / 4)         | 2–1048575 | demandé  |
 | `-d`, `--delai N`     | Délai entre deux images, en ms (vitesse) | 0–1000   | 50        |
 | `-z`, `--zoom N`      | Taille d'une case à l'écran, en pixels   | 1–16     | 4         |
 | `-v`, `--vitesse N`   | Tours de jeu par image, 0 = automatique  | 0–1000   | 1         |
-| `-t`, `--turbo`       | Terrain et serpents au maximum, vitesse auto, zoom 1, silencieux | | |
+| `-t`, `--turbo`       | Plein écran, terrain de la taille de l'écran, serpents au maximum, vitesse auto, silencieux | | |
 | `-j`, `--threads N`   | Threads de calcul, 0 = cœurs physiques − 1 | 0–256  | 0         |
 | `-g`, `--graine N`    | Rejoue exactement la même partie (mêmes `-l -H -s`, tout `-j`) | entier ≥ 0 | au hasard |
 | `-q`, `--silencieux`  | N'annonce pas chaque mort                |          |           |
@@ -107,11 +107,25 @@ partie :
 - `-v N` joue N tours par image ;
 - `-v 0` (automatique) joue autant de tours que possible pendant chaque image
   et garde ~60 images/s : la partie va aussi vite que la machine le permet ;
-- `--turbo` lance directement la plus grosse partie possible (1200×800,
-  100 000 serpents) en vitesse automatique. Les options données en plus
-  restent prioritaires, par exemple `--turbo -s 20000`. Une partie turbo
-  complète dure moins d'une seconde sur un portable récent (0,5 s sur un
-  i7-1255U) : trop vite pour voir quoi que ce soit.
+- `--turbo` lance directement la plus grosse partie possible : en plein
+  écran, un terrain de la taille de l'écran (une case par pixel) et un
+  serpent pour 4 cases, en vitesse automatique. Sur un écran 1920×1200,
+  576 000 serpents ; au-delà de 1 048 575 serpents (un écran 4K), le nombre
+  est plafonné. Les options données en plus restent prioritaires, par
+  exemple `--turbo -s 20000`, ou `--turbo -l 1200 -H 800` pour une fenêtre
+  (le plein écran n'est utilisé que si ni `-l`, ni `-H`, ni `-z` ne sont
+  donnés). **ÉCHAP** quitte.
+
+Taille des parties turbo (mesurées avec `--graine 42`, 4 cœurs) :
+
+| Écran | Serpents | Tours | Calcul | Mémoire |
+|-------|----------|-------|--------|---------|
+| 1200×800  | 240 000   | 0,7 M     | ~1,2 s | 130 Mo |
+| 1920×1200 | 576 000   | 3,1 M     | ~4 s   | 290 Mo |
+| 3840×2160 | 1 048 575 | 6,7 M     | ~16 s  | 610 Mo |
+
+`--turbo -l 1200 -H 800 -s 100000` donne l'ancienne partie turbo (0,5 s
+sur un i7-1255U).
 
 En jeu, **+** / **−** (ou ↑ / ↓) accélèrent ou ralentissent la partie par
 paliers (×1, ×2, ×5 … ×1000, puis auto), **ÉCHAP** ou la fermeture de la
@@ -120,31 +134,37 @@ le tour en cours et la vitesse.
 
 ### Une partie turbo à regarder
 
-Une partie turbo a deux temps : une mêlée de 100 000 serpents qui ne dure
-que ~1 600 tours, puis une longue fin (~320 000 tours) entre une poignée de
-survivants. En vitesse automatique, la mêlée tient en une trentaine
-d'images. Pour la voir :
+Une partie turbo a deux temps : une mêlée de centaines de milliers de
+serpents qui ne dure que quelques milliers de tours (~4 000 sur un écran
+1920×1200), puis une très longue fin (~3 millions de tours) entre une
+poignée de survivants. En vitesse automatique, la mêlée tient en quelques
+dizaines d'images. Pour la voir :
 
 ```sh
-./build/08_snake --turbo --vsync -v 2
+./build/08_snake --turbo --vsync -v 5
 ```
 
 - `--vsync` cale les images sur l'écran (60 par seconde sur un écran à
   60 Hz) : avec `-v N`, la partie avance de 60 × N tours par seconde, quelle
   que soit la puissance de la machine ;
-- `-v 2` : la mêlée dure ~15 s, on voit les serpents foncer vers leurs
-  pommes et le terrain se vider ;
+- `-v 5` : sur un écran 1920×1200, la mêlée dure ~15 s, on voit les
+  serpents foncer vers leurs pommes et le terrain se vider ;
 - quand il ne reste qu'une centaine de serpents, **+** plusieurs fois
-  (×5, ×10 … ×1000, puis auto) pour ne pas attendre 45 minutes la fin.
+  (×10, ×20 … ×1000, puis auto) : à ×5, la fin durerait près de 3 heures.
 
-Durées complètes à vitesse fixe (écran 60 Hz), sans toucher au clavier :
+Durées à vitesse fixe sur un écran 1920×1200 à 60 Hz (~4 000 tours de
+mêlée, ~3,1 millions en tout), sans toucher au clavier :
 
 | Commande | Mêlée | Partie entière |
 |----------|-------|----------------|
-| `--turbo --vsync -v 1`  | ~27 s | ~1 h 30 |
-| `--turbo --vsync -v 2`  | ~14 s | ~45 min |
-| `--turbo --vsync -v 50` | < 1 s | ~2 min  |
-| `--turbo --vsync -v 200` | —    | ~27 s   |
+| `--turbo --vsync -v 2`    | ~35 s | ~7 h 15  |
+| `--turbo --vsync -v 5`    | ~14 s | ~2 h 55  |
+| `--turbo --vsync -v 200`  | < 1 s | ~4 min 20 |
+| `--turbo --vsync -v 1000` | —     | ~52 s    |
+
+Ancienne partie turbo (1200×800, 100 000 serpents, ~1 600 tours de mêlée,
+~320 000 en tout) : `--turbo -l 1200 -H 800 -s 100000 --vsync -v 2`, mêlée
+~14 s, partie entière ~45 min.
 
 Les chiffres varient d'une graine à l'autre (`--graine N` rejoue la même
 partie). Quelle que soit la taille, la fin entre quelques survivants est
